@@ -1,413 +1,357 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  @media print {
-    body { -webkit-print-color-adjust: exact; }
-    .no-print { display: none !important; }
-    .page { box-shadow: none; margin: 0; }
-  }
-  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
-  .thin-border { border: 2px solid #0f172a; }
-  .school-name { letter-spacing: 1px; }
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NANDI GURUKUL VIDYA MANDIR - Report Card (Half Yearly 2025-26)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media print {
+      body { -webkit-print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page { box-shadow: none; margin: 0; width: auto; padding: 0; }
+    }
+    .page { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 20mm; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); font-size: 12px; }
+    .thin-border { border: 2px solid #0f172a; }
+    .school-name { letter-spacing: 1px; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-
-<!-- DASHBOARD FOR TOPPERS (Hidden in print) -->
-<div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
-  <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
-  <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
-  <select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
-    <option value="">-- Select Class --</option>
-    <option value="Nursery">Nursery</option>
-    <option value="LKG">LKG</option>
-    <option value="UKG">UKG</option>
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-  </select>
-  <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
-  <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-</div>
-
-<div class="page thin-border bg-white">
-  <!-- Header -->
-  <div class="flex items-center justify-between pb-4 border-b mb-4">
-    <div class="flex items-center gap-4">
-      <img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
-      <div>
-        <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
-        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - TERM 1</p>
-      </div>
-    </div>
-
-    <div class="text-right no-print">
-      <label class="block text-xs text-gray-600">Select Class</label>
-      <select id="classSelect" class="border rounded px-2 py-1 bg-white">
-        <option value="">-- Select Class --</option>
-        <option value="Nursery">Nursery</option>
-        <option value="LKG">LKG</option>
-        <option value="UKG">UKG</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Teacher Controls -->
-  <div class="no-print mb-4">
-    <div class="grid grid-cols-3 gap-4 items-end">
-      <div>
-        <label class="text-sm text-gray-600">Select / Add Student</label>
-        <div class="flex gap-2">
-          <select id="studentSelect" class="flex-1 border px-2 py-1 rounded bg-white">
-            <option value="">-- Select Student --</option>
-          </select>
-          <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add</button>
+<body class="bg-gray-100 p-2">
+  <div class="page thin-border bg-white">
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-2 border-b mb-2">
+      <div class="flex items-center gap-4">
+        <img src="logo.png" class="w-20 h-20 object-cover" alt="School Logo">
+        <div>
+          <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
+          <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+          <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY 2025-26</p>
         </div>
       </div>
-
+      <div class="text-right no-print">
+        <label class="block text-xs text-gray-600">Select Class</label>
+        <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+          <option value="">-- Select Class --</option>
+          <option value="Nursery">Nursery</option>
+          <option value="LKG">LKG</option>
+          <option value="UKG">UKG</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+        </select>
+      </div>
+    </div>
+    <!-- Controls -->
+    <div class="no-print mb-2">
+      <div class="grid grid-cols-3 gap-2 items-end">
+        <div>
+          <label class="text-sm text-gray-600">Select / Add Student</label>
+          <div class="flex gap-1">
+            <select id="studentSelect" class="flex-1 border px-2 py-1 rounded bg-white">
+              <option value="">-- Select Student --</option>
+            </select>
+            <button id="addStudentBtn" class="px-2 py-1 bg-blue-600 text-white rounded">Add</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-600">Admission No.</label>
+          <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
+        </div>
+        <div class="flex gap-1 justify-end">
+          <button id="loadBtn" class="px-2 py-1 border rounded">Load</button>
+          <button id="saveBtn" class="px-2 py-1 bg-green-600 text-white rounded">Save</button>
+          <button id="printBtn" class="px-2 py-1 bg-indigo-600 text-white rounded">Print</button>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button id="bulkPrintBtn" class="px-2 py-1 bg-indigo-600 text-white rounded">Bulk Print Class</button>
+        <button id="clearDataBtn" class="px-2 py-1 bg-red-600 text-white rounded">Clear All Data</button>
+      </div>
+    </div>
+    <!-- Student Info -->
+    <div class="grid grid-cols-3 gap-2 mb-2">
+      <div><p class="text-sm text-gray-600">Name</p><h2 id="studentName" class="font-semibold">—</h2></div>
+      <div><p class="text-sm text-gray-600">Admission No.</p><h2 id="admissionNo" class="font-semibold">—</h2></div>
+      <div><p class="text-sm text-gray-600">Class</p><h2 id="classSection" class="font-semibold">—</h2></div>
+    </div>
+    <!-- Attendance -->
+    <div class="mb-2 no-print">
+      <label class="text-sm text-gray-600">Attendance</label>
+      <div class="flex gap-2">
+        <input type="number" id="attendancePresent" placeholder="Days Present" class="border px-2 py-1 rounded w-24" />
+        <input type="number" id="attendanceTotal" placeholder="Total Working Days" class="border px-2 py-1 rounded w-28" />
+      </div>
+    </div>
+    <!-- Marks Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse table-auto text-sm">
+        <thead>
+          <tr class="bg-green-100">
+            <th class="border px-2 py-1">Subject</th>
+            <th class="border px-2 py-1">Unit Test-1</th>
+            <th class="border px-2 py-1">Half Yearly</th>
+            <th class="border px-2 py-1">Term Total</th>
+          </tr>
+        </thead>
+        <tbody id="marksTableBody"></tbody>
+        <tfoot>
+          <tr class="bg-gray-50">
+            <td class="border px-2 py-1 font-semibold text-right">Total</td>
+            <td id="totalUnitTest" class="border px-2 py-1 text-center">0</td>
+            <td id="totalHalfYearly" class="border px-2 py-1 text-center">0</td>
+            <td id="termTotal" class="border px-2 py-1 text-center">0</td>
+          </tr>
+          <tr class="bg-gray-50">
+            <td colspan="3" class="border px-2 py-1 font-semibold text-right">Percentage</td>
+            <td id="percentage" class="border px-2 py-1 text-center">0%</td>
+          </tr>
+          <tr class="bg-gray-50">
+            <td colspan="3" class="border px-2 py-1 font-semibold text-right">Remark</td>
+            <td id="remark" class="border px-2 py-1 text-center">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <!-- Co-Scholastic & Sign -->
+    <div class="grid grid-cols-2 gap-4 mt-4">
       <div>
-        <label class="text-sm text-gray-600">Admission No.</label>
-        <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
+        <h3 class="font-semibold mb-1">Class Teacher Remark</h3>
+        <textarea id="teachersRemark" class="w-full border p-1 text-sm" rows="3">Good effort</textarea>
       </div>
-
-      <div class="flex gap-2 justify-end">
-        <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
-        <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
-        <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Student Info -->
-  <div class="grid grid-cols-3 gap-4 mb-4">
-    <div>
-      <p class="text-sm text-gray-600">Name</p>
-      <h2 id="studentName" class="font-semibold">—</h2>
-    </div>
-    <div>
-      <p class="text-sm text-gray-600">Admission No.</p>
-      <h2 id="admissionNo" class="font-semibold">—</h2>
-    </div>
-    <div>
-      <p class="text-sm text-gray-600">Class/Section</p>
-      <h2 id="classSection" class="font-semibold">—</h2>
-    </div>
-  </div>
-
-  <!-- Marks Table -->
-  <div class="overflow-x-auto">
-    <table class="w-full border-collapse table-auto text-sm">
-      <thead>
-        <tr class="bg-green-100">
-          <th class="border px-3 py-2 text-left">Subject</th>
-          <th class="border px-3 py-2 text-center">Unit Test-1</th>
-          <th class="border px-3 py-2 text-center">Half Yearly</th>
-          <th class="border px-3 py-2 text-center">Term 1 Total</th>
-        </tr>
-      </thead>
-      <tbody id="marksTableBody"></tbody>
-      <tfoot>
-        <tr class="bg-gray-50">
-          <td class="border px-3 py-2 font-semibold text-right">Total</td>
-          <td id="totalUT" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalHY" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalTerm" class="border px-3 py-2 font-semibold text-center">0</td>
-        </tr>
-        <tr class="bg-gray-50">
-          <td colspan="3" class="border px-3 py-2 font-semibold text-right">Percentage</td>
-          <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <!-- Co-Scholastic & Attendance -->
-  <div class="grid grid-cols-3 gap-4 mt-6">
-    <div class="col-span-1">
-      <div class="border p-4">
-        <h3 class="font-semibold mb-2">Co-Scholastic Grades</h3>
-        <table class="w-full text-sm">
-          <tbody id="coscholasticBody"></tbody>
-        </table>
-      </div>
-
-      <div class="border p-4 mt-4">
-        <h3 class="font-semibold mb-2">Attendance</h3>
-        <p id="attendance">Days Present / Working Days: <strong>0 / 0</strong></p>
-
-        <h3 class="font-semibold mt-4 mb-1">Class Teacher's Remark</h3>
-        <textarea id="teachersRemark" class="w-full border p-2 text-sm" rows="3">Good effort. Keep improving.</textarea>
+      <div class="text-right">
+        <p>Date: <span id="dateGenerated"></span></p>
+        <div class="flex justify-end gap-10 mt-6">
+          <div class="text-center">
+            <p class="text-sm">Class Teacher</p>
+            <div class="h-12 w-40 border-b mt-2"></div>
+          </div>
+          <div class="text-center">
+            <p class="text-sm">Principal</p>
+            <div class="h-12 w-40 border-b mt-2"></div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- Graph -->
-    <div class="col-span-2">
-      <div class="border p-4">
-        <h3 class="font-semibold mb-2">Graphical Analysis (Term 1)</h3>
-        <canvas id="marksChart" height="180"></canvas>
-      </div>
-    </div>
+    <p class="text-center mt-4 text-xs text-gray-500">This report is a bonafide assessment of student's performance generated by Nandi Gurukul Vidya Mandir</p>
   </div>
+  <!-- Firebase + App Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 
-  <!-- Signatures -->
-  <div class="flex justify-end gap-12 mt-6 items-end">
-    <div class="text-center">
-      <p class="text-sm">Class Teacher</p>
-      <div class="h-12 w-40 border-b mt-6"></div>
-    </div>
-    <div class="text-center">
-      <p class="text-sm">Principal</p>
-      <div class="h-12 w-40 border-b mt-6"></div>
-    </div>
-  </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMI7gB8Z2K_U1Xl2OmK1B39BuJmTA28-c",
+      authDomain: "report-card-assessment.firebaseapp.com",
+      projectId: "report-card-assessment",
+      storageBucket: "report-card-assessment.firebasestorage.app",
+      messagingSenderId: "381269557217",
+      appId: "1:381269557217:web:7685b1ee6230e677745ca0",
+      measurementId: "G-88ZEW1DJWR"
+    };
 
-  <div class="text-right mt-4 text-xs text-gray-500 no-print">Generated by: NANDI GURUKUL - Report System</div>
-</div>
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
 
-<script>
-// DATA MODEL
-const nurUKGSubjects = [
-  { name: "English Written", maxUT: 15, maxHY: 60 },
-  { name: "English Oral", maxUT: 5, maxHY: 20 },
-  { name: "Hindi Written", maxUT: 15, maxHY: 60 },
-  { name: "Hindi Oral", maxUT: 5, maxHY: 20 },
-  { name: "Maths Written", maxUT: 15, maxHY: 60 },
-  { name: "Maths Oral", maxUT: 5, maxHY: 20 },
-  { name: "Drawing", maxUT: 20, maxHY: 80 }
-];
+    const qs = id => document.getElementById(id);
 
-const standardSubjects = [
-  { name: "English" }, { name: "Hindi" }, { name: "Mathematics" },
-  { name: "Science" }, { name: "Social Science" }
-];
+    let state = { selectedClass:'', studentId:'' };
 
-// STATE
-let state = { selectedClass: '', selectedStudentKey: '', studentsByClass: {}, chart: null };
+    const subjects = ["English","Hindi","Maths","EVS","GK"];
 
-// UTILITY
-const qs = id => document.getElementById(id);
+    function updateDate() {
+      qs('dateGenerated').textContent = new Date().toLocaleDateString();
+    }
+    updateDate();
 
-// FUNCTIONS
-function init() {
-  const stored = localStorage.getItem('ng_students');
-  state.studentsByClass = stored ? JSON.parse(stored) : {};
-  attachEventListeners();
-  initChart();
-}
+    function generateMarksTable(data={}) {
+      const tbody = qs('marksTableBody');
+      tbody.innerHTML = '';
+      let totalUnit=0, totalHalf=0;
+      subjects.forEach(sub=>{
+        const ut = data[sub]?.unitTest || 0;
+        const hy = data[sub]?.halfYearly || 0;
+        totalUnit += ut;
+        totalHalf += hy;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="border px-2 py-1">${sub}</td>
+                        <td class="border px-2 py-1 text-center"><input type="number" value="${ut}" data-sub="${sub}" class="w-16 px-1 py-0.5 border text-center marksInput"/></td>
+                        <td class="border px-2 py-1 text-center"><input type="number" value="${hy}" data-sub="${sub}" class="w-16 px-1 py-0.5 border text-center marksInput"/></td>
+                        <td class="border px-2 py-1 text-center">${ut+hy}</td>`;
+        tbody.appendChild(tr);
+      });
+      qs('totalUnitTest').textContent = totalUnit;
+      qs('totalHalfYearly').textContent = totalHalf;
+      const termTotal = totalUnit+totalHalf;
+      qs('termTotal').textContent = termTotal;
+      const perc = ((termTotal/(subjects.length*100))*100).toFixed(2);
+      qs('percentage').textContent = perc+'%';
+      let remark='Needs Improvement';
+      if(perc>=90) remark='Outstanding';
+      else if(perc>=75) remark='Very Good';
+      else if(perc>=60) remark='Good';
+      else if(perc>=50) remark='Average';
+      qs('remark').textContent = remark;
+    }
 
-function attachEventListeners() {
-  qs('classSelect').addEventListener('change', e => {
-    state.selectedClass = e.target.value;
-    renderStudentOptions();
-    clearStudentView();
-  });
-  qs('addStudentBtn').addEventListener('click', () => {
-    const name = prompt('Enter student full name:'); if (!name) return;
-    if (!state.selectedClass) return alert('Select class first.');
-    const key = `${state.selectedClass}|${name}`;
-    const admission = qs('admissionInput').value || '';
-    const newStudent = makeEmptyStudent(name, admission, state.selectedClass);
-    state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
-    state.studentsByClass[state.selectedClass][key] = newStudent;
-    persistStudents();
-    renderStudentOptions();
-    qs('studentSelect').value = key;
-    loadStudent(key);
-  });
-  qs('studentSelect').addEventListener('change', e => {
-    const key = e.target.value;
-    if (!key) return clearStudentView();
-    loadStudent(key);
-  });
-  qs('saveBtn').addEventListener('click', () => {
-    if (!state.selectedStudentKey) return alert('Select or add a student first.');
-    saveCurrentStudent();
-    alert('Saved locally. Data ready for dashboard and bulk analysis.');
-  });
-  qs('loadBtn').addEventListener('click', () => {
-    if (!state.selectedStudentKey) return alert('Select a saved student first.');
-    loadStudent(state.selectedStudentKey);
-    alert('Loaded saved data.');
-  });
-  qs('printBtn').addEventListener('click', () => {
-    calculateTotalsAndUpdate();
-    window.print();
-  });
-  // Dashboard
-  qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
-}
+    function saveStudent() {
+      if(!state.selectedClass || !state.studentId) { alert("Select class & student"); return; }
+      const data = { attendance:{ present: Number(qs('attendancePresent').value), total: Number(qs('attendanceTotal').value) },
+                     marks:{}, teachersRemark: qs('teachersRemark').value, dateGenerated: new Date().toLocaleDateString()
+                   };
+      document.querySelectorAll('.marksInput').forEach(input=>{
+        const sub = input.dataset.sub;
+        if(!data.marks[sub]) data.marks[sub]={};
+        if(input.parentElement.cellIndex===1) data.marks[sub].unitTest = Number(input.value);
+        else data.marks[sub].halfYearly = Number(input.value);
+      });
+      setDoc(doc(db, `classes/${state.selectedClass}/students/${state.studentId}`), data)
+        .then(()=>alert("Saved successfully!"))
+        .catch(err=>console.error(err));
+      generateMarksTable(data.marks);
+    }
 
-// STUDENT DATA CREATION
-function makeEmptyStudent(name, admission, cls) {
-  const subjects = (cls==='Nursery'||cls==='LKG'||cls==='UKG') ? nurUKGSubjects : standardSubjects;
-  const marks = subjects.map(s => ({ name: s.name, ut: 0, hy: 0, total: 0 }));
-  return { name, admission, cls, marks, coscholastic: [], attendance: { present:0,total:0 }, teachersRemark:'Good effort. Keep improving.' };
-}
+    function loadStudent() {
+      if(!state.selectedClass || !state.studentId) { alert("Select class & student"); return; }
+      getDoc(doc(db, `classes/${state.selectedClass}/students/${state.studentId}`))
+        .then(docSnap=>{
+          if(docSnap.exists()){
+            const data = docSnap.data();
+            qs('attendancePresent').value = data.attendance.present || 0;
+            qs('attendanceTotal').value = data.attendance.total || 0;
+            qs('teachersRemark').value = data.teachersRemark || '';
+            generateMarksTable(data.marks);
+          } else {
+            alert("No data found for this student!");
+            generateMarksTable();
+          }
+        });
+    }
 
-// LOCAL STORAGE
-function persistStudents() { localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass)); }
-
-// STUDENT OPTIONS
-function renderStudentOptions() {
-  const sel = qs('studentSelect'); sel.innerHTML='<option value="">-- Select Student --</option>';
-  const cls = state.selectedClass;
-  if(!cls||!state.studentsByClass[cls]) return;
-  Object.keys(state.studentsByClass[cls]).forEach(k=>{
-    const s=state.studentsByClass[cls][k];
-    const opt=document.createElement('option'); opt.value=k; opt.textContent=s.name+' — '+(s.admission||''); sel.appendChild(opt);
-  });
-}
-
-// LOAD STUDENT
-function loadStudent(key) {
-  const [cls,name]=key.split('|');
-  const student=state.studentsByClass[cls][key];
-  if(!student) return alert('Data not found.');
-  state.selectedStudentKey=key; state.selectedClass=cls; qs('classSelect').value=cls;
-  qs('studentName').textContent=student.name;
-  qs('admissionNo').textContent=student.admission||'—';
-  qs('admissionInput').value=student.admission||'';
-  qs('attendance').innerHTML=`Days Present / Working Days: <strong>${student.attendance.present} / ${student.attendance.total}</strong>`;
-  qs('teachersRemark').value=student.teachersRemark||'';
-  renderMarksTable(student.marks);
-  calculateTotalsAndUpdate();
-}
-
-function clearStudentView() {
-  state.selectedStudentKey=''; qs('studentName').textContent='—'; qs('admissionNo').textContent='—'; qs('admissionInput').value='';
-  qs('attendance').innerHTML='Days Present / Working Days: <strong>0 / 0</strong>';
-  renderMarksTable([]);
-  calculateTotalsAndUpdate();
-}
-
-// SAVE STUDENT
-function saveCurrentStudent() {
-  const s=getCurrentStudent(); if(!s) return;
-  const [cls]=state.selectedStudentKey.split('|');
-  state.studentsByClass[cls][state.selectedStudentKey]=s; persistStudents();
-}
-
-// GET CURRENT
-function getCurrentStudent() { if(!state.selectedStudentKey) return null; const [cls]=state.selectedStudentKey.split('|'); return state.studentsByClass[cls][state.selectedStudentKey]; }
-
-// MARKS TABLE
-function renderMarksTable(marks=[]) {
-  const tbody=qs('marksTableBody'); tbody.innerHTML='';
-  marks.forEach((m,idx)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="border px-3 py-2">${m.name}</td>
-      <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="ut" type="number" min="0" max="20" class="w-16 p-1 border rounded text-center" value="${m.ut||0}"/></td>
-      <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="hy" type="number" min="0" max="80" class="w-16 p-1 border rounded text-center" value="${m.hy||0}"/></td>
-      <td class="border px-3 py-2 text-center">${m.total||0}</td>`;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll('input').forEach(inp=>{
-    inp.addEventListener('input',()=>{ calculateTotalsAndUpdate(); });
-  });
-}
-
-// CALCULATE TOTALS
-function calculateTotalsAndUpdate() {
-  const student=getCurrentStudent(); if(!student) return;
-  const rows=qs('marksTableBody').querySelectorAll('tr');
-  let totalUT=0,totalHY=0,totalTerm=0;
-  rows.forEach((tr,idx)=>{
-    const ut=Number(tr.querySelector('input[data-field="ut"]').value)||0;
-    const hy=Number(tr.querySelector('input[data-field="hy"]').value)||0;
-    const t=ut+hy; tr.children[3].textContent=t;
-    student.marks[idx].ut=ut; student.marks[idx].hy=hy; student.marks[idx].total=t;
-    totalUT+=ut; totalHY+=hy; totalTerm+=t;
-  });
-  qs('totalUT').textContent=totalUT; qs('totalHY').textContent=totalHY; qs('totalTerm').textContent=totalTerm;
-  const percent=student.marks.length?((totalTerm/(student.marks.length*100))*100).toFixed(2):0;
-  qs('percentage').textContent=`${percent}%`;
-  updateChart(student);
-}
-
-// CHART
-function initChart() {
-  const ctx=document.getElementById('marksChart').getContext('2d');
-  state.chart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[]},options:{responsive:true,plugins:{legend:{display:true}}}});
-}
-
-function updateChart(student) {
-  const labels=student.marks.map(m=>m.name);
-  const data=student.marks.map(m=>m.total);
-  const classData=student.marks.map(m=>getClassAverage(student.cls,m.name));
-  const highestData=student.marks.map(m=>getClassHighest(student.cls,m.name));
-  state.chart.data.labels=labels;
-  state.chart.data.datasets=[
-    {label:'Obtained',data:data,backgroundColor:'rgba(59,130,246,0.7)'},
-    {label:'Class Avg',data:classData,backgroundColor:'rgba(16,185,129,0.7)'},
-    {label:'Highest',data:highestData,backgroundColor:'rgba(244,63,94,0.7)'}
-  ];
-  state.chart.update();
-}
-
-// CLASS AVG & HIGHEST
-function getClassAverage(cls,subjectName){
-  if(!state.studentsByClass[cls]) return 0;
-  const vals=Object.values(state.studentsByClass[cls]).map(s=>{
-    const sub=s.marks.find(m=>m.name===subjectName); return sub?sub.total:0;
-  });
-  if(!vals.length) return 0;
-  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
-}
-
-function getClassHighest(cls,subjectName){
-  if(!state.studentsByClass[cls]) return 0;
-  const vals=Object.values(state.studentsByClass[cls]).map(s=>{
-    const sub=s.marks.find(m=>m.name===subjectName); return sub?sub.total:0;
-  });
-  if(!vals.length) return 0;
-  return Math.max(...vals);
-}
-
-// DASHBOARD TOPPER
-function showDashboardTopper() {
-  const cls=qs('dashboardClassSelect').value; if(!cls) return;
-  let classTopper={name:'—',total:0}; let schoolTopper={name:'—',total:0};
-  Object.keys(state.studentsByClass[cls]||{}).forEach(k=>{
-    const s=state.studentsByClass[cls][k];
-    const t=s.marks.reduce((a,b)=>a+b.total,0);
-    if(t>classTopper.total) classTopper={name:s.name,total:t};
-  });
-  Object.values(state.studentsByClass).forEach(clsObj=>{
-    Object.values(clsObj).forEach(s=>{
-      const t=s.marks.reduce((a,b)=>a+b.total,0);
-      if(t>schoolTopper.total) schoolTopper={name:s.name,total:t};
+    qs('classSelect').addEventListener('change', e=>{
+      state.selectedClass = e.target.value;
+      // Fetch students in class
+      const studentSelect = qs('studentSelect');
+      studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+      getDocs(collection(db, `classes/${state.selectedClass}/students`))
+        .then(snapshot=>{
+          snapshot.forEach(docSnap=>{
+            const option = document.createElement('option');
+            option.value = docSnap.id;
+            option.textContent = docSnap.id;
+            studentSelect.appendChild(option);
+          });
+        });
     });
-  });
-  qs('classTopperDashboard').textContent=`Class Topper: ${classTopper.name} — ${classTopper.total}`;
-  qs('schoolTopperDashboard').textContent=`School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
-}
 
-init();
-</script>
+    qs('studentSelect').addEventListener('change', e=>{
+      state.studentId = e.target.value;
+      qs('studentName').textContent = e.target.value;
+      qs('admissionNo').textContent = e.target.value;
+      qs('classSection').textContent = state.selectedClass;
+      loadStudent();
+    });
 
+    qs('saveBtn').addEventListener('click', saveStudent);
+    qs('loadBtn').addEventListener('click', loadStudent);
+    qs('printBtn').addEventListener('click', ()=>window.print());
+
+    // Bulk Print / Download Class-wise
+    qs('bulkPrintBtn').addEventListener('click', async () => {
+      if (!state.selectedClass) return alert("Select a class first!");
+      const snapshot = await getDocs(collection(db, `classes/${state.selectedClass}/students`));
+      if (snapshot.empty) return alert("No students found in this class!");
+      const originalHTML = document.body.innerHTML;
+      let bulkHTML = '';
+      snapshot.forEach(docSnap=>{
+        const studentId = docSnap.id;
+        const data = docSnap.data();
+        bulkHTML += `<div class="page thin-border mb-4">
+          <h2>${studentId} - ${state.selectedClass}</h2>
+          <p>Attendance: ${data.attendance.present || 0}/${data.attendance.total || 0}</p>
+          <table class="w-full border-collapse table-auto text-sm">
+            <thead><tr><th>Subject</th><th>Unit Test-1</th><th>Half Yearly</th><th>Total</th></tr></thead>
+            <tbody>`;
+        for (const sub of subjects) {
+          const ut = data.marks[sub]?.unitTest || 0;
+          const hy = data.marks[sub]?.halfYearly || 0;
+          bulkHTML += `<tr><td>${sub}</td><td>${ut}</td><td>${hy}</td><td>${ut+hy}</td></tr>`;
+        }
+        const totalUnit = subjects.reduce((sum,s)=>sum+(data.marks[s]?.unitTest||0),0);
+        const totalHalf = subjects.reduce((sum,s)=>sum+(data.marks[s]?.halfYearly||0),0);
+        const termTotal = totalUnit + totalHalf;
+        const perc = ((termTotal/(subjects.length*100))*100).toFixed(2);
+        let remark='Needs Improvement';
+        if(perc>=90) remark='Outstanding';
+        else if(perc>=75) remark='Very Good';
+        else if(perc>=60) remark='Good';
+        else if(perc>=50) remark='Average';
+        bulkHTML += `</tbody>
+          <tfoot>
+            <tr><td colspan="3">Total</td><td>${termTotal}</td></tr>
+            <tr><td colspan="3">Percentage</td><td>${perc}%</td></tr>
+            <tr><td colspan="3">Remark</td><td>${remark}</td></tr>
+          </tfoot>
+          </table>
+          </div>`;
+      });
+      document.body.innerHTML = bulkHTML;
+      window.print();
+      document.body.innerHTML = originalHTML;
+      window.location.reload();
+    });
+
+    // Clear All Data with password
+    qs('clearDataBtn').addEventListener('click', async () => {
+      const pass = prompt("Enter password to clear ALL data:");
+      if(pass !== "nandi123") return alert("Incorrect password!");
+      if(!confirm("Are you sure? This will delete ALL student data!")) return;
+      const classesSnapshot = await getDocs(collection(db, 'classes'));
+      for(const classDoc of classesSnapshot.docs){
+        const studentsSnapshot = await getDocs(collection(db, `classes/${classDoc.id}/students`));
+        for(const studentDoc of studentsSnapshot.docs){
+          await deleteDoc(doc(db, `classes/${classDoc.id}/students/${studentDoc.id}`));
+        }
+      }
+      alert("All data cleared successfully!");
+      window.location.reload();
+    });
+
+    // Add Student
+    qs('addStudentBtn').addEventListener('click', async () => {
+      if(!state.selectedClass) return alert("Select a class first!");
+      const studentId = prompt("Enter new student name/ID:");
+      if(!studentId) return;
+      // Insert student with blank/default data
+      await setDoc(doc(db, `classes/${state.selectedClass}/students/${studentId}`), {
+        attendance:{present:0,total:0},
+        marks:{},
+        teachersRemark:'',
+        dateGenerated:new Date().toLocaleDateString()
+      });
+      // Refresh student list
+      const studentSelect = qs('studentSelect');
+      const option = document.createElement('option');
+      option.value = studentId;
+      option.textContent = studentId;
+      studentSelect.appendChild(option);
+      studentSelect.value = studentId;
+      qs('studentName').textContent = studentId;
+      qs('admissionNo').textContent = studentId;
+      qs('classSection').textContent = state.selectedClass;
+      state.studentId = studentId;
+      generateMarksTable();
+    });
+
+  </script>
 </body>
 </html>
