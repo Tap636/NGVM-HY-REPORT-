@@ -477,4 +477,50 @@
         const cls = 'X-D';
         const s1 = makeEmptyStudent('SAMARTH KEDIA', '138/Z18', cls);
         // sample marks
-        s1.marks[0].obtained100 = 82.5; s1.marks[0].obtained80 = 66; s1.marks[0].qualifyin
+        s1.marks[0].obtained100 = 82.5; s1.marks[0].obtained80 = 66; s1.marks[0].qualifying = 64; s1.marks[0].secHighest = 82.5; s1.marks[0].classHighest = 95;
+        s1.marks[1].obtained100 = 67.5; s1.marks[1].obtained80 = 54; s1.marks[1].qualifying = 54; s1.marks[1].secHighest = 67.5; s1.marks[1].classHighest = 98.75;
+        s1.marks[2].obtained100 = 75; s1.marks[2].obtained80 = 60; s1.marks[2].qualifying = 58; s1.marks[2].secHighest = 75; s1.marks[2].classHighest = 100;
+        state.studentsByClass[cls] = {};
+        state.studentsByClass[cls][`${cls}|${s1.name}`] = s1;
+        persistStudents();
+      }
+    }
+
+    // When page unloads, persist current student state
+    window.addEventListener('beforeunload', () => {
+      // if a student is being edited, save the current values into memory (not auto-saving to localStorage unless saved)
+      const s = getCurrentStudent();
+      if (s) {
+        // write inputs back to student.marks
+        const rows = qs('marksTableBody').querySelectorAll('tr');
+        rows.forEach((tr, idx) => {
+          const inputs = tr.querySelectorAll('input');
+          inputs.forEach(inp => {
+            const f = inp.dataset.field;
+            const v = inp.value === '' ? null : Number(inp.value);
+            s.marks[idx][f] = (v === null || isNaN(v)) ? null : v;
+          });
+        });
+        s.teachersRemark = qs('teachersRemark').value;
+        // also coscholastic
+        const cosInputs = qs('coscholasticBody').querySelectorAll('input[data-cos]');
+        cosInputs.forEach(inp => {
+          const idx = Number(inp.dataset.cos);
+          s.coscholastic[idx].grade = inp.value;
+        });
+
+        // save to memory
+        const [cls] = state.selectedStudentKey.split('|');
+        state.studentsByClass[cls][state.selectedStudentKey] = s;
+        persistStudents();
+      }
+    });
+
+    // Initialize + demo
+    ensureDemoData();
+    init();
+    // keep totals updated periodically in case script-inserted values exist
+    setTimeout(calculateTotalsAndUpdate, 200);
+  </script>
+</body>
+</html>
