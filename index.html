@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NANDI GURUKUL VIDYA MANDIR - Report Card (Half Yearly 2025-26)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media print {
+      body { -webkit-print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page { box-shadow: none; margin: 0; }
+    }
+    .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    .thin-border { border: 2px solid #0f172a; }
+    .school-name { letter-spacing: 1px; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="page thin-border bg-white">
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-4 border-b mb-4">
+      <div class="flex items-center gap-4">
+        <div class="w-20 h-20 rounded-md bg-green-700 flex items-center justify-center text-white font-bold">NG</div>
+        <div>
+          <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
+          <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+          <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
+        </div>
+      </div>
+
+      <div class="text-right no-print">
+        <label class="block text-xs text-gray-600">Select Class</label>
+        <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+          <option value="">-- Select Class --</option>
+          <option value="X-A">X - A</option>
+          <option value="X-B">X - B</option>
+          <option value="X-C">X - C</option>
+          <option value="X-D">X - D</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Controls (Teacher area) -->
+    <div class="no-print mb-4">
+      <div class="grid grid-cols-3 gap-4 items-end">
+        <div>
+          <label class="text-sm text-gray-600">Select / Add Student</label>
+          <div class="flex gap-2">
+            <select id="studentSelect" class="flex-1 border px-2 py-1 rounded bg-white">
+              <option value="">-- Select Student --</option>
+            </select>
+            <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-sm text-gray-600">Admission No.</label>
+          <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
+        </div>
+
+        <div class="flex gap-2 justify-end">
+          <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
+          <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
+          <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Info Row -->
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <div>
+        <p class="text-sm text-gray-600">Name</p>
+        <h2 id="studentName" class="font-semibold">—</h2>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600">Admission No.</p>
+        <h2 id="admissionNo" class="font-semibold">—</h2>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600">Class/Section</p>
+        <h2 id="classSection" class="font-semibold">—</h2>
+      </div>
+    </div>
+
+    <!-- Marks Entry Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse table-auto text-sm">
+        <thead>
+          <tr class="bg-green-100">
+            <th class="border px-3 py-2 text-left">Subject Code</th>
+            <th class="border px-3 py-2 text-left">Subject Name</th>
+            <th class="border px-3 py-2">MT-1</th>
+            <th class="border px-3 py-2">MT-2</th>
+            <th class="border px-3 py-2">Qualifying Exam</th>
+            <th class="border px-3 py-2">Marks (80)</th>
+            <th class="border px-3 py-2">Marks (100)</th>
+            <th class="border px-3 py-2">Highest Section</th>
+            <th class="border px-3 py-2">Highest Class</th>
+          </tr>
+        </thead>
+        <tbody id="marksTableBody">
+          <!-- JS will render rows -->
+        </tbody>
+        <tfoot>
+          <tr class="bg-gray-50">
+            <td colspan="5" class="border px-3 py-2 font-semibold text-right">Total</td>
+            <td id="totalObtained80" class="border px-3 py-2 font-semibold text-center">0</td>
+            <td id="totalObtained100" class="border px-3 py-2 font-semibold text-center">0</td>
+            <td colspan="2" class="border px-3 py-2 font-semibold text-center">Percentage: <span id="percentage">0%</span></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Co-scholastic & Graph -->
+    <div class="grid grid-cols-3 gap-4 mt-6">
+      <div class="col-span-1">
+        <div class="border p-4">
+          <h3 class="font-semibold mb-2">Co-Scholastic Grades</h3>
+          <table class="w-full text-sm">
+            <tbody id="coscholasticBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="border p-4 mt-4">
+          <h3 class="font-semibold mb-2">Attendance</h3>
+          <p id="attendance">Days Present / Working Days: <strong>0 / 0</strong></p>
+
+          <h3 class="font-semibold mt-4 mb-1">Class Teacher's Remark</h3>
+          <textarea id="teachersRemark" class="w-full border p-2 text-sm" rows="3">Good effort. Keep improving.</textarea>
+        </div>
+      </div>
+
+      <div class="col-span-2">
+        <div class="border p-4">
+          <h3 class="font-semibold mb-2">Graphical Analysis</h3>
+          <canvas id="marksChart" height="180"></canvas>
+        </div>
+
+        <div class="flex justify-end gap-12 mt-6 items-end">
+          <div class="text-center">
+            <p class="text-sm">Class Teacher</p>
+            <div class="h-12 w-40 border-b mt-6"></div>
+          </div>
+
+          <div class="text-center">
+            <p class="text-sm">Principal</p>
+            <div class="h-12 w-40 border-b mt-6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-right mt-4 text-xs text-gray-500 no-print">Generated by: NANDI GURUKUL - Report System</div>
+  </div>
+
+  <script>
+    // Robust interactive report card with class selection, marks entry, save/load, and print.
+    // Data model
+    const defaultSubjects = [
+      { code: '184', name: 'English Lang & Lit' },
+      { code: '085', name: 'Hindi' },
+      { code: '041', name: 'Mathematics' },
+      { code: '086', name: 'Science' },
+      { code: '087', name: 'Social Science' },
+      { code: '402', name: 'Information Tech' }
+    ];
+
+    // Utilities
+    const qs = id => document.getElementById(id);
+
+    // State
+    let state = {
+      selectedClass: '',
+      selectedStudentKey: '', // key format: class|studentName
+      studentsByClass: {},
+      subjects: defaultSubjects,
+      chart: null
+    };
+
+    // Initialize
+    function init() {
+      // Load students list from localStorage
+      const stored = localStorage.getItem('ng_students');
+      state.studentsByClass = stored ? JSON.parse(stored) : {};
+      renderStudentOptions();
+      renderMarksTable();
+      renderCoScholastic();
+      attachEventListeners();
+      initChart();
+    }
+
+    function attachEventListeners() {
+      qs('classSelect').addEventListener('change', e => {
+        state.selectedClass = e.target.value;
+        qs('classSection').textContent = state.selectedClass || '—';
+        renderStudentOptions();
+      });
+
+      qs('addStudentBtn').addEventListener('click', () => {
+        const name = prompt('Enter student full name:');
+        if (!name) return;
+        const cls = state.selectedClass;
+        if (!cls) return alert('Please select class first.');
+        const key = `${cls}|${name}`;
+        const admission = qs('admissionInput').value || '';
+        const newStudent = makeEmptyStudent(name, admission, cls);
+        state.studentsByClass[cls] = state.studentsByClass[cls] || {};
+        state.studentsByClass[cls][key] = newStudent;
+        persistStudents();
+        renderStudentOptions();
+        qs('studentSelect').value = key;
+        loadStudent(key);
+      });
+
+      qs('studentSelect').addEventListener('change', (e) => {
+        const key = e.target.value;
+        if (!key) return clearStudentView();
+        loadStudent(key);
+      });
+
+      qs('saveBtn').addEventListener('click', () => {
+        if (!state.selectedStudentKey) return alert('Select or add a student first.');
+        saveCurrentStudent();
+        alert('Saved locally. You can load it anytime in this browser.');
+      });
+
+      qs('loadBtn').addEventListener('click', () => {
+        if (!state.selectedStudentKey) return alert('Select a saved student first.');
+        loadStudent(state.selectedStudentKey);
+        alert('Loaded saved data.');
+      });
+
+      qs('printBtn').addEventListener('click', () => {
+        // Ensure calculations up-to-date
+        calculateTotalsAndUpdate();
+        window.print();
+      });
+
+      // delegate inputs in marks table
+      qs('marksTableBody').addEventListener('input', (e) => {
+        const el = e.target;
+        if (!el.dataset || !el.dataset.field) return;
+        const idx = Number(el.dataset.idx);
+        const field = el.dataset.field;
+        const val = el.value === '' ? null : Number(el.value);
+        const student = getCurrentStudent();
+        if (!student) return;
+        student.marks[idx][field] = (val === null || isNaN(val)) ? null : val;
+        calculateTotalsAndUpdate();
+      });
+
+      qs('teachersRemark').addEventListener('input', () => {
+        const s = getCurrentStudent();
+        if (s) { s.teachersRemark = qs('teachersRemark').value; }
+      });
+    }
+
+    function makeEmptyStudent(name, admission, cls) {
+      return {
+        name,
+        admission: admission || '',
+        cls,
+        attendance: { present: 0, total: 0 },
+        teachersRemark: 'Good effort. Keep improving.',
+        coscholastic: [
+          { name: 'Punctuality', grade: '' },
+          { name: 'Obedience', grade: '' },
+          { name: 'Discipline', grade: '' },
+          { name: 'Concentration', grade: '' },
+          { name: 'Curiosity', grade: '' },
+          { name: 'Confidence', grade: '' }
+        ],
+        marks: defaultSubjects.map(s => ({ code: s.code, name: s.name, mt1: null, mt2: null, qualifying: null, obtained80: 0, obtained100: 0, secHighest: 0, classHighest: 0 }))
+      };
+    }
+
+    function persistStudents() {
+      localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
+    }
+
+    function renderStudentOptions() {
+      const sel = qs('studentSelect');
+      sel.innerHTML = '<option value="">-- Select Student --</option>';
+      const cls = state.selectedClass;
+      if (!cls || !state.studentsByClass[cls]) return;
+      Object.keys(state.studentsByClass[cls]).forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = state.studentsByClass[cls][key].name + ' — ' + (state.studentsByClass[cls][key].admission || '');
+        sel.appendChild(opt);
+      });
+    }
+
+    function loadStudent(key) {
+      const [cls, name] = key.split('|');
+      const student = state.studentsByClass[cls] && state.studentsByClass[cls][key];
+      if (!student) return alert('Saved data not found.');
+      state.selectedStudentKey = key;
+      state.selectedClass = cls;
+      qs('classSelect').value = cls;
+      qs('classSection').textContent = cls;
+
+      // populate fields
+      qs('studentName').textContent = student.name;
+      qs('admissionNo').textContent = student.admission || '—';
+      qs('admissionInput').value = student.admission || '';
+      qs('attendance').innerHTML = `Days Present / Working Days: <strong>${student.attendance.present} / ${student.attendance.total}</strong>`;
+      qs('teachersRemark').value = student.teachersRemark || '';
+
+      // copy marks into table
+      renderMarksTable(student.marks);
+      renderCoScholastic(student.coscholastic);
+      calculateTotalsAndUpdate();
+    }
+
+    function clearStudentView() {
+      state.selectedStudentKey = '';
+      qs('studentName').textContent = '—';
+      qs('admissionNo').textContent = '—';
+      qs('admissionInput').value = '';
+      qs('attendance').innerHTML = `Days Present / Working Days: <strong>0 / 0</strong>`;
+      renderMarksTable();
+      renderCoScholastic();
+      calculateTotalsAndUpdate();
+    }
+
+    function saveCurrentStudent() {
+      const key = state.selectedStudentKey;
+      if (!key) return alert('Select or add a student first.');
+      const [cls] = key.split('|');
+      state.studentsByClass[cls][key] = getCurrentStudent();
+      persistStudents();
+    }
+
+    function getCurrentStudent() {
+      if (!state.selectedStudentKey) return null;
+      const [cls] = state.selectedStudentKey.split('|');
+      return state.studentsByClass[cls] && state.studentsByClass[cls][state.selectedStudentKey];
+    }
+
+    function renderMarksTable(existingMarks) {
+      const tbody = qs('marksTableBody');
+      tbody.innerHTML = '';
+      const marks = existingMarks || defaultSubjects.map(s => ({ code: s.code, name: s.name, mt1: null, mt2: null, qualifying: null, obtained80: 0, obtained100: 0, secHighest: 0, classHighest: 0 }));
+
+      // If loading into a student in memory, ensure state.studentsByClass contains it
+      if (state.selectedStudentKey) {
+        const [cls] = state.selectedStudentKey.split('|');
+        state.studentsByClass[cls] = state.studentsByClass[cls] || {};
+        const student = state.studentsByClass[cls][state.selectedStudentKey];
+        if (student) {
+          student.marks = marks;
+        }
+      }
+
+      marks.forEach((m, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-3 py-2">${m.code}</td>
+          <td class="border px-3 py-2">${m.name}</td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="mt1" type="number" min="0" max="100" class="w-16 p-1 border rounded text-center" value="${m.mt1 === null ? '' : m.mt1}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="mt2" type="number" min="0" max="100" class="w-16 p-1 border rounded text-center" value="${m.mt2 === null ? '' : m.mt2}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="qualifying" type="number" min="0" max="100" class="w-20 p-1 border rounded text-center" value="${m.qualifying === null ? '' : m.qualifying}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="obtained80" type="number" min="0" max="80" class="w-20 p-1 border rounded text-center" value="${m.obtained80 === null ? '' : m.obtained80}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="obtained100" type="number" min="0" max="100" class="w-20 p-1 border rounded text-center" value="${m.obtained100 === null ? '' : m.obtained100}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="secHighest" type="number" min="0" max="100" class="w-20 p-1 border rounded text-center" value="${m.secHighest === null ? '' : m.secHighest}" /></td>
+          <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="classHighest" type="number" min="0" max="100" class="w-20 p-1 border rounded text-center" value="${m.classHighest === null ? '' : m.classHighest}" /></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderCoScholastic(existing) {
+      const body = qs('coscholasticBody');
+      body.innerHTML = '';
+      const cos = existing || [
+        { name: 'Punctuality', grade: '' },
+        { name: 'Obedience', grade: '' },
+        { name: 'Discipline', grade: '' },
+        { name: 'Concentration', grade: '' },
+        { name: 'Curiosity', grade: '' },
+        { name: 'Confidence', grade: '' }
+      ];
+      cos.forEach((c, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="py-1">${c.name}</td><td class="py-1 text-right font-semibold"><input data-cos="${i}" class="border p-1 rounded w-20 text-center" value="${c.grade || ''}" /></td>`;
+        body.appendChild(tr);
+      });
+
+      // wire up inputs
+      body.querySelectorAll('input[data-cos]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const s = getCurrentStudent();
+          if (!s) return;
+          const idx = Number(inp.dataset.cos);
+          s.coscholastic[idx].grade = inp.value;
+        });
+      });
+    }
+
+    function calculateTotalsAndUpdate() {
+      // read values from table into current student if present
+      const student = getCurrentStudent();
+      const rows = qs('marksTableBody').querySelectorAll('tr');
+      let total80 = 0, total100 = 0;
+      const labels = [];
+      const dataObt = [];
+      const dataSec = [];
+      const dataClass = [];
+
+      rows.forEach((tr, idx) => {
+        const inputs = tr.querySelectorAll('input');
+        const rowObj = {};
+        inputs.forEach(inp => {
+          const f = inp.dataset.field;
+          const v = inp.value === '' ? null : Number(inp.value);
+          rowObj[f] = (v === null || isNaN(v)) ? null : v;
+        });
+        // update student.marks if applicable
+        if (student) student.marks[idx] = Object.assign({}, student.marks[idx] || {}, rowObj);
+
+        const obt80 = Number(rowObj.obtained80 || 0);
+        const obt100 = Number(rowObj.obtained100 || 0);
+        const sh = Number(rowObj.secHighest || 0);
+        const ch = Number(rowObj.classHighest || 0);
+        total80 += obt80;
+        total100 += obt100;
+        labels.push(tr.children[1].textContent);
+        dataObt.push(obt100);
+        dataSec.push(sh);
+        dataClass.push(ch);
+      });
+
+      qs('totalObtained80').textContent = total80.toFixed(2);
+      qs('totalObtained100').textContent = total100.toFixed(2);
+      const subjectCount = rows.length || 1;
+      const percent = ((total100) / (subjectCount * 100)) * 100;
+      qs('percentage').textContent = isFinite(percent) ? percent.toFixed(2) + '%' : '0%';
+
+      // update attendance display if student present
+      if (student) qs('attendance').innerHTML = `Days Present / Working Days: <strong>${student.attendance.present || 0} / ${student.attendance.total || 0}</strong>`;
+
+      // update chart
+      updateChart(labels, dataObt, dataSec, dataClass);
+    }
+
+    function initChart() {
+      const ctx = qs('marksChart');
+      state.chart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [
+          { label: 'Obtained (100)', data: [], stack: 'a' },
+          { label: 'Highest Section', data: [], stack: 'a' },
+          { label: 'Highest Class', data: [], stack: 'a' }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 110 } }, plugins: { legend: { position: 'top' } } }
+      });
+    }
+
+    function updateChart(labels, a, b, c) {
+      if (!state.chart) return;
+      state.chart.data.labels = labels;
+      state.chart.data.datasets[0].data = a;
+      state.chart.data.datasets[1].data = b;
+      state.chart.data.datasets[2].data = c;
+      state.chart.update();
+    }
+
+    // On first load, if no students exist, create demo entries
+    function ensureDemoData() {
+      if (Object.keys(state.studentsByClass).length === 0) {
+        const cls = 'X-D';
+        const s1 = makeEmptyStudent('SAMARTH KEDIA', '138/Z18', cls);
+        // sample marks
+        s1.marks[0].obtained100 = 82.5; s1.marks[0].obtained80 = 66; s1.marks[0].qualifyin
