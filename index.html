@@ -31,40 +31,41 @@
     .page {
       box-shadow: none;
       margin: 0;
-      padding: 20mm 20mm 30mm 20mm;
+      padding: 20mm 20mm 40mm 20mm;
       width: 210mm;
       min-height: 297mm;
       border: 1px solid #0f172a;
       box-sizing: border-box;
-      position: relative;
       background: white;
       page-break-after: always;
+      position: relative;
+      overflow: visible;
     }
     #printDate {
       text-align: center;
       font-size: 10px;
-      margin-top: 4mm;
+      margin-top: 2mm;
       width: 100%;
       position: absolute;
-      bottom: 15mm;
+      bottom: 10mm;
       left: 0;
     }
     #signaturesPrint {
       position: absolute;
-      bottom: 30mm;
+      bottom: 25mm;
       left: 0;
       width: 100%;
       display: flex;
       justify-content: space-between;
-      padding: 0 10mm;
+      padding: 0 15mm;
       box-sizing: border-box;
       align-items: center;
     }
     #signaturesPrint > div {
-      text-align: center;
-      width: 33.3333%;
+      width: 32%;
       font-size: 11px;
       font-weight: 600;
+      text-align: center;
     }
     #signaturesPrint > .school-seal {
       display: flex;
@@ -72,32 +73,35 @@
       align-items: center;
     }
     #signaturesPrint > .school-seal img {
-      opacity: 0.2;
-      width: 60px;
+      opacity: 0.15;
+      width: 75px;
       height: auto;
     }
     #disclaimerPrint {
       position: absolute;
-      bottom: 7mm;
+      bottom: 5mm;
       width: 100%;
       font-size: 9px;
       text-align: center;
-      color: #444444cc;
+      color: #44444499;
       font-style: italic;
       font-weight: 500;
+      padding: 0 20mm;
+      box-sizing: border-box;
     }
   }
   .page {
     width: 210mm;
     min-height: 297mm;
     margin: 10mm auto;
-    padding: 20mm;
+    padding: 20mm 20mm 60px 20mm;
     background: white;
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     font-size: 12px;
     box-sizing: border-box;
     border: 2px solid #0f172a;
     position: relative;
+    overflow: visible;
   }
   .school-name {
     letter-spacing: 1px;
@@ -115,15 +119,12 @@
   th, td {
     border: 1px solid #0f172a;
     padding: 6px 8px;
+    font-size: 11px;
   }
   th {
     background: #d1fae5;
     font-weight: 700;
     text-align: center;
-    font-size: 12px;
-  }
-  td {
-    font-size: 11px;
   }
   td.text-left {
     text-align: left;
@@ -131,7 +132,7 @@
   #signatures {
     display: flex;
     justify-content: space-between;
-    margin-top: 60px;
+    margin-top: 24px;
     font-size: 12px;
   }
   #signatures div {
@@ -140,22 +141,22 @@
   }
   #signatures div div {
     border-bottom: 1px solid black;
-    margin-top: 40px;
-    height: 50px;
+    margin-top: 16px;
+    height: 48px;
   }
   #coScholasticGrades {
-    margin-top: 18px;
+    margin-top: 16px;
   }
   #remarksArea {
-    margin-top: 6px;
+    margin-top: 8px;
     font-weight: 600;
   }
   .watermark {
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    opacity: 0.08;
+    opacity: 0.05;
     pointer-events: none;
     user-select: none;
     z-index: 0;
@@ -165,14 +166,17 @@
   .no-print {
     margin-bottom: 20px;
   }
+  input[readonly] {
+    background-color: #e5e7eb;
+  }
   .hidden {
-    display: none;
+    display: none !important;
   }
 </style>
 </head>
 <body>
 
-<!-- WATERMARK -->
+<!-- WATERMARK inside the border & centered -->
 <img src="watermark.png" alt="Watermark" class="watermark" />
 
 <!-- DASHBOARD FOR TOPPERS (Hidden in print) -->
@@ -272,10 +276,10 @@
       <thead>
         <tr>
           <th>Subject</th>
-          <th class="writtenCol utWrittenCol">UT Written</th>
-          <th class="writtenCol utOralCol">UT Oral</th>
-          <th class="writtenCol hyWrittenCol">Half Yearly Written</th>
-          <th class="writtenCol hyOralCol">Half Yearly Oral</th>
+          <th class="writtenCol utWrittenCol">Unit Test</th>
+          <th class="writtenCol utOralCol">Oral</th>
+          <th class="writtenCol hyWrittenCol">Half Yearly</th>
+          <th class="writtenCol hyOralCol">Oral</th>
           <th>Absent?</th>
           <th style="font-weight: 700;">Overall Performance</th>
         </tr>
@@ -311,7 +315,7 @@
   </div>
 
   <!-- Remarks below co-scholastic -->
-  <div id="remarksArea" style="margin-top: 12px; font-weight: 700;">Remark: —</div>
+  <div id="remarksArea" style="margin-top: 8px; font-weight: 600;">Remark: —</div>
 
   <!-- Graph -->
   <div style="margin-top: 18px; width: 100%;">
@@ -320,24 +324,22 @@
   </div>
 
   <!-- Signatures and Seal -->
-  <div id="signaturesPrint" class="no-print hidden" aria-hidden="true">
-    <div>Class Teacher<br><div></div></div>
-    <div class="school-seal"><img src="principal.png" alt="School Seal" /></div>
-    <div>Principal<br><div></div></div>
-  </div>
-  <div id="signatures" style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 12px;">
+  <div id="signatures" style="display: flex; justify-content: space-between; margin-top: 40px; font-size: 12px; z-index: 10;">
     <div>
-      Class Teacher:<br><div style="border-bottom: 1px solid black; height: 48px; margin-top: 10px;"></div>
+      Class Teacher<br>
+      <div></div>
     </div>
     <div style="text-align: center;">
-      <img src="principal.png" alt="School Seal" style="opacity: 0.15; width: 90px; height: auto; margin-top: 4px;" />
+      <img src="principal.png" alt="School Seal" style="opacity: 0.15; width: 90px; height: auto; margin-top: 0;" />
     </div>
     <div style="text-align: right;">
-      Principal:<br><div style="border-bottom: 1px solid black; height: 48px; margin-top: 10px;"></div>
+      <img src="principal.png" alt="Principal Signature" style="width: 70px; height: auto; margin-bottom: 4px;" /><br>
+      Principal<br>
+      <div></div>
     </div>
   </div>
 
-  <div id="printDate" style="text-align: center; margin-top: 10px; font-size: 10px; color: #444;">Date: —</div>
+  <div id="printDate" style="text-align: center; margin-top: 8px; font-size: 10px; color: #444;">Date: —</div>
 
   <div id="disclaimerPrint" style="color: #666; font-size: 9px; margin-top: 6px; font-style: italic; border-top: 1px solid #e5e7eb; padding-top: 4px; text-align: center;">
     This is a digitally generated report card which is a bonafide record of student's academic performance.
@@ -352,10 +354,10 @@
 <script>
   // Constants & Subject Definitions
   const nurseryToUKGSubjects = [
-    { name: "English", hasOral: true, maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20 },
-    { name: "Hindi", hasOral: true, maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20 },
-    { name: "Maths", hasOral: true, maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20 },
-    { name: "Drawing", hasOral: false, maxUTWritten: 20, maxUTOral: 0, maxHYWritten: 80, maxHYOral: 0 }
+    { name: "English", maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20, hasOral: true },
+    { name: "Hindi", maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20, hasOral: true },
+    { name: "Maths", maxUTWritten: 15, maxUTOral: 5, maxHYWritten: 60, maxHYOral: 20, hasOral: true },
+    { name: "Drawing", maxUTWritten: 20, maxUTOral: 0, maxHYWritten: 80, maxHYOral: 0, hasOral: false }
   ];
 
   const classesSubjects = {
@@ -370,10 +372,8 @@
     '9': ["Hindi", "English", "Maths", "Drawing", "Science", "SST"]
   };
 
-  // Graded Subjects
   const gradedSubjects = ['GK'];
 
-  // State
   let state = {
     selectedClass: '',
     selectedStudentKey: '',
@@ -381,10 +381,8 @@
     chart: null
   };
 
-  // Convenience selector
   const qs = id => document.getElementById(id);
 
-  // Init Function
   function init() {
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
@@ -393,7 +391,6 @@
     updatePrintDate();
   }
 
-  // Attach Event Listeners
   function attachEventListeners() {
     qs('classSelect').addEventListener('change', (e) => {
       state.selectedClass = e.target.value;
@@ -481,26 +478,22 @@
     qs('clearDataBtn').addEventListener('click', clearAllData);
   }
 
-  // Update Columns Visibility Based on Class
   function updateColumnsVisibility() {
     const cls = state.selectedClass;
-    const showOral = (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG');
+    const isNurOrLower = (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG');
+    const showOral = isNurOrLower;
     document.querySelectorAll('.writtenCol').forEach(e => e.style.display = showOral ? '' : 'none');
     if (showOral) {
-      // Show Oral headers and inputs
-      document.querySelectorAll('.utWrittenCol').forEach(e => e.textContent = 'UT Written');
-      document.querySelectorAll('.utOralCol').forEach(e => e.textContent = 'UT Oral');
-      document.querySelectorAll('.hyWrittenCol').forEach(e => e.textContent = 'Half Yearly Written');
-      document.querySelectorAll('.hyOralCol').forEach(e => e.textContent = 'Half Yearly Oral');
-    } else {
-      // For classes 1 and above hide oral columns completely
       document.querySelectorAll('.utWrittenCol').forEach(e => e.textContent = 'UT');
-      // Remove oral headers
+      document.querySelectorAll('.utOralCol').forEach(e => e.textContent = 'Oral');
+      document.querySelectorAll('.hyWrittenCol').forEach(e => e.textContent = 'Half Yearly');
+      document.querySelectorAll('.hyOralCol').forEach(e => e.textContent = 'Oral');
+    } else {
+      document.querySelectorAll('.utWrittenCol').forEach(e => e.textContent = 'UT');
       document.querySelectorAll('.utOralCol, .hyWrittenCol, .hyOralCol').forEach(e => e.textContent = '');
     }
   }
 
-  // Student Data Creation
   function makeEmptyStudent(name, admission, cls) {
     let marks = [];
     if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') {
@@ -521,8 +514,7 @@
         });
       });
     } else {
-      const subjList = classesSubjects[cls];
-      if (!subjList) return [];
+      const subjList = classesSubjects[cls] || [];
       subjList.forEach(s => {
         marks.push({
           name: s,
@@ -552,12 +544,10 @@
     };
   }
 
-  // Persist student data locally
   function persistStudents() {
     localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
   }
 
-  // Clear current form UI
   function clearStudentView() {
     state.selectedStudentKey = '';
     qs('studentName').textContent = '—';
@@ -576,7 +566,6 @@
     calculateTotalsAndUpdate();
   }
 
-  // Load student data to UI
   function loadStudent(key) {
     const [cls, admission] = key.split('|');
     const student = state.studentsByClass[cls][key];
@@ -600,7 +589,6 @@
     calculateTotalsAndUpdate();
   }
 
-  // Save data from form to student object
   function saveCurrentStudent() {
     if (!state.selectedStudentKey) return;
     const student = getCurrentStudent();
@@ -608,7 +596,6 @@
     student.attendance.present = Number(qs('attendancePresent').value) || 0;
     student.teachersRemark = qs('teachersRemark').value;
 
-    // Save coscholastic grades
     const workHabits = qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '';
     const behavior = qs('behaviorInput') ? qs('behaviorInput').value.trim() : '';
     student.coscholastic = { workHabits, behavior };
@@ -622,7 +609,6 @@
     return state.studentsByClass[cls][state.selectedStudentKey];
   }
 
-  // Render marks table inputs
   function renderMarksTable(marks = []) {
     const tbody = qs('marksTableBody');
     tbody.innerHTML = '';
@@ -632,17 +618,14 @@
     marks.forEach((m, idx) => {
       const isNurOrLower = (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG');
       const graded = m.graded || false;
-
       const utWrittenVal = m.utWritten === '' ? '' : m.utWritten;
       const utOralVal = m.utOral === '' ? '' : m.utOral;
       const hyWrittenVal = m.hyWritten === '' ? '' : m.hyWritten;
       const hyOralVal = m.hyOral === '' ? '' : m.hyOral;
-
       const maxUTWritten = m.maxUTWritten || 20;
       const maxUTOral = m.maxUTOral || 0;
       const maxHYWritten = m.maxHYWritten || 80;
       const maxHYOral = m.maxHYOral || 0;
-
       const absentChecked = m.absent ? 'checked' : '';
 
       tbody.insertAdjacentHTML('beforeend', `
@@ -669,7 +652,6 @@
     attachMarksInputsListener();
   }
 
-  // Listeners for mark inputs + absent checkboxes
   function attachMarksInputsListener() {
     qs('marksTableBody').querySelectorAll('input[type="number"]').forEach(input => {
       input.addEventListener('input', () => {
@@ -683,7 +665,6 @@
     });
   }
 
-  // Handle absent checkbox logic: If checked, disable marks inputs and set marks blank/0
   function handleAbsentCheckboxChange(absentCheckbox) {
     const idx = Number(absentCheckbox.dataset.idx);
     const tr = absentCheckbox.closest('tr');
@@ -692,7 +673,6 @@
     const mark = student.marks[idx];
     mark.absent = absentCheckbox.checked;
 
-    // Disable/enable inputs accordingly
     ['utWritten', 'utOral', 'hyWritten', 'hyOral'].forEach(field => {
       const input = tr.querySelector(`input[data-field="${field}"]`);
       if (input) {
@@ -707,7 +687,6 @@
     calculateTotalsAndUpdate();
   }
 
-  // Calculate totals and update UI and state
   function calculateTotalsAndUpdate() {
     const student = getCurrentStudent();
     if (!student) return;
@@ -733,7 +712,6 @@
       let hyWritten = Number(tr.querySelector('input[data-field="hyWritten"]').value) || 0;
       let hyOral = Number(tr.querySelector('input[data-field="hyOral"]').value) || 0;
 
-      // Clamp marks to max for Nur to UKG classes
       if (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG') {
         utWritten = Math.min(utWritten, studentMark.maxUTWritten);
         utOral = Math.min(utOral, studentMark.maxUTOral);
@@ -746,24 +724,18 @@
         hyOral = 0;
       }
 
-      // For graded subjects (GK), convert grades to marks for calculation, but display grades (A,B,C,D)
       if(studentMark.graded){
-        // If user input a letter grade, map it to marks approx else treat zero
-        const gradesMap = {A: 90, B: 75, C: 60, D: 45};
-        // Assume utWritten has the letter grade, clear others
-        // We'll treat it as numeric marks approx for chart/total calculations
+        const gradeMap = {A: 90,B: 75,C: 60,D: 45};
         const gradeLetter = tr.querySelector('input[data-field="utWritten"]').value.trim().toUpperCase();
-        const gradeValue = gradesMap[gradeLetter] || 0;
+        const gradeValue = gradeMap[gradeLetter] || 0;
         studentMark.utWritten = gradeLetter || '';
         studentMark.total = gradeValue;
         tr.children[6].textContent = gradeLetter || 'N/A';
-
         totals.termTotal += gradeValue;
-        // Graded subject has no other marks contributions
         return;
       }
 
-      const total = utWritten + utOral + hyWritten + hyOral;
+      let total = utWritten + utOral + hyWritten + hyOral;
       studentMark.utWritten = utWritten;
       studentMark.utOral = utOral;
       studentMark.hyWritten = hyWritten;
@@ -779,14 +751,12 @@
       totals.termTotal += total;
     });
 
-    // Set total cells
     qs('totalUTWritten').textContent = state.selectedClass && (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG') ? totals.utWritten : '';
     qs('totalUTOral').textContent = state.selectedClass && (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG') ? totals.utOral : '';
     qs('totalHYWritten').textContent = state.selectedClass && (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG') ? totals.hyWritten : '';
     qs('totalHYOral').textContent = state.selectedClass && (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG') ? totals.hyOral : '';
     qs('totalTerm').textContent = totals.termTotal;
 
-    // Percentage calculation: assume max 100 marks per subject except GK graded which is excluded from percentage count
     let subjCount = 0;
     let totalMax = 0;
     student.marks.forEach(m => {
@@ -800,7 +770,6 @@
     const percentage = perc.toFixed(2);
     qs('percentage').textContent = percentage + '%';
 
-    // Generate remark based on percentage (same scale)
     let remarkText = 'Needs Improvement';
     if (perc >= 90) remarkText = 'Outstanding';
     else if (perc >= 80) remarkText = 'Excellent';
@@ -809,8 +778,6 @@
     else if (perc >= 50) remarkText = 'Average';
 
     qs('remarksArea').textContent = 'Remark: ' + remarkText;
-
-    // Autofill teacher's remark suggestions based on percentage
     if (!qs('teachersRemark').value.trim() || qs('teachersRemark').value.toLowerCase().includes('good effort')) {
       qs('teachersRemark').value =
         remarkText === 'Outstanding' ? "Exceptional performance, keep it up!" :
@@ -820,13 +787,11 @@
         remarkText === 'Average' ? "Average performance, please focus more." :
         "Needs more effort to improve.";
     }
-
     student.remark = remarkText;
 
     updateChart(student);
   }
 
-  // Chart
   function initChart() {
     const ctx = qs('marksChart').getContext('2d');
     state.chart = new Chart(ctx, {
@@ -850,7 +815,6 @@
     state.chart.update();
   }
 
-  // Class average and highest marks for subject
   function getClassAverage(cls, subjectName) {
     if (!state.studentsByClass[cls]) return 0;
     const vals = Object.values(state.studentsByClass[cls])
@@ -874,7 +838,6 @@
     return Math.max(...vals);
   }
 
-  // Show topper info on dashboard
   function showDashboardTopper() {
     const cls = qs('dashboardClassSelect').value;
     if (!cls) {
@@ -899,7 +862,6 @@
     qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
   }
 
-  // Bulk download for class report cards
   function bulkDownloadReports() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) {
@@ -936,10 +898,9 @@
     URL.revokeObjectURL(url);
   }
 
-  // Clear all data after password validation
   function clearAllData() {
     const pass = prompt('Enter password to clear ALL data:');
-    if (pass !== '2006') {
+    if (pass !== '1234') {
       alert('Incorrect password!');
       return;
     }
@@ -952,15 +913,12 @@
     alert('All data cleared successfully.');
   }
 
-  // Update today's date display for print
   function updatePrintDate() {
     const today = new Date().toLocaleDateString();
     qs('printDate').textContent = 'Date: ' + today;
   }
 
-  // INIT
   init();
-
 </script>
 </body>
 </html>
