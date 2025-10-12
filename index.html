@@ -46,9 +46,9 @@
 
     /* Footer (single horizontal line) */
     #finalFooter {
-      position: fixed;
-      top: 10px;
-      bottom: 50px; /* leave room for disclaimer and date */
+      position: relative;
+      top: 5px;
+      bottom: 200px; /* leave room for disclaimer and date */
       left: 0;
       width: 100%;
       display: flex;
@@ -65,7 +65,7 @@
     .signature-space { height: 56px; display:block; margin-bottom:6px; }
 
     #disclaimer {
-      position: fixed;
+      position: relative;
       top: 5px;
       bottom: 40px;
       left: 0;
@@ -77,7 +77,7 @@
     }
 
     #printDate {
-      position: fixed;
+      position: relative;
       top: 5px;
       bottom: 35px;
       left: 0;
@@ -235,7 +235,7 @@
   <div class="grid grid-cols-3 gap-4 mt-6">
     <div class="col-span-1">
       <div class="border p-4">
-        <h3 class="font-semibold mb-2">Co-Scholastic Grades (Optional)</h3>
+        <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
         <table class="w-full text-sm" id="coscholasticTable">
           <tbody id="coscholasticBody">
             <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
@@ -258,22 +258,6 @@
     </div>
   </div>
 
-  <!-- On-screen signature area (for manual signing preview) -->
-  <div id="signatures" class="no-print mt-6">
-    <div>
-      <div style="height:56px;"></div>
-      <div class="signature-label">Class Teacher</div>
-    </div>
-    <div style="text-align:center;">
-      <div style="height:56px;"></div>
-      <div class="signature-label">School Seal</div>
-    </div>
-    <div style="text-align:right;">
-      <img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" />
-      <div class="signature-label">Principal</div>
-    </div>
-  </div>
-
   <!-- Final footer (single-line) - visible both on screen and print; on print fixed positioning applies -->
   <div id="finalFooter" style="margin-top:28px; display:flex; justify-content:space-between; align-items:flex-start;">
     <div class="col left" style="text-align:left;">
@@ -291,10 +275,10 @@
   </div>
 
   <!-- Disclaimer & Date -->
-  <div id="disclaimer" class="muted text-center" style="margin-top:20px;">
+  <div id="disclaimer" class="muted text-center" style="margin-top:15px;">
     This digitally generated report card is a bonafide record of student's academic performance
   </div>
-  <div id="printDate" class="text-center muted" style="margin-top:6px;">Date: —</div>
+  <div id="printDate" class="text-center muted" style="margin-top:5px;">Date: —</div>
 
 </div>
 
