@@ -12,6 +12,18 @@
     body { -webkit-print-color-adjust: exact; }
     .no-print { display: none !important; }
 
+    /* A4 page area */
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      padding: 18mm; /* use mm units for print */
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      background: white;
+      position: relative;
+      page-break-inside: avoid;
+      -webkit-print-color-adjust: exact;
+    }
     .page {
       width: 210mm;
       height: 297mm;
