@@ -12,17 +12,33 @@
     body { -webkit-print-color-adjust: exact; }
     .no-print { display: none !important; }
 
+.page {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  padding: 18mm;
+  background: white;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  border: 2px solid #0f172a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* pushes footer/disclaimer/date to bottom */
+  box-sizing: border-box;
+}
+
+/* --- Content area (graphs, text) --- */
+.page .content {
+  flex: 1; /* takes remaining vertical space */
+}
+
 /* --- Footer inside border --- */
 #finalFooter {
-  position: absolute;           /* relative to .page */
-  bottom: 18mm;                 /* aligns with page padding */
-  left: 18mm;                   /* aligns with page padding */
-  width: calc(100% - 36mm);     /* fits within page borders */
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
-  z-index: 2;
   box-sizing: border-box;
 }
 
@@ -30,30 +46,22 @@
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
 
-.signature-space { height: 56px; display:block; margin-bottom:6px; }
-
 /* --- Disclaimer inside border --- */
 #disclaimer {
-  position: absolute;
-  bottom: 10mm;                 /* above the bottom padding */
-  left: 18mm;                   /* align with page padding */
-  width: calc(100% - 36mm);     /* fit inside border */
+  width: 100%;
   text-align: center;
   font-size: 10px;
-  z-index: 2;
   box-sizing: border-box;
+  margin-top: 6px;
 }
 
 /* --- Print date inside border --- */
 #printDate {
-  position: absolute;
-  bottom: 4mm;                  /* just above bottom of page */
-  left: 18mm;                   /* align with page padding */
-  width: calc(100% - 36mm);     /* fit inside border */
+  width: 100%;
   text-align: center;
   font-size: 10px;
-  z-index: 2;
   box-sizing: border-box;
+  margin-top: 2px;
 }
 
 /* --- Prevent signature.png from overlapping the graph --- */
@@ -61,6 +69,7 @@
   display: block;
   margin-top: 120px; /* ample space above signature */
 }
+
 
     /* hide on-screen duplicate signature block */
     #signatures { display: none !important; }
