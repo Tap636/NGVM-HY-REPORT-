@@ -7,27 +7,25 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* PRINT STYLES - A4, watermark, footer positions, etc. */
+  /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
   @media print {
     body { -webkit-print-color-adjust: exact; }
-
-    /* Keep shadows and border intact as requested (don't remove box-shadow) */
     .no-print { display: none !important; }
 
-    /* Make page A4 sized for print */
+    /* A4 page area */
     .page {
       width: 210mm;
       height: 297mm;
       margin: 0 auto;
-      padding: 18px;
+      padding: 18mm; /* use mm units for print */
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
       background: white;
-      position: relative; /* for watermark pseudo element */
+      position: relative;
       page-break-inside: avoid;
       -webkit-print-color-adjust: exact;
     }
 
-    /* Watermark placed in center of printable area */
+    /* Watermark centered */
     .page::before{
       content: "";
       position: absolute;
@@ -44,23 +42,34 @@
       pointer-events: none;
       z-index: 0;
     }
-    /* Ensure page content renders above watermark */
     .page > * { position: relative; z-index: 1; }
 
-    /* Print footer/footer elements positioning */
+    /* Print footer container (visible in print) */
     #printFooter {
       width: 100%;
       position: fixed;
-      bottom: 80px; /* leaves space for disclaimer & date */
+      bottom: 95px; /* leave room for disclaimer and date below */
       left: 0;
-      padding: 0 24px;
+      padding: 0;
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      align-items: flex-start;
       gap: 10px;
+      z-index: 2;
     }
 
-    /* Disclaimer and date positions */
+    /* Each footer column */
+    #printFooter .footer-col { width: 33%; padding: 0 6mm; box-sizing: border-box; text-align: center; }
+    #printFooter .footer-left { text-align: left; }
+    #printFooter .footer-right { text-align: right; }
+
+    /* Reserve vertical space for manual signature / seal above each label */
+    .signature-space { height: 48px; display: block; margin-bottom: 6px; }
+
+    /* Ensure principal image prints above the principal label */
+    #printFooter img { display: block; margin: 0 auto 6px; max-height:48px; }
+
+    /* Disclaimer above the date */
     #disclaimer {
       width: 100%;
       text-align: center;
@@ -68,9 +77,11 @@
       position: fixed;
       bottom: 55px;
       left: 0;
-      z-index: 1;
+      z-index: 2;
+      padding: 0 12mm;
     }
 
+    /* Date below disclaimer */
     #printDate {
       text-align: center;
       font-size: 10px;
@@ -78,63 +89,41 @@
       bottom: 30px;
       left: 0;
       width: 100%;
-      z-index: 1;
+      z-index: 2;
       border: none; /* ensure no lines */
     }
 
-    /* Hide any signature lines for this new print footer (user requested no lines/borders) */
-    #printFooter .signature-box { border: none !important; box-shadow: none !important; }
-    #printFooter img { display: block; margin: 0 auto; }
-
-    /* Hide old on-screen signature area positioning if it conflicts with print; keep it visible on screen */
+    /* Hide on-screen signature area (duplicate) in print */
     #signatures { display: none !important; }
+
+    /* Table should not break awkwardly */
+    table { page-break-inside: auto; }
+    tr    { page-break-inside: avoid; page-break-after: auto; }
   }
 
-  /* SCREEN STYLES */
-  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
-  .thin-border { border: 2px solid #0f172a; }
+  /* ------- SCREEN STYLES ------- */
+  body { background: #f3f4f6; }
+  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a; }
   .school-name { letter-spacing: 1px; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-  /* Original on-screen signatures (kept for non-print view) */
-  #signatures {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 32px;
-  }
-  #signatures div {
-    width: 40%;
-    text-align: center;
-  }
-  #signatures div div {
-    border-bottom: 1px solid black;
-    margin-top: 40px;
-    height: 48px;
-  }
+  /* On-screen signatures (kept) */
+  #signatures { display: flex; justify-content: space-between; margin-top: 32px; }
+  #signatures div { width: 40%; text-align: center; }
+  #signatures div div { border-bottom: 1px solid black; margin-top: 40px; height: 48px; }
 
-  /* Dashboard signature inputs removed from HTML; keep dashboard signs style in case used */
-  #dashboardSigns {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    margin-top: 12px;
-  }
-  #dashboardSigns input {
-    flex-grow: 1;
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-
-  /* Print footer (non-printed borders removed) */
+  /* Tables and inputs */
+  .thin-border { border: 2px solid #0f172a; }
   .signature-label { font-size: 0.875rem; text-align: center; }
   .signature-sign { font-weight: 600; text-align: center; margin-top: 8px; }
 
+  /* Small helper */
+  .muted { color: #6b7280; font-size: 0.85rem; }
 </style>
 </head>
 <body class="bg-gray-100 p-6">
 
-<!-- DASHBOARD FOR TOPPERS (Hidden in print) -->
+<!-- DASHBOARD (hidden in print) -->
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
   <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
   <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
@@ -156,12 +145,10 @@
   <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
   <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
 
-  <!-- NOTE: Class Teacher and Principal signature INPUTS REMOVED from dashboard as requested -->
-
   <button id="bulkDownloadBtn" class="mt-3 px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
 </div>
 
-<div class="page thin-border bg-white">
+<div class="page">
   <!-- Header -->
   <div class="flex items-center justify-between pb-4 border-b mb-4">
     <div class="flex items-center gap-4">
@@ -169,7 +156,7 @@
       <div>
         <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
         <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - TERM 1</p>
+        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
       </div>
     </div>
 
@@ -180,15 +167,15 @@
         <option value="Nursery">Nursery</option>
         <option value="LKG">LKG</option>
         <option value="UKG">UKG</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
+        <option value="1">I</option>
+        <option value="2">II</option>
+        <option value="3">III</option>
+        <option value="4">IV</option>
+        <option value="5">V</option>
+        <option value="6">VI</option>
+        <option value="7">VII</option>
+        <option value="8">VIII</option>
+        <option value="9">IX</option>
       </select>
     </div>
   </div>
@@ -236,40 +223,19 @@
     <label class="text-sm text-gray-600 font-semibold">Attendance</label>
     <div class="flex gap-2 items-center">
       <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-      <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Fixed total 130 working days" />
-      <small class="text-xs text-gray-600 ml-2">* Total Working Days Fixed at 130</small>
+      <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+      <!-- Removed the helper "Total Working Days Fixed at 130" as requested -->
     </div>
   </div>
 
   <!-- Marks Table -->
   <div class="overflow-x-auto">
-    <table class="w-full border-collapse table-auto text-sm">
-      <thead>
-        <tr class="bg-green-100">
-          <th class="border px-3 py-2 text-left">Subject</th>
-          <th class="border px-3 py-2 text-center">Unit Test Written</th>
-          <th class="border px-3 py-2 text-center">Unit Test Oral</th>
-          <th class="border px-3 py-2 text-center">Half Yearly Written</th>
-          <th class="border px-3 py-2 text-center">Half Yearly Oral</th>
-          <th class="border px-3 py-2 text-center font-semibold">Term 1 Total</th>
-        </tr>
+    <table id="marksTable" class="w-full border-collapse table-auto text-sm">
+      <thead id="marksTableHead">
+        <!-- Filled dynamically per class selection -->
       </thead>
       <tbody id="marksTableBody"></tbody>
-      <tfoot>
-        <tr class="bg-gray-50">
-          <td class="border px-3 py-2 font-semibold text-right">Total</td>
-          <td id="totalUTWritten" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalUTOral" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalHYWritten" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalHYOral" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalTerm" class="border px-3 py-2 font-semibold text-center">0</td>
-        </tr>
-        <tr class="bg-gray-50">
-          <td colspan="5" class="border px-3 py-2 font-semibold text-right">Percentage</td>
-          <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
-        </tr>
-        <!-- REMOVED the previous Remark row below Percentage as requested -->
-      </tfoot>
+      <tfoot id="marksTableFoot"></tfoot>
     </table>
   </div>
 
@@ -283,7 +249,7 @@
 
       <div class="border p-4 mt-4">
         <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-        <!-- Replaced editable textarea with an automatically-generated, non-editable display (keeps font size) -->
+        <!-- Automated class teacher remark display -->
         <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
       </div>
     </div>
@@ -291,129 +257,129 @@
     <!-- Graph -->
     <div class="col-span-2">
       <div class="border p-4">
-        <h3 class="font-semibold mb-2">Graphical Analysis (Term 1)</h3>
+        <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
         <canvas id="marksChart" height="180"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- ON-SCREEN Signatures (kept for non-print view, unchanged except principal now shows image) -->
+  <!-- ON-SCREEN Signatures (kept for non-print view) -->
   <div id="signatures">
     <div>
-      <p class="text-sm">Class Teacher: <span id="classTeacherPrintSign">—</span></p>
+      <p class="text-sm">Class Teacher: <span id="classTeacherPrintSign">Aman</span></p>
       <div></div>
     </div>
     <div>
-      <!-- Replaced principal signature text with image above the label (keeps text size/alignment) -->
       <p class="text-sm">
         <img src="principal.png" alt="Principal Signature" style="max-height:48px; display:block; margin:0 auto 6px;" />
-        Principal: <span id="principalPrintSign">—</span>
+        Principal: <span id="principalPrintSign">Tapish</span>
       </p>
       <div></div>
     </div>
   </div>
 
-  <!-- PRINT FOOTER (for print) -->
-  <div id="printFooter" class="no-print:hidden" style="display:none;">
-    <!-- left: class teacher signature label & generated signature -->
-    <div class="signature-box" style="width:33%; text-align:left;">
+  <!-- PRINT FOOTER (visible in print) -->
+  <div id="printFooter" style="display:block;">
+    <!-- left: Class Teacher signature area - MANUAL SIGN ABOVE LABEL -->
+    <div class="footer-col footer-left">
+      <span class="signature-space" id="classTeacherSignatureSpace"></span>
       <div class="signature-label">Class Teacher</div>
-      <div class="signature-sign" id="printClassTeacherSign">—</div>
+      <div class="signature-sign" id="printClassTeacherSign">Aman</div>
     </div>
 
-    <!-- center: school seal placeholder -->
-    <div class="signature-box" style="width:33%; text-align:center;">
-      <div style="height:68px; display:flex; align-items:center; justify-content:center;">
-        <!-- space reserved for school seal -->
-        <div style="width:120px; height:60px; border:0; display:flex; align-items:center; justify-content:center;">
-          <!-- intentionally left blank as placeholder for seal -->
-          <span class="text-xs text-gray-500">School Seal</span>
+    <!-- center: School Seal placeholder - MANUAL PASTE ABOVE -->
+    <div class="footer-col" style="text-align:center;">
+      <span class="signature-space" id="schoolSealSpace"></span>
+      <div style="height:48px; display:flex; align-items:center; justify-content:center;">
+        <div style="width:140px; height:60px; border:0; display:flex; align-items:center; justify-content:center;">
+          <span class="text-xs muted">School Seal</span>
         </div>
       </div>
     </div>
 
-    <!-- right: principal signature image and label -->
-    <div class="signature-box" style="width:33%; text-align:right;">
-      <div style="display:flex; flex-direction:column; align-items:flex-end;">
-        <img src="principal.png" alt="Principal" style="max-height:48px; margin-bottom:6px;" />
-        <div class="signature-label">Principal</div>
-      </div>
+    <!-- right: Principal image + label -->
+    <div class="footer-col footer-right">
+      <img src="principal.png" alt="Principal" style="max-height:48px; margin-bottom:6px;" />
+      <div class="signature-label">Principal</div>
+      <div class="signature-sign" id="printPrincipalSign">Tapish</div>
     </div>
   </div>
 
-  <!-- Disclaimer (printed above date) -->
-  <div id="disclaimer" class="hidden no-print:block" style="display:none;">
+  <!-- Disclaimer above date -->
+  <div id="disclaimer" class="muted text-center" style="margin-top:18px; font-size:12px;">
     This digitally generated report card is a bonafide record of student's academic performance
   </div>
 
-  <!-- Print Date -->
-  <div id="printDate" class="text-center text-xs text-gray-600">Date: —</div>
+  <!-- Print Date below disclaimer -->
+  <div id="printDate" class="text-center muted" style="margin-top:6px;">Date: —</div>
 </div>
 
-<!-- Clear Data Button -->
+<!-- Clear Data Button (non-print) -->
 <div class="no-print text-center mt-6">
   <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
 
 <script>
-  // CONSTANTS & DEFINITIONS
-  const nurseryToUKGSubjects = [
-    { name: "English Written", maxUnitWritten: 15, maxUnitOral: 5, maxHalfWritten: 60, maxHalfOral: 20 },
-    { name: "Hindi Written", maxUnitWritten: 15, maxUnitOral: 5, maxHalfWritten: 60, maxHalfOral: 20 },
-    { name: "Maths Written", maxUnitWritten: 15, maxUnitOral: 5, maxHalfWritten: 60, maxHalfOral: 20 },
-    { name: "Drawing", maxUnitWritten: 20, maxUnitOral: 0, maxHalfWritten: 80, maxHalfOral: 0 }
-  ];
-  const standardSubjects = [
-    { name: "English" },
-    { name: "Hindi" },
-    { name: "Mathematics" },
-    { name: "Science" },
-    { name: "Social Science" }
+  /* -------------------- CONFIG & SUBJECT MAPPINGS -------------------- */
+  // Default names fixed to resolve "AMAN/TAPISH" issue
+  const DEFAULT_CLASS_TEACHER = 'Aman';
+  const DEFAULT_PRINCIPAL = 'Tapish';
+
+  // Subject lists per requested logic
+  const SUBJECTS_NUR_TO_UKG = [
+    { name: "English", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
+    { name: "Hindi", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
+    { name: "Maths", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
+    { name: "Drawing", utMax: 20, utOralMax: 0, hyMax: 80, hyOralMax: 0 }
   ];
 
-  // STATE
+  const SUBJECTS_1_TO_5 = ["Hindi", "English", "Mathematics", "Computer", "E.V.S.", "Drawing", "G.K."];
+  const SUBJECTS_6_TO_8 = ["Hindi", "English", "Mathematics", "Computer", "Drawing", "G.K.", "Science", "S.S.T."];
+  const SUBJECTS_9 = ["Hindi", "English", "Mathematics", "Science", "S.S.T.", "Drawing"];
+
+  /* -------------------- STATE -------------------- */
   let state = {
     selectedClass: '',
     selectedStudentKey: '',
     studentsByClass: {},
     chart: null,
-    classTeacherSign: '',
-    principalSign: ''
+    classTeacherSign: DEFAULT_CLASS_TEACHER,
+    principalSign: DEFAULT_PRINCIPAL
   };
 
-  // UTILITY
   const qs = id => document.getElementById(id);
 
-  // INIT
+  /* -------------------- INIT -------------------- */
   function init() {
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
-    const clsTSign = localStorage.getItem('classTeacherSign');
-    const prSign = localStorage.getItem('principalSign');
-    if (clsTSign) {
-      state.classTeacherSign = clsTSign;
-      if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = clsTSign;
-      if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = clsTSign;
-      // dashboard input removed, so we don't set it
-    }
-    if (prSign) {
-      state.principalSign = prSign;
-      if (qs('principalPrintSign')) qs('principalPrintSign').textContent = prSign;
-      // dashboard input removed, so we don't set it in an input
-    }
+    const clsTSign = localStorage.getItem('classTeacherSign') || DEFAULT_CLASS_TEACHER;
+    const prSign = localStorage.getItem('principalSign') || DEFAULT_PRINCIPAL;
+    state.classTeacherSign = clsTSign;
+    state.principalSign = prSign;
+
+    // set default displays
+    if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = state.classTeacherSign;
+    if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign;
+    if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = state.classTeacherSign;
+    if (qs('principalPrintSign')) qs('principalPrintSign').textContent = state.principalSign;
+    if (qs('printPrincipalSign')) qs('printPrincipalSign').textContent = state.principalSign;
+
     attachEventListeners();
     initChart();
     updatePrintDate();
-    // Show print footer/disclaimer elements only for print; keep them hidden on screen but make accessible for print
-    // We'll set style/display toggles when printing using CSS (they are fixed/positioned in @media print).
+    renderEmptyMarksTable(); // default until class selected
   }
 
-  // EVENT LISTENERS
+  /* -------------------- EVENT LISTENERS -------------------- */
   function attachEventListeners() {
     qs('classSelect').addEventListener('change', e => {
-      state.selectedClass = e.target.value;
-      qs('classSection').textContent = state.selectedClass || '—';
+      // note: classSelect shows Roman numerals for 1..9 - map back to numbers if needed
+      const val = e.target.value;
+      state.selectedClass = interpretClassSelectValue(val);
+      qs('classSection').textContent = displayClassLabel(state.selectedClass);
       clearStudentView();
+      renderMarksTableForClass(state.selectedClass);
     });
 
     qs('addStudentBtn').addEventListener('click', () => {
@@ -423,15 +389,15 @@
       const name = qs('studentNameInput').value.trim();
       if (!name) return alert('Enter Student Name.');
       const key = `${state.selectedClass}|${admission}`;
-      const newStudent = makeEmptyStudent(name, admission, state.selectedClass);
       state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
-      // Preserve marks, attendance if student already exists:
-      if(state.studentsByClass[state.selectedClass][key]){
-        const existing = state.studentsByClass[state.selectedClass][key];
-        newStudent.marks = existing.marks;
-        newStudent.attendance = existing.attendance;
-        newStudent.teachersRemark = existing.teachersRemark;
-        newStudent.coscholastic = existing.coscholastic || [];
+      const newStudent = makeEmptyStudent(name, admission, state.selectedClass);
+      // if existed, preserve marks & attendance
+      if (state.studentsByClass[state.selectedClass][key]) {
+        const ex = state.studentsByClass[state.selectedClass][key];
+        newStudent.marks = ex.marks;
+        newStudent.attendance = ex.attendance || newStudent.attendance;
+        newStudent.teachersRemark = ex.teachersRemark || newStudent.teachersRemark;
+        newStudent.coscholastic = ex.coscholastic || newStudent.coscholastic;
       }
       state.studentsByClass[state.selectedClass][key] = newStudent;
       persistStudents();
@@ -461,336 +427,504 @@
     qs('printBtn').addEventListener('click', () => {
       if(!state.selectedStudentKey) return alert('Load or add a student first.');
       calculateTotalsAndUpdate();
-      // For print, ensure print footer/disclaimer are shown by temporarily toggling display for screen if needed.
-      // CSS @media print handles final visibility; call print directly.
       window.print();
     });
 
     qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 
-    // The signature input fields on dashboard were removed. Only attach listeners if inputs exist (guarded).
-    if (qs('classTeacherSign')) {
-      qs('classTeacherSign').addEventListener('input', e => {
-        state.classTeacherSign = e.target.value.trim();
-        if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = state.classTeacherSign || '—';
-        if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || '—';
-        localStorage.setItem('classTeacherSign', state.classTeacherSign);
-      });
-    }
-
-    if (qs('principalSign')) {
-      qs('principalSign').addEventListener('input', e => {
-        state.principalSign = e.target.value.trim();
-        if (qs('principalPrintSign')) qs('principalPrintSign').textContent = state.principalSign || '—';
-        localStorage.setItem('principalSign', state.principalSign);
-      });
-    }
-
     qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
     qs('clearDataBtn').addEventListener('click', clearAllData);
   }
 
-  // STUDENT DATA CREATION
+  /* -------------------- HELPERS: CLASS LABELS -------------------- */
+  function interpretClassSelectValue(val) {
+    // convert displayed roman numerals back to numeric where needed
+    const romanToNum = { "I":"1","II":"2","III":"3","IV":"4","V":"5","VI":"6","VII":"7","VIII":"8","IX":"9" };
+    if (!val) return '';
+    if (romanToNum[val]) return romanToNum[val];
+    return val; // Nursery/LKG/UKG already OK
+  }
+  function displayClassLabel(cls) {
+    if (!cls) return '—';
+    if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') return cls;
+    const num = parseInt(cls,10);
+    const map = {1:'I',2:'II',3:'III',4:'IV',5:'V',6:'VI',7:'VII',8:'VIII',9:'IX'};
+    return map[num] || cls;
+  }
+
+  /* -------------------- STUDENT DATA -------------------- */
   function makeEmptyStudent(name, admission, cls) {
-    const isNurseryToUKG = (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG');
     const marks = [];
-    if (isNurseryToUKG) {
-      nurseryToUKGSubjects.forEach(s => {
+    if (isNurToUkg(cls)) {
+      // nursery/ukg default subjects (names without 'Written')
+      SUBJECTS_NUR_TO_UKG.forEach(s => {
         marks.push({
           name: s.name,
-          utWritten: 0,
-          utOral: 0,
-          hyWritten: 0,
-          hyOral: 0,
+          ut: 0,
+          utOral: s.utOralMax || 0,
+          hy: 0,
+          hyOral: s.hyOralMax || 0,
           total: 0,
-          maxUTWritten: s.maxUnitWritten,
-          maxUTOral: s.maxUnitOral,
-          maxHYWritten: s.maxHalfWritten,
-          maxHYOral: s.maxHalfOral,
+          max: { ut: s.utMax, utOral: s.utOralMax, hy: s.hyMax, hyOral: s.hyOralMax }
         });
       });
     } else {
-      standardSubjects.forEach(s => {
-        marks.push({
-          name: s.name,
-          utWritten: 0,
-          utOral: 0,
-          hyWritten: 0,
-          hyOral: 0,
-          total: 0
-        });
+      // classes 1-9 subjects per mapping (no oral columns)
+      const subjects = subjectsForClass(cls);
+      subjects.forEach(sub => {
+        // G.K. is grade-based
+        if (sub === 'G.K.') {
+          marks.push({ name: sub, grade: 'A', ut: null, hy: null, total: null, isGrade: true });
+        } else {
+          marks.push({ name: sub, ut: 0, hy: 0, total: 0, isGrade: false, max: { ut: 20, hy: 80 } });
+        }
       });
     }
+
     return {
       name,
       admission,
       cls,
       marks,
-      coscholastic: [],
+      coscholastic: {},
       attendance: { present: 0, total: 130 },
       teachersRemark: 'Good effort. Keep improving.',
       remark: 'Needs Improvement'
     };
   }
 
-  // SAVE / LOAD LOCAL STORAGE
+  function isNurToUkg(cls) {
+    return cls === 'Nursery' || cls === 'LKG' || cls === 'UKG';
+  }
+
+  function subjectsForClass(cls) {
+    const n = parseInt(cls,10);
+    if (n >=1 && n <=5) return SUBJECTS_1_TO_5.slice();
+    if (n >=6 && n <=8) return SUBJECTS_6_TO_8.slice();
+    if (n === 9) return SUBJECTS_9.slice();
+    return [];
+  }
+
+  /* -------------------- PERSISTENCE -------------------- */
   function persistStudents() {
     localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
   }
 
-  // CLEAR VIEW
-  function clearStudentView() {
-    state.selectedStudentKey = '';
-    qs('studentName').textContent = '—';
-    qs('admissionNo').textContent = '—';
-    qs('studentNameInput').value = '';
-    qs('admissionInput').value = '';
-    qs('classSection').textContent = state.selectedClass || '—';
-    qs('attendancePresent').value = '';
-    qs('attendanceTotal').value = 130;
-    // teachersRemark is now a non-editable display
-    if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
-    qs('coscholasticBody').innerHTML = `
-      <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-      <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
-    `;
-    renderMarksTable([]);
+  /* -------------------- RENDER: MARKS TABLE BASED ON CLASS -------------------- */
+  function renderEmptyMarksTable() {
+    qs('marksTableHead').innerHTML = `<tr class="bg-green-100"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test-1</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center font-semibold">Overall Performance</th></tr>`;
+    qs('marksTableBody').innerHTML = '';
+    qs('marksTableFoot').innerHTML = '';
+  }
+
+  function renderMarksTableForClass(cls) {
+    const thead = qs('marksTableHead');
+    const tbody = qs('marksTableBody');
+    const tfoot = qs('marksTableFoot');
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+
+    if (isNurToUkg(cls)) {
+      // HEAD for nursery/ukg: includes oral columns
+      thead.innerHTML = `
+        <tr class="bg-green-100">
+          <th class="border px-3 py-2 text-left">Subject</th>
+          <th class="border px-3 py-2 text-center">Unit Test Written</th>
+          <th class="border px-3 py-2 text-center">Unit Test Oral</th>
+          <th class="border px-3 py-2 text-center">Half Yearly Written</th>
+          <th class="border px-3 py-2 text-center">Half Yearly Oral</th>
+          <th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
+        </tr>
+      `;
+      // If student loaded, render those marks; else render placeholders
+      const student = getCurrentStudent();
+      const marksArray = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name, ut:0, utOral:0, hy:0, hyOral:0, total:0, max: s }));
+      marksArray.forEach((m, idx) => {
+        const maxUT = (m.max?.ut ?? (m.maxUTWritten ?? 20));
+        const maxUTOral = (m.max?.utOral ?? (m.maxUTOral ?? 0));
+        const maxHY = (m.max?.hy ?? (m.maxHYWritten ?? 80));
+        const maxHYOral = (m.max?.hyOral ?? (m.maxHYOral ?? 0));
+        const utVal = m.ut ?? m.utWritten ?? 0;
+        const utOralVal = m.utOral ?? 0;
+        const hyVal = m.hy ?? m.hyWritten ?? 0;
+        const hyOralVal = m.hyOral ?? 0;
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td class="border px-3 py-2">${m.name}</td>
+            <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="ut" type="number" min="0" max="${maxUT}" class="w-16 p-1 border rounded text-center" value="${utVal}" /></td>
+            <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="utOral" type="number" min="0" max="${maxUTOral}" class="w-16 p-1 border rounded text-center" value="${utOralVal}" /></td>
+            <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="hy" type="number" min="0" max="${maxHY}" class="w-16 p-1 border rounded text-center" value="${hyVal}" /></td>
+            <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="hyOral" type="number" min="0" max="${maxHYOral}" class="w-16 p-1 border rounded text-center" value="${hyOralVal}" /></td>
+            <td class="border px-3 py-2 font-semibold text-center">${m.total || 0}</td>
+          </tr>
+        `);
+      });
+
+      // Footer totals and Percentage row
+      tfoot.innerHTML = `
+        <tr class="bg-gray-50">
+          <td class="border px-3 py-2 font-semibold text-right">Total</td>
+          <td id="totalUT" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalUTOral" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalHY" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalHYOral" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
+        </tr>
+        <tr class="bg-gray-50">
+          <td colspan="5" class="border px-3 py-2 font-semibold text-right">Percentage</td>
+          <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
+        </tr>
+      `;
+    } else {
+      // Classes 1-9: no oral columns. Subjects depend on class
+      const subjects = subjectsForClass(cls);
+      thead.innerHTML = `
+        <tr class="bg-green-100">
+          <th class="border px-3 py-2 text-left">Subject</th>
+          <th class="border px-3 py-2 text-center">Unit Test - 20</th>
+          <th class="border px-3 py-2 text-center">Half Yearly - 80</th>
+          <th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
+        </tr>
+      `;
+      // render rows
+      const student = getCurrentStudent();
+      const marksArr = student ? student.marks : subjects.map(s => ({ name: s, ut:0, hy:0, total:0, isGrade: s==='G.K.' }));
+      marksArr.forEach((m, idx) => {
+        if (m.isGrade) {
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td class="border px-3 py-2">${m.name}</td>
+              <td class="border px-3 py-2 text-center">—</td>
+              <td class="border px-3 py-2 text-center">—</td>
+              <td class="border px-3 py-2 text-center">
+                <select data-idx="${idx}" data-field="grade" class="border px-1 py-0.5 rounded">
+                  <option value="A"${m.grade==='A'?' selected':''}>A</option>
+                  <option value="B"${m.grade==='B'?' selected':''}>B</option>
+                  <option value="C"${m.grade==='C'?' selected':''}>C</option>
+                  <option value="D"${m.grade==='D'?' selected':''}>D</option>
+                </select>
+              </td>
+            </tr>
+          `);
+        } else {
+          const utVal = m.ut || 0;
+          const hyVal = m.hy || 0;
+          const total = m.total || 0;
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td class="border px-3 py-2">${m.name}</td>
+              <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="ut" type="number" min="0" max="20" class="w-16 p-1 border rounded text-center" value="${utVal}" /></td>
+              <td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="hy" type="number" min="0" max="80" class="w-16 p-1 border rounded text-center" value="${hyVal}" /></td>
+              <td class="border px-3 py-2 font-semibold text-center">${total}</td>
+            </tr>
+          `);
+        }
+      });
+
+      // Footer totals and Percentage
+      tfoot.innerHTML = `
+        <tr class="bg-gray-50">
+          <td class="border px-3 py-2 font-semibold text-right">Total</td>
+          <td id="totalUT" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalHY" class="border px-3 py-2 font-semibold text-center">0</td>
+          <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
+        </tr>
+        <tr class="bg-gray-50">
+          <td colspan="3" class="border px-3 py-2 font-semibold text-right">Percentage</td>
+          <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
+        </tr>
+      `;
+    }
+
+    // attach input listeners to update totals live
+    attachMarksInputsListeners();
     calculateTotalsAndUpdate();
   }
 
-  // LOAD STUDENT
+  function attachMarksInputsListeners() {
+    qs('marksTableBody').querySelectorAll('input, select').forEach(inp => {
+      inp.addEventListener('input', () => calculateTotalsAndUpdate());
+    });
+  }
+
+  /* -------------------- LOAD & SAVE STUDENT -------------------- */
   function loadStudent(key) {
     const [cls, admission] = key.split('|');
     const student = state.studentsByClass[cls][key];
     if (!student) return alert('Data not found.');
     state.selectedStudentKey = key;
     state.selectedClass = cls;
-    qs('classSelect').value = cls;
+    qs('classSelect').value = (cls === '1' ? 'I' : cls === '2' ? 'II' : cls === '3' ? 'III' : cls === '4' ? 'IV' : cls === '5' ? 'V' : cls === '6' ? 'VI' : cls === '7' ? 'VII' : cls === '8' ? 'VIII' : cls === '9' ? 'IX' : cls);
     qs('studentName').textContent = student.name;
     qs('admissionNo').textContent = student.admission || '—';
+    qs('classSection').textContent = displayClassLabel(cls);
     qs('studentNameInput').value = student.name;
     qs('admissionInput').value = student.admission || '';
-    qs('classSection').textContent = cls;
-    qs('attendancePresent').value = student.attendance.present ?? '';
-    qs('attendanceTotal').value = 130; // fixed total
-    // teachersRemark is now auto-generated; display stored teachersRemark if exists (will be overwritten by calculation)
-    if (qs('teachersRemark')) qs('teachersRemark').textContent = student.teachersRemark || 'Good effort. Keep improving.';
+    qs('attendancePresent').value = student.attendance.present || 0;
+    qs('attendanceTotal').value = student.attendance.total || 130;
 
-    // CoScholastic fields
-    const workHabits = student.coscholastic?.workHabits || '';
-    const behavior = student.coscholastic?.behavior || '';
+    // Render marks table for that class with student marks
+    renderMarksTableForClass(cls);
+
+    // Fill marks inputs according to student data
+    // (renderMarksTableForClass already used student if present, but ensure inputs updated)
+    // Set coscholastic inputs
     qs('coscholasticBody').innerHTML = `
-      <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${workHabits}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-      <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${behavior}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+      <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+      <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
     `;
 
-    renderMarksTable(student.marks);
+    // Update marks inputs to match student.marks explicitly
+    qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
+      const idx = Number(el.getAttribute('data-idx'));
+      const field = el.getAttribute('data-field');
+      const m = student.marks[idx];
+      if (!m) return;
+      if (el.tagName.toLowerCase() === 'select') {
+        el.value = m.grade || 'A';
+      } else if (field === 'ut' || field === 'hy' || field === 'utOral' || field === 'hyOral') {
+        const val = m[field] ?? 0;
+        el.value = val;
+      }
+    });
+
     calculateTotalsAndUpdate();
   }
 
-  // SAVE CURRENT STUDENT
   function saveCurrentStudent() {
-    if(!state.selectedStudentKey) return;
+    if (!state.selectedStudentKey) return;
     const student = getCurrentStudent();
-    if(!student) return;
-    // Save attendance and remarks
+    if (!student) return;
     student.attendance.present = Number(qs('attendancePresent').value) || 0;
-    student.attendance.total = 130; // fixed
-
-    // Do NOT save teachersRemark from a textarea - it's automatically generated. We will overwrite it in calculateTotals.
+    student.attendance.total = Number(qs('attendanceTotal').value) || 130;
     // Save coscholastic
-    const workHabits = qs('workHabitsInput')? qs('workHabitsInput').value.trim() : '';
-    const behavior = qs('behaviorInput')? qs('behaviorInput').value.trim() : '';
+    const workHabits = qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '';
+    const behavior = qs('behaviorInput') ? qs('behaviorInput').value.trim() : '';
     student.coscholastic = { workHabits, behavior };
 
-    // Update marks data from inputs is handled in calculateTotalsAndUpdate (inputs are read there)
+    // Save marks from inputs
+    qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
+      const idx = Number(el.getAttribute('data-idx'));
+      const field = el.getAttribute('data-field');
+      if (!Number.isFinite(idx)) return;
+      const m = student.marks[idx];
+      if (!m) return;
+      if (el.tagName.toLowerCase() === 'select') {
+        m.grade = el.value;
+      } else {
+        const val = Number(el.value) || 0;
+        m[field] = val;
+      }
+    });
+
+    // Recalculate totals & remark
+    calculateTotalsAndUpdate();
     persistStudents();
   }
 
-  // GET CURRENT STUDENT
   function getCurrentStudent() {
-    if(!state.selectedStudentKey) return null;
+    if (!state.selectedStudentKey) return null;
     const [cls] = state.selectedStudentKey.split('|');
     return state.studentsByClass[cls][state.selectedStudentKey];
   }
 
-  // RENDER MARKS TABLE
-  function renderMarksTable(marks=[]) {
-    const tbody = qs('marksTableBody');
-    tbody.innerHTML = '';
-
-    if(marks.length === 0) return;
-
-    const isNurUKG = (state.selectedClass === 'Nursery' || state.selectedClass === 'LKG' || state.selectedClass === 'UKG');
-    marks.forEach((m, idx) => {
-      const maxUTW = m.maxUTWritten ?? (isNurUKG ? 20 : 20);
-      const maxUTO = m.maxUTOral ?? 0;
-      const maxHYW = m.maxHYWritten ?? (isNurUKG ? 80 : 80);
-      const maxHYO = m.maxHYOral ?? 0;
-
-      tbody.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td class="border px-3 py-2">${m.name}</td>
-          <td class="border px-3 py-2 text-center">
-            <input data-idx="${idx}" data-field="utWritten" type="number" min="0" max="${maxUTW}" class="w-16 p-1 border rounded text-center" value="${m.utWritten || 0}" />
-          </td>
-          <td class="border px-3 py-2 text-center">
-            <input data-idx="${idx}" data-field="utOral" type="number" min="0" max="${maxUTO}" class="w-16 p-1 border rounded text-center" value="${m.utOral || 0}" />
-          </td>
-          <td class="border px-3 py-2 text-center">
-            <input data-idx="${idx}" data-field="hyWritten" type="number" min="0" max="${maxHYW}" class="w-16 p-1 border rounded text-center" value="${m.hyWritten || 0}" />
-          </td>
-          <td class="border px-3 py-2 text-center">
-            <input data-idx="${idx}" data-field="hyOral" type="number" min="0" max="${maxHYO}" class="w-16 p-1 border rounded text-center" value="${m.hyOral || 0}" />
-          </td>
-          <td class="border px-3 py-2 font-semibold text-center">${m.total || 0}</td>
-        </tr>
-      `);
-    });
-
-    tbody.querySelectorAll('input').forEach(inp => {
-      inp.addEventListener('input', () => {
-        calculateTotalsAndUpdate();
-      });
-    });
+  function clearStudentView() {
+    state.selectedStudentKey = '';
+    qs('studentName').textContent = '—';
+    qs('admissionNo').textContent = '—';
+    qs('studentNameInput').value = '';
+    qs('admissionInput').value = '';
+    qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
+    qs('attendancePresent').value = '';
+    qs('attendanceTotal').value = 130;
+    if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
+    qs('coscholasticBody').innerHTML = `
+      <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+      <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+    `;
+    renderMarksTableForClass(state.selectedClass);
   }
 
-  // CALCULATE TOTALS & VALIDATE MARKS
+  /* -------------------- CALCULATIONS & REMARKS -------------------- */
   function calculateTotalsAndUpdate() {
     const student = getCurrentStudent();
-    if (!student) return;
+    if (!student) {
+      // still compute totals for displayed inputs if student absent
+      computeTotalsFromInputsAndUpdateChart();
+      return;
+    }
 
-    const rows = qs('marksTableBody').querySelectorAll('tr');
-    let totals = {
-      utWritten: 0,
-      utOral: 0,
-      hyWritten: 0,
-      hyOral: 0,
-      termTotal: 0
-    };
-
-    rows.forEach((tr, idx) => {
-      const utWrittenInp = tr.querySelector('input[data-field="utWritten"]');
-      const utOralInp = tr.querySelector('input[data-field="utOral"]');
-      const hyWrittenInp = tr.querySelector('input[data-field="hyWritten"]');
-      const hyOralInp = tr.querySelector('input[data-field="hyOral"]');
-
-      let utWritten = Number(utWrittenInp.value) || 0;
-      let utOral = Number(utOralInp.value) || 0;
-      let hyWritten = Number(hyWrittenInp.value) || 0;
-      let hyOral = Number(hyOralInp.value) || 0;
-
-      // Validation by max marks for Nur - UKG classes
-      if (state.selectedClass === "Nursery" || state.selectedClass === "LKG" || state.selectedClass === "UKG") {
-        const markObj = student.marks[idx];
-        if (utWritten > markObj.maxUTWritten) utWritten = markObj.maxUTWritten;
-        if (utOral > markObj.maxUTOral) utOral = markObj.maxUTOral;
-        if (hyWritten > markObj.maxHYWritten) hyWritten = markObj.maxHYWritten;
-        if (hyOral > markObj.maxHYOral) hyOral = markObj.maxHYOral;
-
-        // Update inputs if exceeded max to reflect corrected value
-        if (utWrittenInp.value != utWritten) utWrittenInp.value = utWritten;
-        if (utOralInp.value != utOral) utOralInp.value = utOral;
-        if (hyWrittenInp.value != hyWritten) hyWrittenInp.value = hyWritten;
-        if (hyOralInp.value != hyOral) hyOralInp.value = hyOral;
+    // Read inputs and update student.marks
+    qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
+      const idx = Number(el.getAttribute('data-idx'));
+      const field = el.getAttribute('data-field');
+      const m = student.marks[idx];
+      if (!m) return;
+      if (el.tagName.toLowerCase() === 'select') {
+        m.grade = el.value;
+      } else {
+        const val = Number(el.value) || 0;
+        m[field] = val;
       }
-
-      // Calculate total for this subject
-      const total = utWritten + utOral + hyWritten + hyOral;
-
-      // Update UI cell and state
-      tr.children[5].textContent = total;
-      student.marks[idx].utWritten = utWritten;
-      student.marks[idx].utOral = utOral;
-      student.marks[idx].hyWritten = hyWritten;
-      student.marks[idx].hyOral = hyOral;
-      student.marks[idx].total = total;
-
-      totals.utWritten += utWritten;
-      totals.utOral += utOral;
-      totals.hyWritten += hyWritten;
-      totals.hyOral += hyOral;
-      totals.termTotal += total;
     });
 
-    // Update totals in footer
-    qs('totalUTWritten').textContent = totals.utWritten;
-    qs('totalUTOral').textContent = totals.utOral;
-    qs('totalHYWritten').textContent = totals.hyWritten;
-    qs('totalHYOral').textContent = totals.hyOral;
-    qs('totalTerm').textContent = totals.termTotal;
+    // Totals for nursery vs classes 1-9 differ
+    if (isNurToUkg(student.cls)) {
+      // compute totals including orals
+      let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0 };
+      student.marks.forEach(m => {
+        const ut = Number(m.ut) || 0;
+        const utOral = Number(m.utOral) || 0;
+        const hy = Number(m.hy) || 0;
+        const hyOral = Number(m.hyOral) || 0;
+        const subjTotal = ut + utOral + hy + hyOral;
+        m.total = subjTotal;
+        totals.ut += ut; totals.utOral += utOral; totals.hy += hy; totals.hyOral += hyOral; totals.overall += subjTotal;
+      });
+      qs('totalUT').textContent = totals.ut;
+      qs('totalUTOral').textContent = totals.utOral;
+      qs('totalHY').textContent = totals.hy;
+      qs('totalHYOral').textContent = totals.hyOral;
+      qs('totalOverall').textContent = totals.overall;
 
-    // Percentage calculation assuming max total per subject = 100
-    const subjectsCount = student.marks.length || 1;
-    const percentage = ((totals.termTotal / (subjectsCount * 100)) * 100).toFixed(2);
-    qs('percentage').textContent = `${percentage}%`;
+      const subjCount = student.marks.length || 1;
+      const percentage = ((totals.overall / (subjCount * 100)) * 100).toFixed(2);
+      qs('percentage').textContent = `${percentage}%`;
 
-    // Assign Remark based on % ranges (this becomes the Class Teacher's remark display)
-    let remarkText = 'Needs Improvement';
-    if (percentage >= 90) remarkText = 'Outstanding';
-    else if (percentage >= 80) remarkText = 'Excellent';
-    else if (percentage >= 70) remarkText = 'Very Good';
-    else if (percentage >= 60) remarkText = 'Good';
-    else if (percentage >= 50) remarkText = 'Average';
+      // remark assignment
+      let remarkText = 'Needs Improvement';
+      if (percentage >= 90) remarkText = 'Outstanding';
+      else if (percentage >= 80) remarkText = 'Excellent';
+      else if (percentage >= 70) remarkText = 'Very Good';
+      else if (percentage >= 60) remarkText = 'Good';
+      else if (percentage >= 50) remarkText = 'Average';
+      student.remark = remarkText;
+      student.teachersRemark = remarkText;
+      if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
 
-    // Set the automated remark into the Class Teacher's remark display
-    if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
-    // keep both student.remark and student.teachersRemark in state for export
-    student.remark = remarkText;
-    student.teachersRemark = remarkText;
+      // update chart & print footer teacher sign
+      updateChart(student);
+      if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || student.teachersRemark || '—';
+    } else {
+      // classes 1-9
+      let totals = { ut:0, hy:0, overall:0, numericSubjects:0 };
+      student.marks.forEach(m => {
+        if (m.isGrade) {
+          // skip numeric totals
+          m.total = null;
+        } else {
+          const ut = Number(m.ut) || 0;
+          const hy = Number(m.hy) || 0;
+          const subjTotal = ut + hy;
+          m.total = subjTotal;
+          totals.ut += ut; totals.hy += hy; totals.overall += subjTotal; totals.numericSubjects += 1;
+        }
+      });
+      qs('totalUT').textContent = totals.ut;
+      qs('totalHY').textContent = totals.hy;
+      qs('totalOverall').textContent = totals.overall;
 
-    // Update print footer class teacher signature text if used
-    if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || (student.teachersRemark || '—');
+      // Percentage: numerator = totals.overall, denominator = (numericSubjects * 100)
+      const denom = (totals.numericSubjects || 1) * 100;
+      const percentage = denom > 0 ? ((totals.overall / denom) * 100).toFixed(2) : "0.00";
+      qs('percentage').textContent = `${percentage}%`;
 
-    updateChart(student);
+      // remark
+      let remarkText = 'Needs Improvement';
+      if (percentage >= 90) remarkText = 'Outstanding';
+      else if (percentage >= 80) remarkText = 'Excellent';
+      else if (percentage >= 70) remarkText = 'Very Good';
+      else if (percentage >= 60) remarkText = 'Good';
+      else if (percentage >= 50) remarkText = 'Average';
+      student.remark = remarkText;
+      student.teachersRemark = remarkText;
+      if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
+
+      updateChart(student);
+      if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || student.teachersRemark || '—';
+    }
+
+    persistStudents();
+    // reflect totals into the visible overall cells for each row
+    qs('marksTableBody').querySelectorAll('tr').forEach((tr, idx) => {
+      const studentMark = student.marks[idx];
+      if (!studentMark) return;
+      const overallCell = tr.children[tr.children.length - 1];
+      overallCell.textContent = studentMark.isGrade ? (studentMark.grade || '—') : (studentMark.total || 0);
+    });
   }
 
-  // CHART INIT & UPDATE
+  // used when no student loaded but inputs exist (keeps chart behavior consistent)
+  function computeTotalsFromInputsAndUpdateChart() {
+    const inputs = qs('marksTableBody').querySelectorAll('input, select');
+    // we won't update chart (no student) but keep visible totals updated
+    let totalUT = 0, totalHY = 0, totalOverall = 0;
+    inputs.forEach(el => {
+      const field = el.getAttribute('data-field');
+      if (field === 'ut' || field === 'hy' || field === 'utOral' || field === 'hyOral') {
+        const val = Number(el.value) || 0;
+        if (field === 'ut' || field === 'utOral') totalUT += val;
+        if (field === 'hy' || field === 'hyOral') totalHY += val;
+        totalOverall += val;
+      }
+    });
+    if (qs('totalUT')) qs('totalUT').textContent = totalUT;
+    if (qs('totalHY')) qs('totalHY').textContent = totalHY;
+    if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
+  }
+
+  /* -------------------- CHART -------------------- */
   function initChart() {
     const ctx = qs('marksChart').getContext('2d');
     state.chart = new Chart(ctx, {
       type: 'bar',
       data: { labels: [], datasets: [] },
-      options: { responsive: true, plugins: { legend: { display: true } } }
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: {
+          y: { beginAtZero: true, max: 100 }
+        }
+      }
     });
   }
 
   function updateChart(student) {
+    if (!state.chart) return;
     const labels = student.marks.map(m => m.name);
-    const data = student.marks.map(m => m.total);
+    const obtained = student.marks.map(m => m.total === null ? 0 : m.total);
     const classData = labels.map(label => getClassAverage(student.cls, label));
     const highestData = labels.map(label => getClassHighest(student.cls, label));
     state.chart.data.labels = labels;
     state.chart.data.datasets = [
-      { label: 'Obtained', data, backgroundColor: 'rgba(59,130,246,0.7)' },
-      { label: 'Class Avg', data: classData, backgroundColor: 'rgba(16,185,129,0.7)' },
-      { label: 'Highest', data: highestData, backgroundColor: 'rgba(244,63,94,0.7)' }
+      { label: 'Obtained', data: obtained },
+      { label: 'Class Average', data: classData },
+      { label: 'Class Highest', data: highestData }
     ];
     state.chart.update();
   }
 
-  // CLASS AVG & HIGHEST
   function getClassAverage(cls, subjectName) {
     if (!state.studentsByClass[cls]) return 0;
     const vals = Object.values(state.studentsByClass[cls]).map(s => {
       const sub = s.marks.find(m => m.name === subjectName);
-      return sub ? sub.total : 0;
-    });
+      return sub ? (sub.total === null ? 0 : sub.total) : 0;
+    }).filter(v => typeof v === 'number');
     if (!vals.length) return 0;
-    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    return Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
   }
 
   function getClassHighest(cls, subjectName) {
     if (!state.studentsByClass[cls]) return 0;
     const vals = Object.values(state.studentsByClass[cls]).map(s => {
       const sub = s.marks.find(m => m.name === subjectName);
-      return sub ? sub.total : 0;
-    });
+      return sub ? (sub.total === null ? 0 : sub.total) : 0;
+    }).filter(v => typeof v === 'number');
     if (!vals.length) return 0;
     return Math.max(...vals);
   }
 
-  // DASHBOARD TOPPER
+  /* -------------------- DASHBOARD TOPPER -------------------- */
   function showDashboardTopper() {
     const cls = qs('dashboardClassSelect').value;
     if (!cls) {
@@ -802,12 +936,12 @@
     let schoolTopper = { name: '—', total: 0 };
     Object.keys(state.studentsByClass[cls] || {}).forEach(k => {
       const s = state.studentsByClass[cls][k];
-      const t = s.marks.reduce((a, b) => a + b.total, 0);
+      const t = s.marks.reduce((a,b)=>a+(b.total||0),0);
       if (t > classTopper.total) classTopper = { name: s.name, total: t };
     });
     Object.values(state.studentsByClass).forEach(clsObj => {
       Object.values(clsObj).forEach(s => {
-        const t = s.marks.reduce((a, b) => a + b.total, 0);
+        const t = s.marks.reduce((a,b)=>a+(b.total||0),0);
         if (t > schoolTopper.total) schoolTopper = { name: s.name, total: t };
       });
     });
@@ -815,7 +949,7 @@
     qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
   }
 
-  // BULK DOWNLOAD
+  /* -------------------- BULK DOWNLOAD -------------------- */
   function bulkDownloadReports() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for bulk download.');
@@ -825,12 +959,16 @@
     const arr = [];
     Object.keys(state.studentsByClass[cls]).forEach(key => {
       const s = state.studentsByClass[cls][key];
-      let report = `Report Card - ${cls} - ${s.name}\nAdmission No: ${s.admission}\n\nSubjects:\n`;
+      let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\n\nSubjects:\n`;
       s.marks.forEach(m => {
-        report += `${m.name}: Unit Test Written ${m.utWritten || 0}, Unit Test Oral ${m.utOral || 0}, Half Yearly Written ${m.hyWritten || 0}, Half Yearly Oral ${m.hyOral || 0}, Total: ${m.total || 0}\n`;
+        if (m.isGrade) {
+          report += `${m.name}: Grade ${m.grade || '—'}\n`;
+        } else {
+          report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
+        }
       });
-      report += `\nTotals: UT Written ${s.marks.reduce((a,b)=>a+(b.utWritten||0),0)}, UT Oral ${s.marks.reduce((a,b)=>a+(b.utOral||0),0)}, HY Written ${s.marks.reduce((a,b)=>a+(b.hyWritten||0),0)}, HY Oral ${s.marks.reduce((a,b)=>a+(b.hyOral||0),0)}, Overall ${s.marks.reduce((a,b)=>a+(b.total||0),0)}\n`;
-      report += `Percentage: ${((s.marks.reduce((a,b)=>a+(b.total||0),0)/(s.marks.length*100))*100).toFixed(2)}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / 130\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher: ${state.classTeacherSign || '—'}\nPrincipal: ${state.principalSign || '—'}\n\n--------------------------------------------------\n\n`;
+      report += `\nTotals: UT ${s.marks.reduce((a,b)=>a+ (b.ut||0),0)}, HY ${s.marks.reduce((a,b)=>a+(b.hy||0),0)}, Overall ${s.marks.reduce((a,b)=>a+(b.total||0),0)}\n`;
+      report += `Percentage: ${((s.marks.reduce((a,b)=>a+(b.total||0),0)/(s.marks.filter(m=>!m.isGrade).length*100))*100).toFixed(2)}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || 130}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher: ${state.classTeacherSign || DEFAULT_CLASS_TEACHER}\nPrincipal: ${state.principalSign || DEFAULT_PRINCIPAL}\n\n--------------------------------------------------\n\n`;
       arr.push(report);
     });
     const blob = new Blob(arr, { type: 'text/plain' });
@@ -842,12 +980,11 @@
     URL.revokeObjectURL(url);
   }
 
-  // DATA CLEAR
+  /* -------------------- CLEAR DATA -------------------- */
   function clearAllData() {
     const password = prompt('Enter password to clear ALL data:');
     if (password !== '1234') return alert('Incorrect password!');
     if (!confirm('Are you sure? This will remove all saved data!')) return;
-
     localStorage.clear();
     state.studentsByClass = {};
     state.selectedStudentKey = '';
@@ -855,13 +992,13 @@
     alert('All data cleared successfully.');
   }
 
-  // UPDATE PRINT DATE
+  /* -------------------- DATE -------------------- */
   function updatePrintDate() {
     const printDate = new Date().toLocaleDateString();
-    qs('printDate').textContent = 'Date: ' + printDate;
+    if (qs('printDate')) qs('printDate').textContent = 'Date: ' + printDate;
   }
 
-  // INIT CALL
+  /* -------------------- INIT CALL -------------------- */
   init();
 </script>
 
