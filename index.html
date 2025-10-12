@@ -7,33 +7,96 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
+  /* PRINT STYLES - A4, watermark, footer positions, etc. */
   @media print {
     body { -webkit-print-color-adjust: exact; }
+
+    /* Keep shadows and border intact as requested (don't remove box-shadow) */
     .no-print { display: none !important; }
-    .page { box-shadow: none; margin: 0; }
+
+    /* Make page A4 sized for print */
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      padding: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      background: white;
+      position: relative; /* for watermark pseudo element */
+      page-break-inside: avoid;
+      -webkit-print-color-adjust: exact;
+    }
+
+    /* Watermark placed in center of printable area */
+    .page::before{
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      background-image: url('watermark.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.07;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Ensure page content renders above watermark */
+    .page > * { position: relative; z-index: 1; }
+
+    /* Print footer/footer elements positioning */
+    #printFooter {
+      width: 100%;
+      position: fixed;
+      bottom: 80px; /* leaves space for disclaimer & date */
+      left: 0;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    /* Disclaimer and date positions */
+    #disclaimer {
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      position: fixed;
+      bottom: 55px;
+      left: 0;
+      z-index: 1;
+    }
+
     #printDate {
       text-align: center;
       font-size: 10px;
-      margin-top: 12px;
-      width: 100%;
       position: fixed;
-      bottom: 45px;
+      bottom: 30px;
       left: 0;
-    }
-    #signaturesPrint {
       width: 100%;
-      display: flex;
-      justify-content: space-between;
-      position: fixed;
-      bottom: 25px;
-      left: 0;
-      padding: 0 20px;
+      z-index: 1;
+      border: none; /* ensure no lines */
     }
+
+    /* Hide any signature lines for this new print footer (user requested no lines/borders) */
+    #printFooter .signature-box { border: none !important; box-shadow: none !important; }
+    #printFooter img { display: block; margin: 0 auto; }
+
+    /* Hide old on-screen signature area positioning if it conflicts with print; keep it visible on screen */
+    #signatures { display: none !important; }
   }
+
+  /* SCREEN STYLES */
   .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
   .thin-border { border: 2px solid #0f172a; }
   .school-name { letter-spacing: 1px; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Original on-screen signatures (kept for non-print view) */
   #signatures {
     display: flex;
     justify-content: space-between;
@@ -48,6 +111,8 @@
     margin-top: 40px;
     height: 48px;
   }
+
+  /* Dashboard signature inputs removed from HTML; keep dashboard signs style in case used */
   #dashboardSigns {
     display: flex;
     justify-content: space-between;
@@ -60,6 +125,11 @@
     border: 1px solid #ccc;
     border-radius: 4px;
   }
+
+  /* Print footer (non-printed borders removed) */
+  .signature-label { font-size: 0.875rem; text-align: center; }
+  .signature-sign { font-weight: 600; text-align: center; margin-top: 8px; }
+
 </style>
 </head>
 <body class="bg-gray-100 p-6">
@@ -85,10 +155,9 @@
   </select>
   <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
   <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-  <div id="dashboardSigns" class="mt-2">
-    <input type="text" id="classTeacherSign" placeholder="Class Teacher Signature" />
-    <input type="text" id="principalSign" placeholder="Principal Signature" />
-  </div>
+
+  <!-- NOTE: Class Teacher and Principal signature INPUTS REMOVED from dashboard as requested -->
+
   <button id="bulkDownloadBtn" class="mt-3 px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
 </div>
 
@@ -199,10 +268,7 @@
           <td colspan="5" class="border px-3 py-2 font-semibold text-right">Percentage</td>
           <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
         </tr>
-        <tr class="bg-gray-50">
-          <td colspan="5" class="border px-3 py-2 font-semibold text-right">Remark</td>
-          <td id="remark" class="border px-3 py-2 font-semibold text-center">—</td>
-        </tr>
+        <!-- REMOVED the previous Remark row below Percentage as requested -->
       </tfoot>
     </table>
   </div>
@@ -217,7 +283,8 @@
 
       <div class="border p-4 mt-4">
         <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-        <textarea id="teachersRemark" class="w-full border p-2 text-sm" rows="3">Good effort. Keep improving.</textarea>
+        <!-- Replaced editable textarea with an automatically-generated, non-editable display (keeps font size) -->
+        <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
       </div>
     </div>
 
@@ -230,17 +297,56 @@
     </div>
   </div>
 
-  <!-- Signatures -->
+  <!-- ON-SCREEN Signatures (kept for non-print view, unchanged except principal now shows image) -->
   <div id="signatures">
     <div>
       <p class="text-sm">Class Teacher: <span id="classTeacherPrintSign">—</span></p>
       <div></div>
     </div>
     <div>
-      <p class="text-sm">Principal: <span id="principalPrintSign">—</span></p>
+      <!-- Replaced principal signature text with image above the label (keeps text size/alignment) -->
+      <p class="text-sm">
+        <img src="principal.png" alt="Principal Signature" style="max-height:48px; display:block; margin:0 auto 6px;" />
+        Principal: <span id="principalPrintSign">—</span>
+      </p>
       <div></div>
     </div>
   </div>
+
+  <!-- PRINT FOOTER (for print) -->
+  <div id="printFooter" class="no-print:hidden" style="display:none;">
+    <!-- left: class teacher signature label & generated signature -->
+    <div class="signature-box" style="width:33%; text-align:left;">
+      <div class="signature-label">Class Teacher</div>
+      <div class="signature-sign" id="printClassTeacherSign">—</div>
+    </div>
+
+    <!-- center: school seal placeholder -->
+    <div class="signature-box" style="width:33%; text-align:center;">
+      <div style="height:68px; display:flex; align-items:center; justify-content:center;">
+        <!-- space reserved for school seal -->
+        <div style="width:120px; height:60px; border:0; display:flex; align-items:center; justify-content:center;">
+          <!-- intentionally left blank as placeholder for seal -->
+          <span class="text-xs text-gray-500">School Seal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: principal signature image and label -->
+    <div class="signature-box" style="width:33%; text-align:right;">
+      <div style="display:flex; flex-direction:column; align-items:flex-end;">
+        <img src="principal.png" alt="Principal" style="max-height:48px; margin-bottom:6px;" />
+        <div class="signature-label">Principal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer (printed above date) -->
+  <div id="disclaimer" class="hidden no-print:block" style="display:none;">
+    This digitally generated report card is a bonafide record of student's academic performance
+  </div>
+
+  <!-- Print Date -->
   <div id="printDate" class="text-center text-xs text-gray-600">Date: —</div>
 </div>
 
@@ -286,17 +392,20 @@
     const prSign = localStorage.getItem('principalSign');
     if (clsTSign) {
       state.classTeacherSign = clsTSign;
-      qs('classTeacherSign').value = clsTSign;
-      qs('classTeacherPrintSign').textContent = clsTSign;
+      if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = clsTSign;
+      if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = clsTSign;
+      // dashboard input removed, so we don't set it
     }
     if (prSign) {
       state.principalSign = prSign;
-      qs('principalSign').value = prSign;
-      qs('principalPrintSign').textContent = prSign;
+      if (qs('principalPrintSign')) qs('principalPrintSign').textContent = prSign;
+      // dashboard input removed, so we don't set it in an input
     }
     attachEventListeners();
     initChart();
     updatePrintDate();
+    // Show print footer/disclaimer elements only for print; keep them hidden on screen but make accessible for print
+    // We'll set style/display toggles when printing using CSS (they are fixed/positioned in @media print).
   }
 
   // EVENT LISTENERS
@@ -352,21 +461,30 @@
     qs('printBtn').addEventListener('click', () => {
       if(!state.selectedStudentKey) return alert('Load or add a student first.');
       calculateTotalsAndUpdate();
+      // For print, ensure print footer/disclaimer are shown by temporarily toggling display for screen if needed.
+      // CSS @media print handles final visibility; call print directly.
       window.print();
     });
 
     qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 
-    qs('classTeacherSign').addEventListener('input', e => {
-      state.classTeacherSign = e.target.value.trim();
-      qs('classTeacherPrintSign').textContent = state.classTeacherSign || '—';
-      localStorage.setItem('classTeacherSign', state.classTeacherSign);
-    });
-    qs('principalSign').addEventListener('input', e => {
-      state.principalSign = e.target.value.trim();
-      qs('principalPrintSign').textContent = state.principalSign || '—';
-      localStorage.setItem('principalSign', state.principalSign);
-    });
+    // The signature input fields on dashboard were removed. Only attach listeners if inputs exist (guarded).
+    if (qs('classTeacherSign')) {
+      qs('classTeacherSign').addEventListener('input', e => {
+        state.classTeacherSign = e.target.value.trim();
+        if (qs('classTeacherPrintSign')) qs('classTeacherPrintSign').textContent = state.classTeacherSign || '—';
+        if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || '—';
+        localStorage.setItem('classTeacherSign', state.classTeacherSign);
+      });
+    }
+
+    if (qs('principalSign')) {
+      qs('principalSign').addEventListener('input', e => {
+        state.principalSign = e.target.value.trim();
+        if (qs('principalPrintSign')) qs('principalPrintSign').textContent = state.principalSign || '—';
+        localStorage.setItem('principalSign', state.principalSign);
+      });
+    }
 
     qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
     qs('clearDataBtn').addEventListener('click', clearAllData);
@@ -410,7 +528,8 @@
       marks,
       coscholastic: [],
       attendance: { present: 0, total: 130 },
-      teachersRemark: 'Good effort. Keep improving.'
+      teachersRemark: 'Good effort. Keep improving.',
+      remark: 'Needs Improvement'
     };
   }
 
@@ -429,7 +548,8 @@
     qs('classSection').textContent = state.selectedClass || '—';
     qs('attendancePresent').value = '';
     qs('attendanceTotal').value = 130;
-    qs('teachersRemark').value = 'Good effort. Keep improving.';
+    // teachersRemark is now a non-editable display
+    if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
     qs('coscholasticBody').innerHTML = `
       <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
       <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
@@ -453,7 +573,8 @@
     qs('classSection').textContent = cls;
     qs('attendancePresent').value = student.attendance.present ?? '';
     qs('attendanceTotal').value = 130; // fixed total
-    qs('teachersRemark').value = student.teachersRemark || 'Good effort. Keep improving.';
+    // teachersRemark is now auto-generated; display stored teachersRemark if exists (will be overwritten by calculation)
+    if (qs('teachersRemark')) qs('teachersRemark').textContent = student.teachersRemark || 'Good effort. Keep improving.';
 
     // CoScholastic fields
     const workHabits = student.coscholastic?.workHabits || '';
@@ -476,15 +597,13 @@
     student.attendance.present = Number(qs('attendancePresent').value) || 0;
     student.attendance.total = 130; // fixed
 
-    student.teachersRemark = qs('teachersRemark').value;
-
+    // Do NOT save teachersRemark from a textarea - it's automatically generated. We will overwrite it in calculateTotals.
     // Save coscholastic
     const workHabits = qs('workHabitsInput')? qs('workHabitsInput').value.trim() : '';
     const behavior = qs('behaviorInput')? qs('behaviorInput').value.trim() : '';
     student.coscholastic = { workHabits, behavior };
 
-    // Update marks data from inputs also checked in calculateTotals
-
+    // Update marks data from inputs is handled in calculateTotalsAndUpdate (inputs are read there)
     persistStudents();
   }
 
@@ -606,17 +725,22 @@
     const percentage = ((totals.termTotal / (subjectsCount * 100)) * 100).toFixed(2);
     qs('percentage').textContent = `${percentage}%`;
 
-    // Assign Remark based on % ranges
+    // Assign Remark based on % ranges (this becomes the Class Teacher's remark display)
     let remarkText = 'Needs Improvement';
     if (percentage >= 90) remarkText = 'Outstanding';
     else if (percentage >= 80) remarkText = 'Excellent';
     else if (percentage >= 70) remarkText = 'Very Good';
     else if (percentage >= 60) remarkText = 'Good';
     else if (percentage >= 50) remarkText = 'Average';
-    qs('remark').textContent = remarkText;
 
-    // Update remark in student state
+    // Set the automated remark into the Class Teacher's remark display
+    if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
+    // keep both student.remark and student.teachersRemark in state for export
     student.remark = remarkText;
+    student.teachersRemark = remarkText;
+
+    // Update print footer class teacher signature text if used
+    if (qs('printClassTeacherSign')) qs('printClassTeacherSign').textContent = state.classTeacherSign || (student.teachersRemark || '—');
 
     updateChart(student);
   }
