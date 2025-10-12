@@ -38,7 +38,7 @@
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
-      opacity: 0.07;
+      opacity: 1.0;
       pointer-events: none;
       z-index: 0;
     }
@@ -86,9 +86,6 @@
       z-index: 2;
     }
 
-    /* hide on-screen duplicate signature block */
-    #signatures { display: none !important; }
-
     /* table print behavior */
     table { page-break-inside:auto; }
     tr { page-break-inside:avoid; page-break-after:auto; }
@@ -100,9 +97,9 @@
   .school-name { letter-spacing: 1px; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-  #signatures { display:flex; justify-content:space-between; margin-top:32px; }
+  #signatures { display:flex; justify-content:space-between; margin-top:25px; }
   #signatures div { width:40%; text-align:center; }
-  #signatures div div { border-bottom:1px solid black; margin-top:40px; height:48px; }
+  #signatures div div { border-bottom:1px solid black; margin-top:35px; height:48px; }
 
   .muted { color:#6b7280; font-size:0.95rem; }
   .signature-label { font-size:0.95rem; text-align:center; }
