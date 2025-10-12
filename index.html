@@ -12,83 +12,110 @@
     body { -webkit-print-color-adjust: exact; }
     .no-print { display: none !important; }
 
-    .page {
-      width: 210mm;
-      height: 297mm;
-      margin: 0 auto;
-      padding: 18mm;
-      background: white;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-      border: 2px solid #0f172a;
-      position: relative;
-      page-break-inside: avoid;
-    }
+   .page {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  padding: 18mm;
+  background: white;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  border: 2px solid #0f172a;
+  position: relative;
+  page-break-inside: avoid;
+  box-sizing: border-box;
+}
 
-    .page::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60%;
-      height: 60%;
-      background-image: url('watermark.png');
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
-      opacity: 0.07;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .page > * { position: relative; z-index: 1; }
+.page::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  background-image: url('watermark.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
 
-    /* Footer (single horizontal line) */
-    #finalFooter {
-      position: fixed;
-      bottom: 100px; /* leave room for disclaimer and date */
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 0 18mm;
-      z-index: 2;
-    }
-    #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
-    #finalFooter .left { text-align: left; }
-    #finalFooter .right { text-align: right; }
+.page > * {
+  position: relative;
+  z-index: 1;
+}
 
-    .signature-space { height: 56px; display:block; margin-bottom:6px; }
+/* Footer - stays inside border */
+#finalFooter {
+  position: absolute;
+  bottom: 80px; /* position above disclaimer/date */
+  left: 0;
+  width: calc(100% - 36mm); /* respect page padding (18mm each side) */
+  margin: 0 18mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  z-index: 2;
+  box-sizing: border-box;
+}
 
-    #disclaimer {
-      position: fixed;
-      bottom: 60px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-      padding: 0 18mm;
-    }
+#finalFooter .col {
+  width: 33%;
+  text-align: center;
+}
 
-    #printDate {
-      position: fixed;
-      bottom: 34px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-    }
+#finalFooter .left { text-align: left; }
+#finalFooter .right { text-align: right; }
 
-    /* hide on-screen duplicate signature block */
-    #signatures { display: none !important; }
+.signature-space {
+  height: 56px;
+  display: block;
+  margin-bottom: 6px;
+}
 
-    /* table print behavior */
-    table { page-break-inside:auto; }
-    tr { page-break-inside:avoid; page-break-after:auto; }
-  }
+/* Disclaimer - inside border */
+#disclaimer {
+  position: absolute;
+  bottom: 45px;
+  left: 0;
+  width: calc(100% - 36mm);
+  margin: 0 18mm;
+  text-align: center;
+  font-size: 10px;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+/* Print date - inside border */
+#printDate {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  width: calc(100% - 36mm);
+  margin: 0 18mm;
+  text-align: center;
+  font-size: 10px;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+/* Hide on-screen duplicate signature block */
+#signatures {
+  display: none !important;
+}
+
+/* Table print behavior */
+table {
+  page-break-inside: auto;
+}
+
+tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
 
   /* ---------------- SCREEN ---------------- */
   body { background: #f3f4f6; }
