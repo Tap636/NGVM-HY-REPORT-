@@ -70,7 +70,7 @@
       text-align: center;
       font-size: 10px;
       z-index: 2;
-      padding: 0 18mm;
+      padding: 0 14mm;
     }
 
     #printDate {
@@ -84,8 +84,8 @@
     }
 
       /* table print behavior */
-    table { page-break-inside:auto; }
-    tr { page-break-inside:avoid; page-break-after:auto; }
+    table { page-break-inside:relative; }
+    tr { page-break-inside:avoid; page-break-after:relative; }
   }
 
   /* ---------------- SCREEN ---------------- */
