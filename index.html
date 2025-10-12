@@ -16,13 +16,12 @@
 #finalFooter {
   position: absolute; /* relative to .page */
   bottom: 100px;
-  left: 0;
-  width: 100%;
+  left: 18mm;          /* align with page padding */
+  width: calc(100% - 36mm); /* total width minus left+right padding */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
-  padding: 0 18mm;
   z-index: 2;
   box-sizing: border-box;
 }
@@ -35,23 +34,22 @@
 
 /* --- Disclaimer inside border --- */
 #disclaimer {
-  position: absolute; /* inside .page */
+  position: absolute;
   bottom: 60px;
-  left: 0;
-  width: 100%;
+  left: 18mm;                     /* align with page padding */
+  width: calc(100% - 36mm);       /* fit inside border */
   text-align: center;
   font-size: 10px;
   z-index: 2;
-  padding: 0 18mm;
   box-sizing: border-box;
 }
 
 /* --- Print date inside border --- */
 #printDate {
-  position: absolute; /* inside .page */
+  position: absolute;
   bottom: 34px;
-  left: 0;
-  width: 100%;
+  left: 18mm;                     /* align with page padding */
+  width: calc(100% - 36mm);       /* fit inside border */
   text-align: center;
   font-size: 10px;
   z-index: 2;
