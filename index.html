@@ -56,44 +56,50 @@
     .page > * { position: relative; z-index: 1; }
 
     /* Footer (single horizontal line) */
-    #finalFooter {
-      position: fixed;
-      bottom: 100px; /* leave room for disclaimer and date */
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 0 18mm;
-      z-index: 2;
-    }
-    #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
-    #finalFooter .left { text-align: left; }
-    #finalFooter .right { text-align: right; }
+#finalFooter {
+  position: absolute; /* changed from fixed */
+  bottom: 100px; /* stays same, now relative to .page */
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 18mm;
+  z-index: 2;
+  box-sizing: border-box;
+}
 
-    .signature-space { height: 56px; display:block; margin-bottom:6px; }
+#finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
+#finalFooter .left { text-align: left; }
+#finalFooter .right { text-align: right; }
 
-    #disclaimer {
-      position: fixed;
-      bottom: 60px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-      padding: 0 18mm;
-    }
+.signature-space { height: 56px; display:block; margin-bottom:6px; }
 
-    #printDate {
-      position: fixed;
-      bottom: 34px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-    }
+/* Disclaimer inside border */
+#disclaimer {
+  position: absolute; /* changed from fixed */
+  bottom: 60px; /* stays same */
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  z-index: 2;
+  padding: 0 18mm;
+  box-sizing: border-box;
+}
+
+/* Print date inside border */
+#printDate {
+  position: absolute; /* changed from fixed */
+  bottom: 34px; /* stays same */
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  z-index: 2;
+  box-sizing: border-box;
+}
 
     /* hide on-screen duplicate signature block */
     #signatures { display: none !important; }
