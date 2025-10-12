@@ -7,107 +7,122 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* ---------------- PRINT (A4) ---------------- */
-  @media print {
-    body { -webkit-print-color-adjust: exact; }
-    .no-print { display: none !important; }
+/* ---------------- PRINT (A4) ---------------- */
+@media print {
+  body { -webkit-print-color-adjust: exact; }
+  .no-print { display: none !important; }
 
-    .page {
-      width: 210mm;
-      height: 297mm;
-      margin: 0 auto;
-      padding: 18mm;
-      background: white;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-      border: 2px solid #0f172a;
-      position: relative;
-      page-break-inside: avoid;
-    }
-
-    .page::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60%;
-      height: 60%;
-      background-image: url('watermark.png');
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
-      opacity: 0.07;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .page > * { position: relative; z-index: 1; }
-
-    /* Footer (single horizontal line) */
-    #finalFooter {
-      position: fixed;
-      bottom: 100px; /* leave room for disclaimer and date */
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 0 18mm;
-      z-index: 2;
-    }
-    #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
-    #finalFooter .left { text-align: left; }
-    #finalFooter .right { text-align: right; }
-
-    .signature-space { height: 56px; display:block; margin-bottom:6px; }
-
-    #disclaimer {
-      position: fixed;
-      bottom: 60px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-      padding: 0 18mm;
-    }
-
-    #printDate {
-      position: fixed;
-      bottom: 34px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 10px;
-      z-index: 2;
-    }
-
-    /* hide on-screen duplicate signature block */
-    #signatures { display: none !important; }
-
-    /* table print behavior */
-    table { page-break-inside:auto; }
-    tr { page-break-inside:avoid; page-break-after:auto; }
+  .page {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    padding: 18mm;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border: 2px solid #0f172a;
+    position: relative;
+    page-break-inside: avoid;
+    box-sizing: border-box;
   }
 
-  /* ---------------- SCREEN ---------------- */
-  body { background: #f3f4f6; }
-  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a; }
-  .school-name { letter-spacing: 1px; }
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .page::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+    background-image: url('watermark.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .page > * { position: relative; z-index: 1; }
 
-  #signatures { display:flex; justify-content:space-between; margin-top:32px; }
-  #signatures div { width:40%; text-align:center; }
-  #signatures div div { border-bottom:1px solid black; margin-top:40px; height:48px; }
+  /* Footer (single horizontal line) */
+  #finalFooter {
+    position: absolute;
+    bottom: 50px; /* leaves space for disclaimer and date */
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0 18mm;
+    z-index: 2;
+  }
+  #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
+  #finalFooter .left { text-align: left; }
+  #finalFooter .right { text-align: right; }
 
-  .muted { color:#6b7280; font-size:0.95rem; }
-  .signature-label { font-size:0.95rem; text-align:center; }
-  .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
-  table input[type="number"] { text-align:center; }
-  select.grade-select { padding:4px; border-radius:4px; }
+  .signature-space { height: 56px; display:block; margin-bottom:6px; }
+
+  #disclaimer {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    z-index: 2;
+    padding: 0 18mm;
+  }
+
+  #printDate {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    z-index: 2;
+  }
+
+  /* hide on-screen duplicate signature block */
+  #signatures { display: none !important; }
+
+  /* table print behavior */
+  table { page-break-inside:auto; }
+  tr { page-break-inside:avoid; page-break-after:auto; }
+}
+
+/* ---------------- SCREEN ---------------- */
+body { background: #f3f4f6; }
+.page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a; }
+.school-name { letter-spacing: 1px; }
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+#signatures { display:flex; justify-content:space-between; margin-top:32px; }
+#signatures div { width:40%; text-align:center; }
+#signatures div div { border-bottom:1px solid black; margin-top:40px; height:48px; }
+
+.muted { color:#6b7280; font-size:0.95rem; }
+.signature-label { font-size:0.95rem; text-align:center; }
+.signature-sign { font-weight:600; text-align:center; margin-top:8px; }
+table input[type="number"] { text-align:center; }
+select.grade-select { padding:4px; border-radius:4px; }
 </style>
 </head>
 <body class="bg-gray-100 p-6">
+
+<div class="page">
+  <!-- Header -->
+  <div class="flex items-center justify-between pb-4 border-b mb-4">
+    <div class="flex items-center gap-4">
+      <img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
+      <div>
+        <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
+        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
+      </div>
+    </div>
+  </div>
+
 
 <!-- Dashboard - no print -->
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
@@ -257,36 +272,18 @@
     </div>
   </div>
 
-  <!-- On-screen signature area (for manual signing preview) -->
+  <!-- On-screen signature area -->
   <div id="signatures" class="no-print mt-6">
-    <div>
-      <div style="height:56px;"></div>
-      <div class="signature-label">Class Teacher</div>
-    </div>
-    <div style="text-align:center;">
-      <div style="height:56px;"></div>
-      <div class="signature-label">School Seal</div>
-    </div>
-    <div style="text-align:right;">
-      <img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" />
-      <div class="signature-label">Principal</div>
-    </div>
+    <div><div style="height:56px;"></div><div class="signature-label">Class Teacher</div></div>
+    <div style="text-align:center;"><div style="height:56px;"></div><div class="signature-label">School Seal</div></div>
+    <div style="text-align:right;"><img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" /><div class="signature-label">Principal</div></div>
   </div>
 
-  <!-- Final footer (single-line) - visible both on screen and print; on print fixed positioning applies -->
+  <!-- Final footer -->
   <div id="finalFooter" style="margin-top:28px; display:flex; justify-content:space-between; align-items:flex-start;">
-    <div class="col left" style="text-align:left;">
-      <span class="signature-space"></span>
-      <div class="signature-label">Class Teacher</div>
-    </div>
-    <div class="col" style="text-align:center;">
-      <span class="signature-space"></span>
-      <div class="signature-label">School Seal</div>
-    </div>
-    <div class="col right" style="text-align:right;">
-      <img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" />
-      <div class="signature-label">Principal</div>
-    </div>
+    <div class="col left"><span class="signature-space"></span><div class="signature-label">Class Teacher</div></div>
+    <div class="col"><span class="signature-space"></span><div class="signature-label">School Seal</div></div>
+    <div class="col right"><img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" /><div class="signature-label">Principal</div></div>
   </div>
 
   <!-- Disclaimer & Date -->
@@ -294,7 +291,6 @@
     This digitally generated report card is a bonafide record of student's academic performance
   </div>
   <div id="printDate" class="text-center muted" style="margin-top:6px;">Date: —</div>
-
 </div>
 
 <!-- Non-print controls -->
