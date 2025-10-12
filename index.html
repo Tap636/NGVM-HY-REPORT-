@@ -6,7 +6,9 @@
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
 <style>
+
   /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
   @media print {
     body { -webkit-print-color-adjust: exact; }
@@ -23,12 +25,14 @@
       position: relative;
       page-break-inside: avoid;
       -webkit-print-color-adjust: exact;
+      border: 2px solid #0f172a;
+
     }
 
     /* Watermark centered */
     .page::before{
       content: "";
-      position: relative;
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -41,248 +45,478 @@
       opacity: 1.0;
       pointer-events: none;
       z-index: 0;
+
     }
 
-    /* Footer (single horizontal line) */
+    /* Footer and below arrangement */
     #finalFooter {
       position: relative;
       top: 5px;
-      bottom: 200px; /* leave room for disclaimer and date */
+      bottom: auto;
       left: 0;
       width: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 10px;
       padding: 0 18mm;
       z-index: 2;
+      border-top: 1px solid #000;
+      margin-top: 15px;
+
     }
+
     #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
+
     #finalFooter .left { text-align: left; }
+
     #finalFooter .right { text-align: right; }
+
+
 
     .signature-space { height: 56px; display:block; margin-bottom:6px; }
 
+
+
     #disclaimer {
+
       position: relative;
+
       top: 5px;
-      bottom: 40px;
+
+      bottom: auto;
+
       left: 0;
+
       width: 100%;
+
       text-align: center;
+
       font-size: 10px;
+
       z-index: 2;
+
       padding: 0 18mm;
+
+      border-top: 1px solid #ccc;
+
+      margin-top: 10px;
+
     }
+
+
 
     #printDate {
+
       position: relative;
+
       top: 5px;
-      bottom: 35px;
+
+      bottom: auto;
+
       left: 0;
+
       width: 100%;
+
       text-align: center;
+
       font-size: 10px;
+
       z-index: 2;
+
+      padding: 0 18mm 10px 18mm;
+
+      border-top: 1px solid #ccc;
+
+      margin-top: 5px;
+
     }
 
+
+
     /* table print behavior */
+
     table { page-break-inside:auto; }
+
     tr { page-break-inside:avoid; page-break-after:auto; }
+
   }
 
+
+
   /* ---------------- SCREEN ---------------- */
+
   body { background: #ffffff; }
-  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a; }
-  .school-name { letter-spacing: 1px; }
+
+  .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a; position: relative; }
+
+  .school-name { letter-spacing: 1px; text-align: center; }
+
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
+
+
   #signatures { display:flex; justify-content:space-between; margin-top:25px; }
+
   #signatures div { width:40%; text-align:center; }
+
   #signatures div div { border-bottom:1px solid black; margin-top:35px; height:48px; }
 
+
+
   .muted { color:#6b7280; font-size:0.95rem; }
+
   .signature-label { font-size:0.95rem; text-align:center; }
+
   .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
+
   table input[type="number"] { text-align:center; }
+
   select.grade-select { padding:4px; border-radius:4px; }
+
 </style>
+
 </head>
+
 <body class="bg-gray-100 p-6">
 
+
+
 <!-- Dashboard - no print -->
+
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
+
   <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
+
   <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
+
   <select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
+
     <option value="">-- Select Class --</option>
+
     <option value="Nursery">Nursery</option>
+
     <option value="LKG">LKG</option>
+
     <option value="UKG">UKG</option>
+
     <option value="1">I</option>
+
     <option value="2">II</option>
+
     <option value="3">III</option>
+
     <option value="4">IV</option>
+
     <option value="5">V</option>
+
     <option value="6">VI</option>
+
     <option value="7">VII</option>
+
     <option value="8">VIII</option>
+
     <option value="9">IX</option>
+
   </select>
+
   <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
+
   <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
 
+
+
   <div class="mt-3 flex gap-2">
+
     <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
+
   </div>
+
 </div>
+
+
 
 <!-- Page -->
+
 <div class="page">
+
   <!-- Header -->
-  <div class="flex items-center justify-between pb-4 border-b mb-4">
-    <div class="flex items-center gap-4">
-      <img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
-      <div>
-        <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
-        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
-      </div>
+
+  <div class="flex items-center justify-center pb-4 border-b mb-4">
+
+    <img src="logo.png" class="w-20 h-20 rounded-md mr-4" alt="School Logo" />
+
+    <div class="text-center">
+
+      <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
+
+      <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+
+      <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
+
     </div>
 
-    <div class="text-right no-print">
-      <label class="block text-xs text-gray-600">Select Class</label>
-      <select id="classSelect" class="border rounded px-2 py-1 bg-white">
-        <option value="">-- Select Class --</option>
-        <option value="Nursery">Nursery</option>
-        <option value="LKG">LKG</option>
-        <option value="UKG">UKG</option>
-        <option value="1">I</option>
-        <option value="2">II</option>
-        <option value="3">III</option>
-        <option value="4">IV</option>
-        <option value="5">V</option>
-        <option value="6">VI</option>
-        <option value="7">VII</option>
-        <option value="8">VIII</option>
-        <option value="9">IX</option>
-      </select>
-    </div>
   </div>
+
+
 
   <!-- Controls -->
+
   <div class="no-print mb-4">
+
     <div class="grid grid-cols-4 gap-4 items-end">
+
       <div>
+
         <label class="text-sm text-gray-600">Admission Number (Roll No.)</label>
+
         <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
+
       </div>
+
       <div>
+
         <label class="text-sm text-gray-600">Full Name</label>
+
         <input id="studentNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Student full name" />
+
       </div>
+
       <div>
-        <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded w-full">Add / Update Student</button>
+
+        <label class="text-sm text-gray-600">Father Name</label>
+
+        <input id="fatherNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Father's full name" />
+
       </div>
-      <div class="flex gap-2 justify-end">
-        <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
-        <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
-        <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
+
+      <div>
+
+        <label class="text-sm text-gray-600">Class</label>
+
+        <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+
+          <option value="">-- Select Class --</option>
+
+          <option value="Nursery">Nursery</option>
+
+          <option value="LKG">LKG</option>
+
+          <option value="UKG">UKG</option>
+
+          <option value="1">I</option>
+
+          <option value="2">II</option>
+
+          <option value="3">III</option>
+
+          <option value="4">IV</option>
+
+          <option value="5">V</option>
+
+          <option value="6">VI</option>
+
+          <option value="7">VII</option>
+
+          <option value="8">VIII</option>
+
+          <option value="9">IX</option>
+
+        </select>
+
       </div>
+
     </div>
+
   </div>
+
+
 
   <!-- Student Info -->
-  <div class="grid grid-cols-3 gap-4 mb-4">
+
+  <div class="grid grid-cols-4 gap-4 mb-4">
+
     <div>
+
       <p class="text-sm text-gray-600">Name</p>
+
       <h2 id="studentName" class="font-semibold">—</h2>
+
     </div>
+
     <div>
+
       <p class="text-sm text-gray-600">Admission No.</p>
+
       <h2 id="admissionNo" class="font-semibold">—</h2>
+
     </div>
+
     <div>
-      <p class="text-sm text-gray-600">Class/Section</p>
-      <h2 id="classSection" class="font-semibold">—</h2>
+
+      <p class="text-sm text-gray-600">Father Name</p>
+
+      <h2 id="fatherName" class="font-semibold">—</h2>
+
     </div>
+
+    <div>
+
+      <p class="text-sm text-gray-600">Class/Section</p>
+
+      <h2 id="classSection" class="font-semibold">—</h2>
+
+    </div>
+
   </div>
+
+
 
   <!-- Attendance -->
+
   <div class="mb-4">
+
     <label class="text-sm text-gray-600 font-semibold">Attendance</label>
+
     <div class="flex gap-2 items-center">
+
       <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+
       <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
-      <!-- Removed helper text as requested -->
+
     </div>
+
   </div>
+
+
 
   <!-- Marks Table -->
+
   <div class="overflow-x-auto">
+
     <table id="marksTable" class="w-full border-collapse table-auto text-sm">
+
       <thead id="marksTableHead"></thead>
+
       <tbody id="marksTableBody"></tbody>
+
       <tfoot id="marksTableFoot"></tfoot>
+
     </table>
+
   </div>
+
+
 
   <!-- Co-Scholastic & Graph -->
+
   <div class="grid grid-cols-3 gap-4 mt-6">
+
     <div class="col-span-1">
+
       <div class="border p-4">
+
         <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
+
         <table class="w-full text-sm" id="coscholasticTable">
+
           <tbody id="coscholasticBody">
+
             <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+
             <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+
           </tbody>
+
         </table>
+
       </div>
+
+
 
       <div class="border p-4 mt-4">
+
         <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
+
         <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
+
       </div>
+
     </div>
+
+
 
     <div class="col-span-2">
+
       <div class="border p-4">
+
         <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
+
         <canvas id="marksChart" height="180"></canvas>
+
       </div>
+
     </div>
+
   </div>
+
+
 
   <!-- Final footer (single-line) - visible both on screen and print; on print fixed positioning applies -->
-  <div id="finalFooter" style="margin-top:28px; display:flex; justify-content:space-between; align-items:flex-start;">
+
+  <div id="finalFooter" style="margin-top:28px; display:flex; justify-content:space-between; align-items:center;">
+
     <div class="col left" style="text-align:left;">
+
       <span class="signature-space"></span>
+
       <div class="signature-label">Class Teacher</div>
+
     </div>
+
     <div class="col" style="text-align:center;">
+
       <span class="signature-space"></span>
+
       <div class="signature-label">School Seal</div>
+
     </div>
+
     <div class="col right" style="text-align:right;">
+
       <img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" />
+
       <div class="signature-label">Principal</div>
+
     </div>
+
   </div>
+
+
 
   <!-- Disclaimer & Date -->
+
   <div id="disclaimer" class="muted text-center" style="margin-top:15px;">
+
     *This digitally generated report card is a bonafide record of student's academic performance
+
   </div>
+
   <div id="printDate" class="text-center muted" style="margin-top:5px;">Date: —</div>
 
+
+
 </div>
+
+
 
 <!-- Non-print controls -->
-<div class="no-print text-center mt-6">
-  <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
-</div>
 
+<div class="no-print text-center mt-6">
+
+  <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
+
+</div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
 const SUBJECTS_NUR_TO_UKG = [
