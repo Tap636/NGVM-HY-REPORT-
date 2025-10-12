@@ -1,258 +1,206 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  .page {
-    width: 210mm !important;
-    min-height: 297mm !important;
-    margin: 0 auto 20px auto;
-    padding: 20mm 15mm !important;
-    background: white;
-    border: 2px solid #0f172a !important;
-    box-sizing: border-box;
-    position: relative;
-    overflow: visible;
-  }
-  .thin-border { border: 2px solid #0f172a; }
-
-  body { background: #f1f5f9; }
-  .school-name { letter-spacing: 1px; }
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-  .watermark-print {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.14;
-    width: 320px;
-    height: 320px;
-    z-index: 0;
-    background: url('watermark.png') center center no-repeat;
-    background-size: contain;
-    pointer-events: none;
-    display: none;
-  }
-  @media print {
-    body { margin: 0 !important; background: white !important; }
-    .page {
-      width: 210mm !important;
-      min-height: 297mm !important;
-      margin: 0 !important;
-      box-shadow: none !important;
-      border: 2px solid #0f172a !important;
-      padding: 20mm 15mm !important;
-      position: relative !important;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Report Card System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f4f7fc;
+      color: #333;
     }
-    .watermark-print { display: block; }
-    .no-print, #signatures, #clearDataBtn { display: none !important; }
-    #printDate { position: fixed; bottom: 35px; left: 0; width: 100%; text-align: center; font-size: 10px; margin-top: 12px;}
-  }
-</style>
+    h1 {
+      text-align: center;
+      color: #2a4d69;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    input, select, button {
+      margin: 6px;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2a4d69;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1d3557;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 6px;
+    }
+    th {
+      background-color: #2a4d69;
+      color: white;
+    }
+  </style>
+
+  <!-- External libraries for PDF + ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
-<body class="bg-gray-100 p-6">
+<body>
+  <h1>📘 Student Report Card System</h1>
+  <div class="container">
+    <label>Student Name:</label>
+    <input type="text" id="studentName" placeholder="Enter student name" />
+    <label>Class:</label>
+    <input type="text" id="studentClass" placeholder="Enter class" />
+    <button onclick="addStudent()">Add Student</button>
+    <button onclick="bulkDownloadReports()">Bulk Download Reports (PDF)</button>
 
-<!-- Dashboard (no signature box now, rest untouched) -->
-<div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
-  <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
-  <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
-  <select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
-    <option value="">-- Select Class --</option>
-    <option value="Nursery">Nursery</option>
-    <option value="LKG">LKG</option>
-    <option value="UKG">UKG</option>
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-  </select>
-  <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
-  <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-  <button id="bulkDownloadBtn" class="mt-3 px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
-</div>
-
-<div class="page thin-border bg-white">
-  <div class="watermark-print"></div>
-  <!-- Header -->
-  <div class="flex items-center justify-between pb-4 border-b mb-4">
-    <div class="flex items-center gap-4">
-      <img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
-      <div>
-        <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
-        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
-      </div>
-    </div>
-    <div class="text-right no-print">
-      <label class="block text-xs text-gray-600">Select Class</label>
-      <select id="classSelect" class="border rounded px-2 py-1 bg-white">
-        <option value="">-- Select Class --</option>
-        <option value="Nursery">Nursery</option>
-        <option value="LKG">LKG</option>
-        <option value="UKG">UKG</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Teacher Controls (untouched except for print hiding via CSS) -->
-  <div class="no-print mb-4">
-    <div class="grid grid-cols-4 gap-4 items-end">
-      <div>
-        <label class="text-sm text-gray-600">Admission Number (Roll No.)</label>
-        <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
-      </div>
-      <div>
-        <label class="text-sm text-gray-600">Full Name</label>
-        <input id="studentNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Student full name" />
-      </div>
-      <div>
-        <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded w-full">Add / Update Student</button>
-      </div>
-      <div class="flex gap-2 justify-end">
-        <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
-        <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
-        <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Student Info -->
-  <div class="grid grid-cols-3 gap-4 mb-4">
-    <div>
-      <p class="text-sm text-gray-600">Name</p>
-      <h2 id="studentName" class="font-semibold">—</h2>
-    </div>
-    <div>
-      <p class="text-sm text-gray-600">Admission No.</p>
-      <h2 id="admissionNo" class="font-semibold">—</h2>
-    </div>
-    <div>
-      <p class="text-sm text-gray-600">Class/Section</p>
-      <h2 id="classSection" class="font-semibold">—</h2>
-    </div>
-  </div>
-
-  <!-- Attendance -->
-  <div class="mb-4">
-    <label class="text-sm text-gray-600 font-semibold">Attendance</label>
-    <div class="flex gap-2 items-center">
-      <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-      <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Fixed total 130 working days" />
-      <small class="text-xs text-gray-600 ml-2">* Total Working Days Fixed at 130</small>
-    </div>
-  </div>
-
-  <!-- Marks Table -->
-  <div class="overflow-x-auto">
-    <table class="w-full border-collapse table-auto text-sm">
+    <table id="studentTable">
       <thead>
-        <tr class="bg-green-100">
-          <th class="border px-3 py-2 text-left">Subject</th>
-          <th class="border px-3 py-2 text-center">Unit Test Written</th>
-          <th class="border px-3 py-2 text-center">Unit Test Oral</th>
-          <th class="border px-3 py-2 text-center">Half Yearly Written</th>
-          <th class="border px-3 py-2 text-center">Half Yearly Oral</th>
-          <th class="border px-3 py-2 text-center font-semibold">Term 1 Total</th>
+        <tr>
+          <th>Student Name</th>
+          <th>Class</th>
+          <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="marksTableBody"></tbody>
-      <tfoot>
-        <tr class="bg-gray-50">
-          <td class="border px-3 py-2 font-semibold text-right">Total</td>
-          <td id="totalUTWritten" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalUTOral" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalHYWritten" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalHYOral" class="border px-3 py-2 font-semibold text-center">0</td>
-          <td id="totalTerm" class="border px-3 py-2 font-semibold text-center">0</td>
-        </tr>
-        <tr class="bg-gray-50">
-          <td colspan="5" class="border px-3 py-2 font-semibold text-right">Percentage</td>
-          <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
-        </tr>
-        <tr class="bg-gray-50">
-          <td colspan="5" class="border px-3 py-2 font-semibold text-right">Remark</td>
-          <td id="remark" class="border px-3 py-2 font-semibold text-center">—</td>
-        </tr>
-      </tfoot>
+      <tbody></tbody>
     </table>
   </div>
 
-  <!-- Co-Scholastic & Attendance -->
-  <div class="grid grid-cols-3 gap-4 mt-6">
-    <div class="col-span-1">
-      <div class="border p-4">
-        <h3 class="font-semibold mb-2">Co-Scholastic Grades (Optional)</h3>
-        <table class="w-full text-sm" id="coscholasticTable"><tbody id="coscholasticBody"><tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr><tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr></tbody></table>
-      </div>
-      <div class="border p-4 mt-4">
-        <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-        <textarea id="teachersRemark" class="w-full border p-2 text-sm" rows="3">Good effort. Keep improving.</textarea>
-      </div>
-    </div>
-    <!-- Graph -->
-    <div class="col-span-2">
-      <div class="border p-4">
-        <h3 class="font-semibold mb-2">Graphical Analysis (Term 1)</h3>
-        <canvas id="marksChart" height="180"></canvas>
-      </div>
-    </div>
-  </div>
+  <script>
+    const students = [];
 
-  <!-- Signature section (shown in browser, hidden in print by CSS) -->
-  <div id="signatures">
-    <div>
-      <p class="text-sm">Class Teacher: <span id="classTeacherPrintSign">—</span></p>
-      <div></div>
-    </div>
-    <div>
-      <p class="text-sm">Principal: <span id="principalPrintSign">—</span></p>
-      <div></div>
-    </div>
-  </div>
-  <div id="printDate" class="text-center text-xs text-gray-600">Date: —</div>
-</div>
+    function addStudent() {
+      const name = document.getElementById('studentName').value.trim();
+      const cls = document.getElementById('studentClass').value.trim();
+      if (!name || !cls) {
+        alert("Please enter both name and class.");
+        return;
+      }
 
-<div class="no-print text-center mt-6">
-  <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
-</div>
+      const newStudent = {
+        name,
+        class: cls,
+        halfYearly: {
+          English: { written: 85, practical: 0, oral: 10 },
+          Math: { written: 90, practical: 0, oral: 9 },
+          Science: { written: 88, practical: 8, oral: 9 }
+        },
+        annual: {
+          English: { written: 80, practical: 0, oral: 10 },
+          Math: { written: 92, practical: 0, oral: 9 },
+          Science: { written: 86, practical: 8, oral: 10 }
+        },
+        remarks: "Excellent performance!",
+        result: "Pass"
+      };
+      students.push(newStudent);
+      displayStudents();
+      document.getElementById('studentName').value = '';
+      document.getElementById('studentClass').value = '';
+    }
 
-<script>
-  // --- Your existing JS code here: (No change except below!)
-  // At END of your script, replace only the print button click logic:
-  qs('printBtn').addEventListener('click', () => {
-    if(!state.selectedStudentKey) return alert('Load or add a student first.');
-    calculateTotalsAndUpdate();
+    function displayStudents() {
+      const tbody = document.querySelector("#studentTable tbody");
+      tbody.innerHTML = "";
+      students.forEach((s, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${s.name}</td>
+          <td>${s.class}</td>
+          <td><button onclick="downloadSingleReport(${i})">Download Report (PDF)</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-    document.getElementById('signatures').style.display = 'none';
+    function getGrade(total) {
+      if (total >= 90) return "A+";
+      if (total >= 80) return "A";
+      if (total >= 70) return "B";
+      if (total >= 60) return "C";
+      if (total >= 50) return "D";
+      return "F";
+    }
 
-    window.print();
+    function generatePDF(s) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-    setTimeout(() => {
-      document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
-      document.getElementById('signatures').style.display = '';
-    }, 800);
-  });
-  // Rest JS code as already written.
-</script>
+      doc.setFontSize(16);
+      doc.text("Student Report Card", 10, 15);
+      doc.setFontSize(12);
+      doc.text(`Name: ${s.name}`, 10, 25);
+      doc.text(`Class: ${s.class}`, 10, 32);
+
+      let y = 45;
+      doc.setFontSize(14);
+      doc.text("Half-Yearly Exam", 10, y);
+      y += 6;
+      for (const [subject, marks] of Object.entries(s.halfYearly)) {
+        const total = marks.written + marks.practical + marks.oral;
+        const grade = getGrade(total);
+        doc.text(`${subject}: W-${marks.written}, P-${marks.practical}, O-${marks.oral}, Total-${total}, Grade-${grade}`, 10, y);
+        y += 6;
+      }
+
+      y += 4;
+      doc.setFontSize(14);
+      doc.text("Annual Exam", 10, y);
+      y += 6;
+      for (const [subject, marks] of Object.entries(s.annual)) {
+        const total = marks.written + marks.practical + marks.oral;
+        const grade = getGrade(total);
+        doc.text(`${subject}: W-${marks.written}, P-${marks.practical}, O-${marks.oral}, Total-${total}, Grade-${grade}`, 10, y);
+        y += 6;
+      }
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text(`Remarks: ${s.remarks}`, 10, y);
+      y += 6;
+      doc.text(`Result: ${s.result}`, 10, y);
+
+      return doc;
+    }
+
+    function downloadSingleReport(index) {
+      const s = students[index];
+      const doc = generatePDF(s);
+      doc.save(`${s.name.replace(/\s+/g, "_")}_Report.pdf`);
+    }
+
+    async function bulkDownloadReports() {
+      if (students.length === 0) {
+        alert("No students available for download.");
+        return;
+      }
+
+      const zip = new JSZip();
+
+      for (const s of students) {
+        const doc = generatePDF(s);
+        const pdfBlob = doc.output("blob");
+        zip.file(`${s.name.replace(/\s+/g, "_")}_Report.pdf`, pdfBlob);
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, "All_Student_Reports.zip");
+    }
+  </script>
 </body>
 </html>
