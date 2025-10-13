@@ -2,101 +2,95 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-@media print {
-  body { -webkit-print-color-adjust: exact; }
-  .no-print { display: none !important; }
-  .page {
-    width: 210mm;
-    height: 297mm;
-    margin: 0 auto;
-    padding: 8mm; /* Border is now closer to margin */
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    background: white;
-    border: 2.5mm solid #0f172a; /* Logo color */
-    position: relative;
-    page-break-inside: avoid;
-    -webkit-print-color-adjust: exact;
+  /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
+  @media print {
+    body { -webkit-print-color-adjust: exact; }
+    .no-print { display: none !important; }
+
+    /* A4 page area */
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 1.27cm;
+      padding: 8mm; /* use mm units for print */
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      background: white;
+      position: relative;
+      page-break-inside: avoid;
+      -webkit-print-color-adjust: exact;
+    }
+
+    /* Watermark centered */
+    .page::before{
+      content: "";
+      position: relative;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      background-image: watermark.png;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 1.0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    
+    /* Footer (single horizontal line) */
+    #finalFooter {
+      position: relative;
+      bottom: 5px;
+      top: 5px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0 8mm;
+      gap: 10px;
+      z-index: 2;
+    }
+    #finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
+    #finalFooter .left { text-align: left; }
+    #finalFooter .right { text-align: right; }
+
+    .signature-space { height: 50px; display:block; margin-bottom:4px; }
+
+    #disclaimer {
+      position: relative;
+      top: 1128px;
+      bottom: 5px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      z-index: 2;
+      padding: 0 8mm;
+    }
+
+    #printDate {
+      position: relative;
+      top: 1126px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      z-index: 2;
+    }
+
+      /* table print behavior */
+    table { page-break-inside:relative; }
+    tr { page-break-inside:avoid; page-break-after:relative; }
   }
-  .page::before{
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60%;
-    height: 60%;
-    background: url('watermark.png') no-repeat center center;
-    background-size: contain;
-    opacity: 0.08;
-    pointer-events: none;
-    z-index: 0;
-  }
-  #finalFooter {
-    position: absolute;
-    left: 8mm;
-    right: 8mm;
-    bottom: 32mm;
-    width: calc(100% - 16mm);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-top: 2px solid #0f172a;
-    background: white;
-    z-index: 2;
-  }
-  #finalFooter .col { width: 33%; text-align: center; }
-  #finalFooter .left { text-align: left; }
-  #finalFooter .right { text-align: right; }
-  .signature-space { height: 28px; }
-  #disclaimer, #printDate {
-    position: absolute;
-    left: 8mm;
-    right: 8mm;
-    font-size: 10px;
-    width: calc(100% - 16mm);
-    background: white;
-    z-index: 2;
-  }
-  #disclaimer { bottom: 24mm; text-align:center; }
-  #printDate { bottom: 18mm; text-align:center; }
-  table { page-break-inside: avoid; }
-  tr { page-break-inside: avoid; }
-}
-body { background: #ffffff; }
-.page {
-  width: 900px;
-  margin: 20px auto;
-  padding: 8mm;
-  background: white;
-  border: 2.5mm solid #0f172a; /* logo color */
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  position: relative;
-}
-.school-name { letter-spacing: 1px; color: #0f172a; }
-#finalFooter {
-  margin-top:28px;
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  border-top: 2px solid #0f172a;
-}
-#finalFooter .col { width: 33%; box-sizing: border-box; }
-#finalFooter .left { text-align: left; }
-#finalFooter .center { text-align: center; }
-#finalFooter .right { text-align: right; }
-.signature-space { height: 28px; display:block; margin-bottom:4px; }
-#disclaimer, #printDate {
-  text-align: center;
-  font-size: 10px;
-  margin: 0;
-  color:#6b7280;
-}
 
   /* ---------------- SCREEN ---------------- */
   body { background: #ffffff; }
@@ -147,17 +141,16 @@ body { background: #ffffff; }
 <!-- Page -->
 <div class="page">
   <!-- Header -->
-   <div class="flex items-center pb-4 mb-4 border-b border-gray-300">
-    <img src="logo.png" class="w-20 h-20 rounded-md mr-4" alt="School Logo" />
-    <div class="flex-1 text-center">
-      <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
-      <div class="text-sm">
-        <strong>Academic Session: 2025-26</strong>
+  <div class="flex items-center justify-between pb-4 border-b mb-4">
+    <div class="flex items-center gap-4">
+      <img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
+      <div>
+        <h1 class="text-2xl font-extrabold school-name">NANDI GURUKUL VIDYA MANDIR</h1>
+        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
       </div>
-      <div class="text-sm font-semibold text-gray-700 mt-1">REPORT CARD - HALF YEARLY EXAMINATION</div>
     </div>
-    <div style="width: 90px;"></div>
-  </div>
+
     <div class="text-right no-print">
       <label class="block text-xs text-gray-600">Select Class</label>
       <select id="classSelect" class="border rounded px-2 py-1 bg-white">
