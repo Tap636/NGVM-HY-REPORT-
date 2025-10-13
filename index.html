@@ -12,22 +12,18 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 
-/* A4 page area: Padding set to 12.7mm (1.27cm) all around as requested */
+/* 1. SOLVE TWO-PAGE ISSUE: Reduce top/bottom padding to give content more vertical space */
 .page {
   width: 210mm;
-  /* Setting MIN-HEIGHT ensures the A4 size is maintained even with less content */
   min-height: 297mm; 
   margin: 0 auto;
-  /* Strict 12.7mm (1.27cm) margin applied to all sides. 
-     The final bottom padding is handled by the overall structure. */
-  padding: 12.7mm; 
+  /* Reduced top/bottom margin from 12.7mm to 8mm to free up vertical space */
+  padding: 8mm 12.7mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
   position: relative;
-  /* Crucial for multi-page reports: content should not break inside this main container */
   page-break-inside: avoid; 
   -webkit-print-color-adjust: exact;
-  /* Use Flexbox Column to push the footer content down */
   display: flex; 
   flex-direction: column;
 }
@@ -52,31 +48,33 @@ z-index: 0;
 
 /* New Content Wrapper to absorb all content and allow footer to be pushed down */
 .page-content-wrapper {
-  flex-grow: 1; /* Pushes the subsequent footer down */
+  flex-grow: 1; 
   display: flex;
   flex-direction: column;
-  /* Ensures inner content uses up all space without pushing the footer off the page */
-  min-height: calc(297mm - 25.4mm); /* Page height minus top/bottom padding (12.7mm * 2) */
+  /* Adjust min-height based on new 8mm top/bottom padding: 297 - 16 = 281mm */
+  min-height: calc(297mm - 16mm); 
   box-sizing: border-box;
 }
 
 /* Footer Container - Now set to push to the bottom of the content wrapper */
 .page-footer-area {
-  margin-top: auto; /* Pushes itself to the bottom of the parent .page-content-wrapper */
+  margin-top: auto; 
   width: 100%;
-  padding-top: 10mm; /* Add space between last content item and footer */
+  padding-top: 5mm; /* Reduced padding for space saving */
 }
 
-/* --- FOOTER COLOR FIX: START --- */
+/* --- COLOR FIXES --- */
 /* Ensure all text in the footer area is black when printing */
 .page-footer-area, #finalFooter, #disclaimer, #printDate {
     color: black !important;
 }
-/* Also target the 'muted' class used by disclaimer and date */
 .muted { 
     color: black !important; 
 }
-/* --- FOOTER COLOR FIX: END --- */
+/* 1. HEADER COLOR FIX: Override the screen's indigo color with black */
+.school-name-color { 
+    color: black !important; 
+}
 
 
 /* Footer (single horizontal line) - NO ABSOLUTE POSITIONING */
@@ -88,31 +86,51 @@ z-index: 0;
   gap: 10px;
   z-index: 2;
 }
-#finalFooter .col { width: 33%; box-sizing: border-box; text-align: center; }
+#finalFooter .col { 
+    width: 33%; 
+    box-sizing: border-box; 
+    text-align: center; 
+    /* 3. ALIGNMENT FIX: Use Flexbox to align content within the column */
+    display: flex; 
+    flex-direction: column;
+    justify-content: flex-end; /* Align to the bottom of the column */
+    min-height: 80px; /* Ensure all columns have the same minimum height */
+}
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
-.signature-space { height: 50px; display:block; margin-bottom:4px; }
+
+/* 3. ALIGNMENT FIX: The space should be a flexible element, not fixed height */
+.signature-space { 
+    flex-grow: 1; /* Pushes the label to the bottom */
+    display:block; 
+}
+/* The principal image must now be aligned with the text base line */
+#finalFooter .principal-img {
+    height: 48px; /* Fixed height for image */
+    display: block; 
+    margin: 0 auto 6px; 
+    object-fit: contain;
+}
+
 
 /* Disclaimer & Print Date - Now FLOWING content, not absolute */
 #disclaimer {
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 10px;
+  margin-top: 5px; /* Reduced margin for space saving */
   z-index: 2;
 }
 #printDate {
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 5px;
+  margin-top: 3px; /* Reduced margin for space saving */
   z-index: 2;
 }
 /* table print behavior */
 table { page-break-inside:relative; }
 tr { page-break-inside:avoid; page-break-after:relative; }
-
-/* REMOVED: .print-safe-content and all absolute positioning from footer elements */
 }
 
 /* ---------------- SCREEN ---------------- */
@@ -121,18 +139,15 @@ body { background: #ffffff; }
 .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a;
 }
 .page-content-wrapper, .page-footer-area {
-  min-height: auto; /* reset for screen view */
+  min-height: auto; 
   flex-grow: 1;
 }
 
-/* Custom class for School Name color - using indigo for a professional look */
-.school-name-color { color: #4f46e5; } /* Using Indigo-600 color */
+/* Screen style for school name */
+.school-name-color { color: #4f46e5; } 
 .school-name { letter-spacing: 1px; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-#signatures { display:flex; justify-content:space-between; margin-top:25px; }
-#signatures div { width:40%; text-align:center; }
-#signatures div div { border-bottom:1px solid black; margin-top:35px; height:48px; }
-.muted { color:#6b7280; font-size:0.95rem; } /* SCREEN: light gray */
+.muted { color:#6b7280; font-size:0.95rem; } 
 .signature-label { font-size:0.95rem; text-align:center; }
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
@@ -275,15 +290,15 @@ select.grade-select { padding:4px; border-radius:4px; }
   <div class="page-footer-area">
     <div id="finalFooter" style="display:flex; justify-content:space-between; align-items:flex-start;">
     <div class="col left" style="text-align:left;">
-    <span class="signature-space"></span>
+    <div class="signature-space"></div>
     <div class="signature-label">Class Teacher</div>
     </div>
     <div class="col" style="text-align:center;">
-    <span class="signature-space"></span>
+    <div class="signature-space"></div>
     <div class="signature-label">School Seal</div>
     </div>
     <div class="col right" style="text-align:right;">
-    <img src="principal.png" alt="Principal" style="max-height:48px; display:block; margin:0 auto 6px;" />
+    <img src="principal.png" alt="Principal" class="principal-img" />
     <div class="signature-label">Principal</div>
     </div>
     </div>
