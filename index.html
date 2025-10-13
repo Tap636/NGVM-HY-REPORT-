@@ -12,13 +12,13 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 
-/* 1. SOLVE TWO-PAGE ISSUE: Reduce top/bottom padding to give content more vertical space */
+/* 1. AGGRESSIVE PADDING REDUCTION */
 .page {
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
-  /* Reduced top/bottom margin from 12.7mm to 8mm to free up vertical space */
-  padding: 8mm 12.7mm; 
+  /* Further reduced top/bottom margin from 8mm to a tight 5mm */
+  padding: 5mm 12.7mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
   position: relative;
@@ -46,21 +46,34 @@ pointer-events: none;
 z-index: 0;
 }
 
-/* New Content Wrapper to absorb all content and allow footer to be pushed down */
+/* 2. CONTENT HEIGHT CORRECTION */
 .page-content-wrapper {
   flex-grow: 1; 
   display: flex;
   flex-direction: column;
-  /* Adjust min-height based on new 8mm top/bottom padding: 297 - 16 = 281mm */
-  min-height: calc(297mm - 16mm); 
+  /* Updated min-height based on new 5mm top/bottom padding: 297 - 10 = 287mm */
+  min-height: calc(297mm - 10mm); 
   box-sizing: border-box;
 }
+
+/* 3. MARGIN COMPACTION FOR HEADER/BODY */
+/* Target the main header div */
+.page-content-wrapper > .border-b {
+    padding-bottom: 5px !important; /* Reduce the padding after the border */
+    margin-bottom: 5px !important; /* Reduce the margin after the header */
+}
+
+/* Target the Student Info grid below the header */
+.page-content-wrapper > .grid.grid-cols-4 {
+    margin-bottom: 5px !important; /* Shrink the margin below Student Info */
+}
+
 
 /* Footer Container - Now set to push to the bottom of the content wrapper */
 .page-footer-area {
   margin-top: auto; 
   width: 100%;
-  padding-top: 5mm; /* Reduced padding for space saving */
+  padding-top: 3mm; /* Further reduced padding for space saving */
 }
 
 /* --- COLOR FIXES --- */
@@ -71,13 +84,13 @@ z-index: 0;
 .muted { 
     color: black !important; 
 }
-/* 1. HEADER COLOR FIX: Override the screen's indigo color with black */
+/* HEADER COLOR FIX: Override the screen's indigo color with black */
 .school-name-color { 
     color: black !important; 
 }
 
 
-/* Footer (single horizontal line) - NO ABSOLUTE POSITIONING */
+/* Footer (single horizontal line) - ALIGNMENT FIXES */
 #finalFooter {
   width: 100%;
   display: flex;
@@ -90,7 +103,6 @@ z-index: 0;
     width: 33%; 
     box-sizing: border-box; 
     text-align: center; 
-    /* 3. ALIGNMENT FIX: Use Flexbox to align content within the column */
     display: flex; 
     flex-direction: column;
     justify-content: flex-end; /* Align to the bottom of the column */
@@ -99,13 +111,11 @@ z-index: 0;
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
 
-/* 3. ALIGNMENT FIX: The space should be a flexible element, not fixed height */
 .signature-space { 
     flex-grow: 1; /* Pushes the label to the bottom */
     display:block; 
 }
-/* The principal image must now be aligned with the text base line */
-#finalFooter .principal-img {
+.principal-img {
     height: 48px; /* Fixed height for image */
     display: block; 
     margin: 0 auto 6px; 
@@ -113,19 +123,19 @@ z-index: 0;
 }
 
 
-/* Disclaimer & Print Date - Now FLOWING content, not absolute */
+/* Disclaimer & Print Date */
 #disclaimer {
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 5px; /* Reduced margin for space saving */
+  margin-top: 3px; /* Reduced margin */
   z-index: 2;
 }
 #printDate {
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 3px; /* Reduced margin for space saving */
+  margin-top: 2px; /* Reduced margin */
   z-index: 2;
 }
 /* table print behavior */
