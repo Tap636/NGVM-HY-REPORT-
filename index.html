@@ -191,7 +191,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 <div class="page">
   <div class="page-content-wrapper">
-    <div class="pb-4 border-b mb-4 relative">
+  <div class="text-center ml-[92px] mr-[92px]">
         <img src="logo.png" class="w-20 h-20 rounded-md absolute top-0 left-0" alt="School Logo" />
 
         <div class="text-center ml-24 mr-24"> 
@@ -259,13 +259,6 @@ select.grade-select { padding:4px; border-radius:4px; }
     <h2 id="classSection" class="font-semibold">—</h2>
     </div>
     </div>
-    <div class="mb-4">
-    <label class="text-sm text-gray-600 font-semibold">Attendance</label>
-    <div class="flex gap-2 items-center">
-    <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-    <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
-    </div>
-    </div>
     <div class="overflow-x-auto">
     <table id="marksTable" class="w-full border-collapse table-auto text-sm">
     <thead id="marksTableHead"></thead>
@@ -287,6 +280,28 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div class="border p-4 mt-4">
     <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
     <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
+    </div>
+      <div class="col-span-1">
+        <div class="border p-4">
+        <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
+        <table class="w-full text-sm" id="coscholasticTable">
+        <tbody id="coscholasticBody">
+        <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+        <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+        </tbody>
+        </table>
+        </div>
+        <div class="border p-4 mt-4">
+        <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
+        <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
+        </div>
+        <div class="border p-4 mt-4">
+            <h3 class="font-semibold mb-2">Attendance</h3>
+            <div class="flex gap-2 items-center">
+                <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+                <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+            </div>
+        </div>
     </div>
     </div>
     <div class="col-span-2">
