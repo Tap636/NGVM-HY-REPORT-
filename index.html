@@ -29,10 +29,10 @@ body { -webkit-print-color-adjust: exact; }
   flex-direction: column;
 }
 
-/* Watermark centered: FIX APPLIED HERE - Ensures consistent display on print */
+/* Watermark centered: Opacity reduced for typical watermark effect */
 .page::before{
 content: "";
-position: absolute; /* FIX: Changed to absolute for consistent printing */
+position: absolute; 
 top: 50%;
 left: 50%;
 transform: translate(-50%, -50%);
@@ -281,8 +281,8 @@ select.grade-select { padding:4px; border-radius:4px; }
     <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
     <table class="w-full text-sm" id="coscholasticTable">
     <tbody id="coscholasticBody">
-    <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-    <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+    <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+    <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
     </tbody>
     </table>
     </div>
@@ -495,7 +495,7 @@ const tfoot = qs('marksTableFoot');
 tbody.innerHTML = '';
 tfoot.innerHTML = '';
 if (!cls) {
-thead.innerHTML = `<tr class="bg-green-100"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center font-bold">Overall Performance</th></tr>`;
+thead.innerHTML = `<tr class="bg-green-100"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center">Overall Performance</th></tr>`;
 return;
 }
 if (isNurToUkg(cls)) {
@@ -506,7 +506,7 @@ thead.innerHTML = `
 <th class="border px-3 py-2 text-center">Unit Test Oral</th>
 <th class="border px-3 py-2 text-center">Half Yearly Written</th>
 <th class="border px-3 py-2 text-center">Half Yearly Oral</th>
-<th class="border px-3 py-2 text-center font-semibold font-bold">Overall Performance</th>
+<th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
 </tr>
 `;
 const student = getCurrentStudent();
@@ -562,7 +562,7 @@ thead.innerHTML = `
 <th class="border px-3 py-2 text-left">Subject</th>
 <th class="border px-3 py-2 text-center">Unit Test - 20</th>
 <th class="border px-3 py-2 text-center">Half Yearly - 80</th>
-<th class="border px-3 py-2 text-center font-semibold font-bold">Overall Performance</th>
+<th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
 </tr>
 `;
 const subs = subjectsForClass(cls);
