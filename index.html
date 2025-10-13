@@ -11,13 +11,14 @@
 @media print {
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
+.screen-only { display: none !important; }
+.print-only { display: block !important; } /* Attendance box visibility */
 
-/* 1. AGGRESSIVE PADDING REDUCTION */
+/* AGGRESSIVE PADDING REDUCTION (Fixes 2-page issue) */
 .page {
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
-  /* Further reduced top/bottom margin from 8mm to a tight 5mm */
   padding: 5mm 12.7mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
@@ -46,34 +47,30 @@ pointer-events: none;
 z-index: 0;
 }
 
-/* 2. CONTENT HEIGHT CORRECTION */
+/* CONTENT HEIGHT CORRECTION */
 .page-content-wrapper {
   flex-grow: 1; 
   display: flex;
   flex-direction: column;
-  /* Updated min-height based on new 5mm top/bottom padding: 297 - 10 = 287mm */
   min-height: calc(297mm - 10mm); 
   box-sizing: border-box;
 }
 
-/* 3. MARGIN COMPACTION FOR HEADER/BODY */
-/* Target the main header div */
+/* MARGIN COMPACTION FOR HEADER/BODY */
 .page-content-wrapper > .border-b {
-    padding-bottom: 5px !important; /* Reduce the padding after the border */
-    margin-bottom: 5px !important; /* Reduce the margin after the header */
+    padding-bottom: 5px !important; 
+    margin-bottom: 5px !important; 
 }
-
-/* Target the Student Info grid below the header */
 .page-content-wrapper > .grid.grid-cols-4 {
-    margin-bottom: 5px !important; /* Shrink the margin below Student Info */
+    margin-bottom: 5px !important; 
 }
 
 
-/* Footer Container - Now set to push to the bottom of the content wrapper */
+/* Footer Container */
 .page-footer-area {
   margin-top: auto; 
   width: 100%;
-  padding-top: 3mm; /* Further reduced padding for space saving */
+  padding-top: 3mm; 
 }
 
 /* --- COLOR FIXES --- */
@@ -103,20 +100,21 @@ z-index: 0;
     width: 33%; 
     box-sizing: border-box; 
     text-align: center; 
+    /* Principal alignment fix */
     display: flex; 
     flex-direction: column;
-    justify-content: flex-end; /* Align to the bottom of the column */
-    min-height: 80px; /* Ensure all columns have the same minimum height */
+    justify-content: flex-end; 
+    min-height: 80px; 
 }
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
 
 .signature-space { 
-    flex-grow: 1; /* Pushes the label to the bottom */
+    flex-grow: 1; 
     display:block; 
 }
 .principal-img {
-    height: 48px; /* Fixed height for image */
+    height: 48px; 
     display: block; 
     margin: 0 auto 6px; 
     object-fit: contain;
@@ -128,14 +126,14 @@ z-index: 0;
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 3px; /* Reduced margin */
+  margin-top: 3px; 
   z-index: 2;
 }
 #printDate {
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 2px; /* Reduced margin */
+  margin-top: 2px; 
   z-index: 2;
 }
 /* table print behavior */
@@ -145,7 +143,9 @@ tr { page-break-inside:avoid; page-break-after:relative; }
 
 /* ---------------- SCREEN ---------------- */
 body { background: #ffffff; }
-/* Screen padding is kept at 18px for on-screen view, only print padding changed */
+/* Hide print-only attendance block on screen */
+.print-only { display: none; } 
+
 .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a;
 }
 .page-content-wrapper, .page-footer-area {
@@ -191,10 +191,10 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 <div class="page">
   <div class="page-content-wrapper">
-  <div class="text-center ml-[92px] mr-[92px]">
-        <img src="logo.png" class="w-20 h-20 rounded-md absolute top-0 left-0" alt="School Logo" />
+    <div class="pb-4 border-b mb-4 relative">
+        <img src="logo.png" class="w-20 h-20 rounded-md absolute top-0 left-3" alt="School Logo" />
 
-        <div class="text-center ml-24 mr-24"> 
+        <div class="text-center ml-[100px] mr-[100px]"> 
             <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
             <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
             <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
@@ -259,6 +259,15 @@ select.grade-select { padding:4px; border-radius:4px; }
     <h2 id="classSection" class="font-semibold">—</h2>
     </div>
     </div>
+    
+    <div class="mb-4 screen-only">
+    <label class="text-sm text-gray-600 font-semibold">Attendance</label>
+    <div class="flex gap-2 items-center">
+    <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+    <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+    </div>
+    </div>
+    
     <div class="overflow-x-auto">
     <table id="marksTable" class="w-full border-collapse table-auto text-sm">
     <thead id="marksTableHead"></thead>
@@ -281,28 +290,15 @@ select.grade-select { padding:4px; border-radius:4px; }
     <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
     <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
     </div>
-      <div class="col-span-1">
-        <div class="border p-4">
-        <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
-        <table class="w-full text-sm" id="coscholasticTable">
-        <tbody id="coscholasticBody">
-        <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-        <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
-        </tbody>
-        </table>
-        </div>
-        <div class="border p-4 mt-4">
-        <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-        <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
-        </div>
-        <div class="border p-4 mt-4">
-            <h3 class="font-semibold mb-2">Attendance</h3>
-            <div class="flex gap-2 items-center">
-                <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-                <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
-            </div>
+    
+    <div class="border p-4 mt-4 print-only">
+        <h3 class="font-semibold mb-2">Attendance</h3>
+        <div class="flex gap-2 items-center">
+            <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
         </div>
     </div>
+    
     </div>
     <div class="col-span-2">
     <div class="border p-4">
@@ -674,8 +670,10 @@ qs('admissionInput').value = student.admission || '';
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
-qs('attendancePresent').value = student.attendance.present || 0;
-qs('attendanceTotal').value = student.attendance.total || DEFAULT_ATT_TOTAL;
+// Load attendance from the screen-only input fields, which are present in both HTML blocks
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = student.attendance.present || 0);
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
+
 renderMarksTableForClass(student.cls);
 // populate marks into inputs/selects
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
@@ -705,8 +703,9 @@ function saveCurrentStudent() {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 const student = getCurrentStudent();
 if (!student) return;
-student.attendance.present = Number(qs('attendancePresent').value) || 0;
-student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+// Save from the *first* visible instance of attendance input
+student.attendance.present = Number(document.getElementById('attendancePresent').value) || 0;
+student.attendance.total = Number(document.getElementById('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
 // Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
@@ -948,8 +947,10 @@ qs('admissionInput').value = '';
 // Clear father name input
 if (qs('fatherNameInput')) qs('fatherNameInput').value = '';
 qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
-qs('attendancePresent').value = '';
-qs('attendanceTotal').value = DEFAULT_ATT_TOTAL;
+// Clear *both* sets of attendance inputs
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = '');
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = DEFAULT_ATT_TOTAL);
+
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
