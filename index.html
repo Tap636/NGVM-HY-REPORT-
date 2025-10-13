@@ -334,8 +334,6 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
-  // **MODIFIED - Added Web App URL**
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxBqazXPAQkNeYeAjqr3g_RCdaOaVUYuj_DgdmZumk0rcFIm8uQZdxbaLnG1LAeCYbH/exec';
 const SUBJECTS_NUR_TO_UKG = [
 { name: "English", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
 { name: "Hindi", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
@@ -357,35 +355,13 @@ chart: null
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 /* ---------------- INIT ---------------- */
-// **MODIFIED - Fetches data from Google Sheet**
 function init() {
-    console.log('Fetching data from Google Sheet...');
-    document.body.style.cursor = 'wait'; // Add loading indicator
-    fetch(WEB_APP_URL)
-        .then(res => res.json())
-        .then(response => {
-            if (response.status === 'success') {
-                state.studentsByClass = response.data || {};
-                console.log('Data loaded successfully.');
-            } else {
-                console.error('Failed to load data:', response.message);
-                alert('Error: Could not load data from the cloud.');
-            }
-            attachEventListeners();
-            initChart();
-            updatePrintDate();
-            renderMarksTableForClass('');
-            document.body.style.cursor = 'default';
-        })
-        .catch(error => {
-            console.error('Network error:', error);
-            alert('A network error occurred. Please check your connection and the Web App URL.');
-            attachEventListeners();
-            initChart();
-            updatePrintDate();
-            renderMarksTableForClass('');
-            document.body.style.cursor = 'default';
-        });
+const stored = localStorage.getItem('ng_students');
+state.studentsByClass = stored ? JSON.parse(stored) : {};
+attachEventListeners();
+initChart();
+updatePrintDate();
+renderMarksTableForClass(''); // initial empty
 }
 init();
 /* ---------------- MAP & HELPERS ---------------- */
@@ -464,40 +440,8 @@ qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
 qs('clearDataBtn').addEventListener('click', clearAllData);
 }
 /* ---------------- PERSISTENCE ---------------- */
-// **MODIFIED - Saves to Google Sheet**
 function persistStudents() {
-    const student = getCurrentStudent();
-    if (!student) return;
-
-    console.log('Saving student to Google Sheet:', student.name);
-    document.body.style.cursor = 'wait';
-    
-    const payload = {
-        studentData: student,
-        studentKey: state.selectedStudentKey,
-        class: state.selectedClass
-    };
-
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Use no-cors for simple requests to Apps Script
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        redirect: 'follow'
-    })
-    .then(res => {
-        console.log('Save successful.');
-        alert('Saved to cloud successfully.');
-        document.body.style.cursor = 'default';
-    })
-    .catch(error => {
-        console.error('Network error on save:', error);
-        alert('A network error occurred while saving. Please check your connection.');
-        document.body.style.cursor = 'default';
-    });
+localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
 }
 /* ---------------- STUDENT FACTORY ---------------- */
 // Added fatherName as an argument
