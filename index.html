@@ -12,15 +12,18 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 
-/* A4 page area: Padding used as margin. Bottom is significantly increased 
-   to create a safe zone for the absolute footer. */
+/* Class to create a large bottom margin for flow content, forcing the graph/table to end higher on the page */
+.print-safe-content {
+    margin-bottom: 60mm !important; /* GUARANTEES a massive gap above the footer area */
+}
+
+/* A4 page area: Padding set to 12.7mm (1.27cm) all around as requested */
 .page {
 width: 210mm;
 height: 297mm;
 margin: 0 auto;
-/* MODIFIED: Top, Left, Right set to 12.7mm (1.27cm). Bottom set to 40mm 
-   to guarantee a footer-safe area */
-padding: 12.7mm 12.7mm 40mm 12.7mm; 
+/* MODIFIED: Strict 12.7mm (1.27cm) margin applied to all sides */
+padding: 12.7mm; 
 box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 background: white;
 position: relative;
@@ -45,10 +48,10 @@ pointer-events: none;
 z-index: 0;
 }
 
-/* Footer (single horizontal line): Positions adjusted for the new 40mm bottom padding */
+/* Footer (single horizontal line): Positions adjusted relative to the bottom margin area */
 #finalFooter {
 position: absolute; 
-/* Pushed up 20mm from the absolute bottom of the page (well within 40mm safe zone) */
+/* Positioned at 20mm from page bottom (leaves 7.3mm clearance from the required 12.7mm margin) */
 bottom: 20mm; 
 top: auto; 
 left: 0;
@@ -56,7 +59,7 @@ width: 100%;
 display: flex;
 justify-content: space-between;
 align-items: flex-start;
-padding: 0 12.7mm; /* Matches new 12.7mm side padding */
+padding: 0 12.7mm; /* Matches 12.7mm side padding */
 gap: 10px;
 z-index: 2;
 }
@@ -91,7 +94,6 @@ z-index: 2;
 table { page-break-inside:relative; }
 tr { page-break-inside:avoid; page-break-after:relative; }
 
-/* REMOVED: .print-footer-spacer class from this block as we rely on .page padding now */
 }
 /* ---------------- SCREEN ---------------- */
 body { background: #ffffff; }
@@ -220,7 +222,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <tfoot id="marksTableFoot"></tfoot>
 </table>
 </div>
-<div class="grid grid-cols-3 gap-4 mt-6"> 
+<div class="grid grid-cols-3 gap-4 mt-6 print-safe-content">
 <div class="col-span-1">
 <div class="border p-4">
 <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
@@ -325,11 +327,11 @@ const admission = qs('admissionInput').value.trim();
 if (!admission) return alert('Enter Admission Number.');
 const name = qs('studentNameInput').value.trim();
 if (!name) return alert('Enter Student Name.');
-// MODIFIED: Capture Father Name input
+// Capture Father Name input
 const fatherName = qs('fatherNameInput').value.trim();
 const key = `${state.selectedClass}|${admission}`;
 state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
-// MODIFIED: Passed fatherName to makeEmptyStudent
+// Passed fatherName to makeEmptyStudent
 const student = makeEmptyStudent(name, admission, state.selectedClass, fatherName);
 if (state.studentsByClass[state.selectedClass][key]) {
 // preserve existing marks
@@ -338,7 +340,7 @@ student.marks = ex.marks || student.marks;
 student.attendance = ex.attendance || ex.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
 student.teachersRemark = ex.teachersRemark || student.teachersRemark;
-// MODIFIED: Ensure fatherName is preserved/updated
+// Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
 state.studentsByClass[state.selectedClass][key] = student;
@@ -377,7 +379,7 @@ function persistStudents() {
 localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
 }
 /* ---------------- STUDENT FACTORY ---------------- */
-// MODIFIED: Added fatherName as an argument
+// Added fatherName as an argument
 function makeEmptyStudent(name, admission, cls, fatherName='') {
 const marks = [];
 if (isNurToUkg(cls)) {
@@ -403,7 +405,7 @@ marks.push({ name: s, ut: 0, hy: 0, total: 0, isGrade: false, max: { ut: 20, hy:
 });
 }
 return {
-name, admission, cls, fatherName, marks, // MODIFIED: Added fatherName
+name, admission, cls, fatherName, marks, // Added fatherName
 coscholastic: {},
 attendance: { present: 0, total: DEFAULT_ATT_TOTAL },
 teachersRemark: 'Good effort. Keep improving.',
@@ -595,11 +597,11 @@ qs('classSelect').value = romanMap[cls] || cls;
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
-// MODIFIED: Load father name for display
+// Load father name for display
 qs('fatherName').textContent = student.fatherName || '—';
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
-// MODIFIED: Load father name for input control
+// Load father name for input control
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
@@ -636,7 +638,7 @@ const student = getCurrentStudent();
 if (!student) return;
 student.attendance.present = Number(qs('attendancePresent').value) || 0;
 student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
-// MODIFIED: Save Father Name from input control
+// Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
 student.coscholastic = {
@@ -836,7 +838,7 @@ if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).leng
 const arr = [];
 Object.keys(state.studentsByClass[cls]).forEach(key => {
 const s = state.studentsByClass[cls][key];
-// MODIFIED: Added Father Name to the report
+// Added Father Name to the report
 let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
 s.marks.forEach(m => {
 if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
@@ -870,11 +872,11 @@ function clearStudentView() {
 state.selectedStudentKey = '';
 qs('studentName').textContent = '—';
 qs('admissionNo').textContent = '—';
-// MODIFIED: Clear father name display
+// Clear father name display
 if (qs('fatherName')) qs('fatherName').textContent = '—';
 qs('studentNameInput').value = '';
 qs('admissionInput').value = '';
-// MODIFIED: Clear father name input
+// Clear father name input
 if (qs('fatherNameInput')) qs('fatherNameInput').value = '';
 qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
 qs('attendancePresent').value = '';
