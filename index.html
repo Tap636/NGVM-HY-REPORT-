@@ -11,12 +11,13 @@
 @media print {
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
-/* A4 page area: Padding changed from 18mm to 12mm for more content space */
+/* A4 page area: Padding modified to create a larger bottom safe space (25mm) */
 .page {
 width: 210mm;
 height: 297mm;
 margin: 0 auto;
-padding: 12mm; /* MODIFIED: Reduced padding for more content space */
+/* MODIFIED: Reduced top/side padding to 12mm, increased bottom padding to 25mm */
+padding: 12mm 12mm 25mm 12mm; 
 box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 background: white;
 position: relative;
@@ -41,17 +42,18 @@ pointer-events: none;
 z-index: 0;
 }
 
-/* Footer (single horizontal line): Positions adjusted for reduced padding (12mm) */
+/* Footer (single horizontal line): Positions adjusted for the new 25mm bottom padding */
 #finalFooter {
-position: absolute; /* Changed from relative to absolute for fixed print position */
-bottom: 12mm; /* MODIFIED: Set based on new 12mm bottom padding */
-top: auto; /* Ensure it respects 'bottom' */
+position: absolute; 
+/* MODIFIED: Set based on new 25mm bottom padding, pushed up 18mm from bottom */
+bottom: 18mm; 
+top: auto; 
 left: 0;
 width: 100%;
 display: flex;
 justify-content: space-between;
 align-items: flex-start;
-padding: 0 12mm; /* MODIFIED: Matches new 12mm side padding */
+padding: 0 12mm; /* Matches new 12mm side padding */
 gap: 10px;
 z-index: 2;
 }
@@ -60,20 +62,22 @@ z-index: 2;
 #finalFooter .right { text-align: right; }
 .signature-space { height: 50px; display:block; margin-bottom:4px; }
 #disclaimer {
-position: absolute; /* Changed from relative to absolute for fixed print position */
-top: auto; /* Ensure it respects 'bottom' */
-bottom: 5mm; /* MODIFIED: Set a position closer to the bottom */
+position: absolute; 
+top: auto; 
+/* MODIFIED: Pushed up 8mm from bottom */
+bottom: 8mm; 
 left: 0;
 width: 100%;
 text-align: center;
 font-size: 10px;
 z-index: 2;
-padding: 0 12mm; /* MODIFIED: Matches new 12mm side padding */
+padding: 0 12mm; 
 }
 #printDate {
-position: absolute; /* Changed from relative to absolute for fixed print position */
-top: auto; /* Ensure it respects 'bottom' */
-bottom: 2mm; /* MODIFIED: Set a position very close to the bottom */
+position: absolute; 
+top: auto; 
+/* MODIFIED: Pushed up 2mm from bottom */
+bottom: 2mm; 
 left: 0;
 width: 100%;
 text-align: center;
