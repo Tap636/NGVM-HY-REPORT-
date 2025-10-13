@@ -129,50 +129,52 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 </div>
 <div class="page">
-<div class="flex items-center justify-between pb-4 border-b mb-4">
-<div class="flex items-center gap-4">
-<img src="logo.png" class="w-20 h-20 rounded-md" alt="School Logo" />
-<div class="text-center w-full"> 
-<h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
-<p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-<p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
-</div>
-</div>
-<div class="text-right no-print">
-<label class="block text-xs text-gray-600">Select Class</label>
-<select id="classSelect" class="border rounded px-2 py-1 bg-white">
-<option value="">-- Select Class --</option>
-<option value="Nursery">Nursery</option>
-<option value="LKG">LKG</option>
-<option value="UKG">UKG</option>
-<option value="1">I</option>
-<option value="2">II</option>
-<option value="3">III</option>
-<option value="4">IV</option>
-<option value="5">V</option>
-<option value="6">VI</option>
-<option value="7">VII</option>
-<option value="8">VIII</option>
-<option value="9">IX</option>
-</select>
-</div>
+<div class="pb-4 border-b mb-4 relative">
+    <img src="logo.png" class="w-20 h-20 rounded-md absolute top-0 left-0" alt="School Logo" />
+
+    <div class="text-center ml-24 mr-24"> 
+        <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
+        <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+        <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
+    </div>
+
+    <div class="text-right no-print absolute top-0 right-0">
+        <label class="block text-xs text-gray-600">Select Class</label>
+        <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+        <option value="">-- Select Class --</option>
+        <option value="Nursery">Nursery</option>
+        <option value="LKG">LKG</option>
+        <option value="UKG">UKG</option>
+        <option value="1">I</option>
+        <option value="2">II</option>
+        <option value="3">III</option>
+        <option value="4">IV</option>
+        <option value="5">V</option>
+        <option value="6">VI</option>
+        <option value="7">VII</option>
+        <option value="8">VIII</option>
+        <option value="9">IX</option>
+        </select>
+    </div>
 </div>
 <div class="no-print mb-4">
-<div class="grid grid-cols-4 gap-4 items-end">
+<div class="grid grid-cols-5 gap-4 items-end">
 <div>
-<label class="text-sm text-gray-600">Admission Number (Roll No.)</label>
+<label class="text-sm text-gray-600">Admission Number</label>
 <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
 </div>
 <div>
-<label class="text-sm text-gray-600">Full Name</label>
+<label class="text-sm text-gray-600">Student Name</label>
 <input id="studentNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Student full name" />
 </div>
 <div>
-<button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded w-full">Add / Update Student</button>
+<label class="text-sm text-gray-600">Father's Name</label>
+<input id="fatherNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Father's full name" />
 </div>
-<div class="flex gap-2 justify-end">
+<div class="col-span-2 flex gap-2 justify-end">
 <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
 <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
+<button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add / Update</button>
 <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
 </div>
 </div>
@@ -314,7 +316,7 @@ const admission = qs('admissionInput').value.trim();
 if (!admission) return alert('Enter Admission Number.');
 const name = qs('studentNameInput').value.trim();
 if (!name) return alert('Enter Student Name.');
-// MODIFIED: Added Father Name input
+// MODIFIED: Capture Father Name input
 const fatherName = qs('fatherNameInput').value.trim();
 const key = `${state.selectedClass}|${admission}`;
 state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
@@ -324,10 +326,11 @@ if (state.studentsByClass[state.selectedClass][key]) {
 // preserve existing marks
 const ex = state.studentsByClass[state.selectedClass][key];
 student.marks = ex.marks || student.marks;
-student.attendance = ex.attendance || student.attendance;
+student.attendance = ex.attendance || ex.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
 student.teachersRemark = ex.teachersRemark || student.teachersRemark;
-student.fatherName = ex.fatherName || student.fatherName; // Preserve father name
+// MODIFIED: Ensure fatherName is preserved/updated
+student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
 state.studentsByClass[state.selectedClass][key] = student;
 persistStudents();
@@ -583,13 +586,13 @@ qs('classSelect').value = romanMap[cls] || cls;
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
-// MODIFIED: Load father name
+// MODIFIED: Load father name for display
 qs('fatherName').textContent = student.fatherName || '—';
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
-// MODIFIED: Input for Father Name needs to be added to the controls for loading
+// MODIFIED: Load father name for input control
 if (qs('fatherNameInput')) {
-  qs('fatherNameInput').value = student.fatherName || '';
+qs('fatherNameInput').value = student.fatherName || '';
 }
 qs('attendancePresent').value = student.attendance.present || 0;
 qs('attendanceTotal').value = student.attendance.total || DEFAULT_ATT_TOTAL;
@@ -610,6 +613,7 @@ if (typeof val === 'number') el.value = val;
 }
 });
 // coscholastic
+student.coscholastic = student.coscholastic || {};
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
@@ -623,7 +627,7 @@ const student = getCurrentStudent();
 if (!student) return;
 student.attendance.present = Number(qs('attendancePresent').value) || 0;
 student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
-// MODIFIED: Save Father Name
+// MODIFIED: Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
 student.coscholastic = {
@@ -857,7 +861,7 @@ function clearStudentView() {
 state.selectedStudentKey = '';
 qs('studentName').textContent = '—';
 qs('admissionNo').textContent = '—';
-// MODIFIED: Clear father name
+// MODIFIED: Clear father name display
 if (qs('fatherName')) qs('fatherName').textContent = '—';
 qs('studentNameInput').value = '';
 qs('admissionInput').value = '';
