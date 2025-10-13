@@ -12,19 +12,15 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 
-/* Class to ensure a clear gap above the absolute footer in print view */
-.print-footer-spacer {
-    /* Guarantees a minimum vertical space between the graph section and the footer */
-    margin-bottom: 20mm !important; 
-}
-
-/* A4 page area: Padding set to 12.7mm (0.5 inch) as requested */
+/* A4 page area: Padding used as margin. Bottom is significantly increased 
+   to create a safe zone for the absolute footer. */
 .page {
 width: 210mm;
 height: 297mm;
 margin: 0 auto;
-/* MODIFIED: Set to 12.7mm (1.27cm) all around as requested */
-padding: 12.7mm; 
+/* MODIFIED: Top, Left, Right set to 12.7mm (1.27cm). Bottom set to 40mm 
+   to guarantee a footer-safe area */
+padding: 12.7mm 12.7mm 40mm 12.7mm; 
 box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 background: white;
 position: relative;
@@ -49,10 +45,11 @@ pointer-events: none;
 z-index: 0;
 }
 
-/* Footer (single horizontal line): Positions adjusted for the new 12.7mm bottom padding */
+/* Footer (single horizontal line): Positions adjusted for the new 40mm bottom padding */
 #finalFooter {
 position: absolute; 
-bottom: 15mm; /* Positioned 15mm from page bottom (leaves space for disclaimer/date) */
+/* Pushed up 20mm from the absolute bottom of the page (well within 40mm safe zone) */
+bottom: 20mm; 
 top: auto; 
 left: 0;
 width: 100%;
@@ -67,16 +64,18 @@ z-index: 2;
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
 .signature-space { height: 50px; display:block; margin-bottom:4px; }
+
+/* Disclaimer & Print Date positioned clearly below the final footer signatures */
 #disclaimer {
 position: absolute; 
 top: auto; 
-bottom: 5mm; 
+bottom: 8mm; 
 left: 0;
 width: 100%;
 text-align: center;
 font-size: 10px;
 z-index: 2;
-padding: 0 12.7mm; /* Matches new 12.7mm side padding */
+padding: 0 12.7mm; 
 }
 #printDate {
 position: absolute; 
@@ -91,6 +90,8 @@ z-index: 2;
 /* table print behavior */
 table { page-break-inside:relative; }
 tr { page-break-inside:avoid; page-break-after:relative; }
+
+/* REMOVED: .print-footer-spacer class from this block as we rely on .page padding now */
 }
 /* ---------------- SCREEN ---------------- */
 body { background: #ffffff; }
@@ -219,7 +220,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <tfoot id="marksTableFoot"></tfoot>
 </table>
 </div>
-<div class="grid grid-cols-3 gap-4 mt-6 print-footer-spacer">
+<div class="grid grid-cols-3 gap-4 mt-6"> 
 <div class="col-span-1">
 <div class="border p-4">
 <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
