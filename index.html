@@ -11,13 +11,20 @@
 @media print {
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
-/* A4 page area: Padding modified to create a larger bottom safe space (25mm) */
+
+/* Class to ensure a clear gap above the absolute footer in print view */
+.print-footer-spacer {
+    /* Guarantees a minimum vertical space between the graph section and the footer */
+    margin-bottom: 20mm !important; 
+}
+
+/* A4 page area: Padding set to 12.7mm (0.5 inch) as requested */
 .page {
 width: 210mm;
 height: 297mm;
 margin: 0 auto;
-/* MODIFIED: Reduced top/side padding to 12mm, increased bottom padding to 25mm */
-padding: 12mm 12mm 25mm 12mm; 
+/* MODIFIED: Set to 12.7mm (1.27cm) all around as requested */
+padding: 12.7mm; 
 box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 background: white;
 position: relative;
@@ -27,33 +34,32 @@ page-break-inside: avoid;
 /* Watermark centered: Opacity reduced for typical watermark effect */
 .page::before{
 content: "";
-position: absolute; /* Changed from relative to absolute for correct centering */
+position: absolute; 
 top: 50%;
 left: 50%;
 transform: translate(-50%, -50%);
 width: 60%;
 height: 60%;
-background-image: url('watermark.png'); /* Added url() for correct CSS syntax */
+background-image: url('watermark.png'); 
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.1; /* MODIFIED: Opacity set to 0.1 for typical watermark */
+opacity: 0.1; 
 pointer-events: none;
 z-index: 0;
 }
 
-/* Footer (single horizontal line): Positions adjusted for the new 25mm bottom padding */
+/* Footer (single horizontal line): Positions adjusted for the new 12.7mm bottom padding */
 #finalFooter {
 position: absolute; 
-/* MODIFIED: Set based on new 25mm bottom padding, pushed up 18mm from bottom */
-bottom: 18mm; 
+bottom: 15mm; /* Positioned 15mm from page bottom (leaves space for disclaimer/date) */
 top: auto; 
 left: 0;
 width: 100%;
 display: flex;
 justify-content: space-between;
 align-items: flex-start;
-padding: 0 12mm; /* Matches new 12mm side padding */
+padding: 0 12.7mm; /* Matches new 12.7mm side padding */
 gap: 10px;
 z-index: 2;
 }
@@ -64,19 +70,17 @@ z-index: 2;
 #disclaimer {
 position: absolute; 
 top: auto; 
-/* MODIFIED: Pushed up 8mm from bottom */
-bottom: 8mm; 
+bottom: 5mm; 
 left: 0;
 width: 100%;
 text-align: center;
 font-size: 10px;
 z-index: 2;
-padding: 0 12mm; 
+padding: 0 12.7mm; /* Matches new 12.7mm side padding */
 }
 #printDate {
 position: absolute; 
 top: auto; 
-/* MODIFIED: Pushed up 2mm from bottom */
 bottom: 2mm; 
 left: 0;
 width: 100%;
@@ -215,7 +219,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <tfoot id="marksTableFoot"></tfoot>
 </table>
 </div>
-<div class="grid grid-cols-3 gap-4 mt-6">
+<div class="grid grid-cols-3 gap-4 mt-6 print-footer-spacer">
 <div class="col-span-1">
 <div class="border p-4">
 <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
