@@ -67,6 +67,17 @@ z-index: 0;
   padding-top: 10mm; /* Add space between last content item and footer */
 }
 
+/* --- FOOTER COLOR FIX: START --- */
+/* Ensure all text in the footer area is black when printing */
+.page-footer-area, #finalFooter, #disclaimer, #printDate {
+    color: black !important;
+}
+/* Also target the 'muted' class used by disclaimer and date */
+.muted { 
+    color: black !important; 
+}
+/* --- FOOTER COLOR FIX: END --- */
+
 
 /* Footer (single horizontal line) - NO ABSOLUTE POSITIONING */
 #finalFooter {
@@ -121,7 +132,7 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 #signatures { display:flex; justify-content:space-between; margin-top:25px; }
 #signatures div { width:40%; text-align:center; }
 #signatures div div { border-bottom:1px solid black; margin-top:35px; height:48px; }
-.muted { color:#6b7280; font-size:0.95rem; }
+.muted { color:#6b7280; font-size:0.95rem; } /* SCREEN: light gray */
 .signature-label { font-size:0.95rem; text-align:center; }
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
