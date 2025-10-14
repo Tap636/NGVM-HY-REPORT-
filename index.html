@@ -718,34 +718,43 @@ attachMarksInputsListeners();
 calculateTotalsAndUpdate();
 }
 function saveCurrentStudent() {
-if (!state.selectedStudentKey) return alert('Load or add a student first.');
-const student = getCurrentStudent();
-if (!student) return;
-// Save from the *first* visible instance of attendance input
-student.attendance.present = Number(document.getElementById('attendancePresent').value) || 0;
-student.attendance.total = Number(document.getElementById('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
-// Save Father Name from input control
-student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
-// coscholastic
-student.coscholastic = {
-workHabits: qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '',
-behavior: qs('behaviorInput') ? qs('behaviorInput').value.trim() : ''
-};
-// collect marks from inputs
-qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
-const idx = Number(el.getAttribute('data-idx'));
-const field = el.getAttribute('data-field');
-if (!Number.isFinite(idx)) return;
-student.marks[idx] = student.marks[idx] || {};
-if (el.tagName.toLowerCase() === 'select') {
-student.marks[idx].grade = el.value;
-student.marks[idx].isGrade = true;
-} else {
-student.marks[idx][field] = Number(el.value) || 0;
-}
-});
-calculateTotalsAndUpdate();
-persistStudents();
+  if (!state.selectedStudentKey) return alert('Load or add a student first.');
+  const student = getCurrentStudent();
+  if (!student) return;
+  
+  // ⭐ FIX: Ensure studentName is mapped from studentNameInput, and fatherName from fatherNameInput
+  student.studentName = qs('studentNameInput').value.trim();
+  student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
+
+  // Save from the *first* visible instance of attendance input
+  student.attendance.present = Number(document.getElementById('attendancePresent').value) || 0;
+  student.attendance.total = Number(document.getElementById('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+
+  // The remarks section in the HTML uses textContent for display, so we use that.
+  student.remarks = qs('teachersRemark').textContent.trim();
+
+  // coscholastic
+  student.coscholastic = {
+    workHabits: qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '',
+    behavior: qs('behaviorInput') ? qs('behaviorInput').value.trim() : ''
+  };
+  
+  // collect marks from inputs
+  qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
+    const idx = Number(el.getAttribute('data-idx'));
+    const field = el.getAttribute('data-field');
+    if (!Number.isFinite(idx)) return;
+    student.marks[idx] = student.marks[idx] || {};
+    if (el.tagName.toLowerCase() === 'select') {
+      student.marks[idx].grade = el.value;
+      student.marks[idx].isGrade = true;
+    } else {
+      student.marks[idx][field] = Number(el.value) || 0;
+    }
+  });
+  
+  calculateTotalsAndUpdate();
+  persistStudents();
 }
 /* ---------------- GET STUDENT ---------------- */
 function getCurrentStudent() {
@@ -896,26 +905,89 @@ return sub ? (sub.total || 0) : 0;
 if (!vals.length) return 0;
 return Math.max(...vals);
 }
-/* ---------------- DASHBOARD TOPPER ---------------- */
-function showDashboardTopper() {
-const cls = qs('dashboardClassSelect').value;
-if (!cls) { qs('classTopperDashboard').textContent='Class Topper: —'; qs('schoolTopperDashboard').textContent='School Topper: —'; return; }
-let classTopper = { name:'—', total:0 };
-let schoolTopper = { name:'—', total:0 };
-Object.keys(state.studentsByClass[cls]||{}).forEach(k => {
-const s = state.studentsByClass[cls][k];
-const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
-if (tot > classTopper.total) classTopper={name:s.name,total:tot};
-});
-Object.values(state.studentsByClass).forEach(clsObj => {
-Object.values(clsObj).forEach(s => {
-const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
-if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
-});
-});
-qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
-qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
+
+
+/* ----------------- NEW DASHBOARD TOPPER FUNCTIONS ----------------- */
+
+/**
+ * loadAndShowAllData()
+ * - Fetches all students for dashboard stats (Topper/Average).
+ * - Called on page load and after every save.
+ */
+async function loadAndShowAllData() {
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('/exec') === -1) return;
+
+  try {
+    const url = `${SHEET_API_URL}?action=loadAll`;
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+
+    if (data.status === 'ok' && data.students) {
+      showDashboardTopper(data.students); 
+    } else {
+      console.warn("Could not load all data for dashboard.", data.error);
+    }
+  } catch (err) {
+    console.error("Error fetching all data for dashboard:", err);
+  }
 }
+
+/**
+ * showDashboardTopper(allStudents)
+ * - Calculates and displays class average and topper based on all fetched data.
+ * - This replaces the old showDashboardTopper, getClassAverage, and getClassHighest logic.
+ */
+function showDashboardTopper(allStudents) {
+    const cls = qs('dashboardClassSelect').value;
+    
+    // Fallback if the user hasn't selected a class in the dashboard dropdown
+    if (!cls || allStudents.length === 0) {
+        qs('classTopperDashboard').textContent='Class Topper: —'; 
+        qs('schoolTopperDashboard').textContent='School Topper: —'; 
+        return;
+    }
+
+    const classStudents = allStudents.filter(s => s.cls === cls);
+    
+    // Initialize results
+    let classTopper = { name:'—', total:-1 };
+    let schoolTopper = { name:'—', total:-1 };
+
+    // Calculate School Topper (based on all students)
+    allStudents.forEach(s => {
+        // Must use the new studentName property
+        const studentName = s.studentName || s.name || 'N/A';
+        // Ensure marks exist before reducing
+        const tot = s.marks ? s.marks.reduce((a,b)=>a+(b.total||0),0) : 0; 
+        if (tot > schoolTopper.total) { schoolTopper={name:studentName,total:tot}; }
+    });
+    
+    // Calculate Class Topper (based on filtered students)
+    classStudents.forEach(s => {
+        // Must use the new studentName property
+        const studentName = s.studentName || s.name || 'N/A';
+        // Ensure marks exist before reducing
+        const tot = s.marks ? s.marks.reduce((a,b)=>a+(b.total||0),0) : 0; 
+        if (tot > classTopper.total) { classTopper={name:studentName,total:tot}; }
+    });
+
+    // Update the Dashboard UI
+    qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total > -1 ? classTopper.total : 0}`;
+    qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total > -1 ? schoolTopper.total : 0}`;
+}
+
+// ⭐ CRITICAL: Add the cloud load call to the init function to fetch data on startup.
+// Find the existing init() function (around line 407) and add the call:
+//
+// function init() {
+//   const stored = localStorage.getItem('ng_students');
+//   state.studentsByClass = stored ? JSON.parse(stored) : {};
+//   attachEventListeners();
+//   initChart();
+//   updatePrintDate();
+//   renderMarksTableForClass(''); // initial empty
+//   loadAndShowAllData(); // <--- ADD THIS LINE
+// }
 /* ---------------- BULK DOWNLOAD ---------------- */
 function bulkDownloadReports() {
 const cls = qs('dashboardClassSelect').value || state.selectedClass;
@@ -981,17 +1053,14 @@ function updatePrintDate() {
 const printDate = new Date().toLocaleDateString();
 qs('printDate').textContent = 'Date: ' + printDate;
 }
-
 /* ----------------- CLOUD SAVE & LOAD ----------------- */
 /**
  * saveToSheet(student)
- * - Posts full student object to your Apps Script Web App using URL parameters.
- * - This structure is NECESSARY for Google Apps Script Web Apps.
+ * - Posts full student object to your Apps Script Web App using URL parameters (REQUIRED).
  */
 async function saveToSheet(student) {
-  // Check the URL for the correct format
   if (!SHEET_API_URL || SHEET_API_URL.indexOf('/exec') === -1) {
-    alert('SHEET_API_URL is missing or incorrect. Please ensure it ends with /exec.');
+    alert('SHEET_API_URL is missing or incorrect. Please ensure it ends with /exec. Local save preserved.');
     return;
   }
   
@@ -1010,9 +1079,9 @@ async function saveToSheet(student) {
     
     if (data.status === 'ok') {
       persistStudents();
+      loadAndShowAllData(); // Reload all data after successful save for updated topper
       alert('Saved to Google Sheets successfully (and locally).');
     } else {
-      // The script ran, but there was an error processing the data (e.g., bad headers in the sheet)
       alert('Save to Google Sheets failed: ' + (data.error || data.message || JSON.stringify(data)));
     }
   } catch (err) {
@@ -1021,6 +1090,71 @@ async function saveToSheet(student) {
   }
 }
 
+/**
+ * loadFromSheet(cls, admission)
+ * - Fetches single student by class+admission from Apps Script Web App.
+ */
+async function loadFromSheet(cls, admission) {
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('/exec') === -1) return;
+
+  try {
+    const url = `${SHEET_API_URL}?action=load&cls=${encodeURIComponent(cls)}&admission=${encodeURIComponent(admission)}`;
+    
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    
+    if (data.status === 'ok' && data.student) {
+      const s = data.student;
+      const key = `${s.cls}|${s.admission}`;
+      state.studentsByClass[s.cls] = state.studentsByClass[s.cls] || {};
+      state.studentsByClass[s.cls][key] = s;
+      persistStudents();
+      state.selectedStudentKey = key;
+     function loadStudent(key) {
+  const student = state.studentsByClass[state.selectedClass][key];
+  if (!student) return;
+
+  clearStudentView(student.cls); 
+  
+  // 1. --- FIX APPLIED HERE ---
+  // Ensure the studentName key loads into the Student Name input
+  qs('studentNameInput').value = student.studentName || ''; 
+  // Ensure the fatherName key loads into the Father Name input
+  qs('fatherNameInput').value = student.fatherName || '';
+  // -------------------------
+
+  qs('admissionInput').value = student.admission || '';
+  qs('teachersRemark').value = student.remarks || '';
+  
+  // Render Marks Table and populate inputs
+  renderMarksTableForClass(student.cls); 
+  
+  // Populate subject marks
+  if (student.marks) {
+    Object.keys(student.marks).forEach(subject => {
+      Object.keys(student.marks[subject]).forEach(term => {
+        const input = qs(`${subject}-${term}`);
+        if (input) input.value = student.marks[subject][term];
+      });
+    });
+  }
+  
+  // Populate co-scholastic inputs
+  if (student.coscholastic) {
+    Object.keys(student.coscholastic).forEach(id => {
+      const input = qs(id);
+      if (input) input.value = student.coscholastic[id];
+    });
+  }
+
+  // Populate attendance inputs
+  if (student.attendance) {
+    qs('attendancePresent').value = student.attendance.Present;
+    qs('attendanceTotal').value = student.attendance.Total;
+  }
+  
+  calculateTotalsAndUpdate();
+}
 /**
  * loadFromSheet(cls, admission)
  * - Fetches student by class+admission from Apps Script Web App.
