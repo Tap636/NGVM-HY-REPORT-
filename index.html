@@ -1018,12 +1018,12 @@ async function saveToSheet(student) {
  * - If found, stores in local state and loads into UI.
  */
 async function loadFromSheet(cls, admission) {
-  if (!SHEET_API_URL || SHEET_API_URL.indexOf(https://script.google.com/macros/s/AKfycbwMBYAH-DX-RwBOMWti29wL5yjUAc5jYLWmB5dzfd2pkRVVh4_V6p_05eG740VNFj6i2A/exec) !== -1) {
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('PASTE_YOUR') !== -1) {
     alert('SHEET_API_URL not set. Paste your Apps Script Web App URL into the code if you want cloud load. Falling back to local data if available.');
     return;
   }
   try {
-    const url = new URL(https://script.google.com/macros/s/AKfycbwMBYAH-DX-RwBOMWti29wL5yjUAc5jYLWmB5dzfd2pkRVVh4_V6p_05eG740VNFj6i2A/exec);
+    const url = new URL(SHEET_API_URL);
     url.searchParams.set('cls', cls);
     url.searchParams.set('adm', admission);
     const res = await fetch(url.toString(), { method: 'GET' });
