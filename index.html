@@ -345,6 +345,12 @@ const SUBJECTS_1_TO_5 = ["Hindi", "English", "Mathematics", "Computer", "E.V.S."
 const SUBJECTS_6_TO_8 = ["Hindi", "English", "Mathematics", "Computer", "Drawing", "G.K.", "Science", "S.S.T."];
 const SUBJECTS_9 = ["Hindi", "English", "Mathematics", "Science", "S.S.T.", "Drawing"];
 const DEFAULT_ATT_TOTAL = 130;
+
+/* ===================  GOOGLE SHEETS API URL ===================
+After you deploy Apps Script as Web App, paste the Web App URL below.
+================================================================*/
+const SHEET_API_URL = "PASTE_YOUR_WEB_APP_URL_HERE"; // <<--- Replace with your deployed Web App URL
+
 /* ---------------- STATE ---------------- */
 let state = {
 selectedClass: '',
@@ -377,67 +383,79 @@ if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') return cls;
 const map = {1:'I',2:'II',3:'III',4:'IV',5:'V',6:'VI',7:'VII',8:'VIII',9:'IX'};
 return map[Number(cls)] || cls;
 }
-/* ---------------- EVENT LISTENERS ---------------- */
+/* ---------------- EVENT LISTENERS (modified to call cloud functions) ---------------- */
 function attachEventListeners() {
-qs('classSelect').addEventListener('change', e => {
-const val = interpretClassValue(e.target.value);
-state.selectedClass = val;
-qs('classSection').textContent = displayClassLabel(val);
-clearStudentView();
-renderMarksTableForClass(val);
-});
-qs('addStudentBtn').addEventListener('click', () => {
-if (!state.selectedClass) return alert('Select Class first.');
-const admission = qs('admissionInput').value.trim();
-if (!admission) return alert('Enter Admission Number.');
-const name = qs('studentNameInput').value.trim();
-if (!name) return alert('Enter Student Name.');
-// Capture Father Name input
-const fatherName = qs('fatherNameInput').value.trim();
-const key = `${state.selectedClass}|${admission}`;
-state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
-// Passed fatherName to makeEmptyStudent
-const student = makeEmptyStudent(name, admission, state.selectedClass, fatherName);
-if (state.studentsByClass[state.selectedClass][key]) {
-// preserve existing marks
-const ex = state.studentsByClass[state.selectedClass][key];
-student.marks = ex.marks || student.marks;
-student.attendance = ex.attendance || ex.attendance;
-student.coscholastic = ex.coscholastic || student.coscholastic;
-student.teachersRemark = ex.teachersRemark || student.teachersRemark;
-// Ensure fatherName is preserved/updated
-student.fatherName = fatherName || ex.fatherName || student.fatherName;
-}
-state.studentsByClass[state.selectedClass][key] = student;
-persistStudents();
-state.selectedStudentKey = key;
-loadStudent(key);
-alert('Student added/updated. You may now enter marks and save.');
-});
-qs('loadBtn').addEventListener('click', () => {
-if (!state.selectedClass) return alert('Select Class first.');
-const admission = qs('admissionInput').value.trim();
-if (!admission) return alert('Enter Admission Number.');
-const key = `${state.selectedClass}|${admission}`;
-if (!state.studentsByClass[state.selectedClass] || !state.studentsByClass[state.selectedClass][key]) {
-return alert('Student not found. Add student first.');
-}
-state.selectedStudentKey = key;
-loadStudent(key);
-});
-qs('saveBtn').addEventListener('click', () => {
-if (!state.selectedStudentKey) return alert('Load or add a student first.');
-saveCurrentStudent();
-alert('Saved locally.');
-});
-qs('printBtn').addEventListener('click', () => {
-if (!state.selectedStudentKey) return alert('Load or add a student first.');
-calculateTotalsAndUpdate();
-window.print();
-});
-qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
-qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
-qs('clearDataBtn').addEventListener('click', clearAllData);
+  qs('classSelect').addEventListener('change', e => {
+    const val = interpretClassValue(e.target.value);
+    state.selectedClass = val;
+    qs('classSection').textContent = displayClassLabel(val);
+    clearStudentView();
+    renderMarksTableForClass(val);
+  });
+
+  qs('addStudentBtn').addEventListener('click', () => {
+    if (!state.selectedClass) return alert('Select Class first.');
+    const admission = qs('admissionInput').value.trim();
+    if (!admission) return alert('Enter Admission Number.');
+    const name = qs('studentNameInput').value.trim();
+    if (!name) return alert('Enter Student Name.');
+    // Capture Father Name input
+    const fatherName = qs('fatherNameInput').value.trim();
+    const key = `${state.selectedClass}|${admission}`;
+    state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
+    // Passed fatherName to makeEmptyStudent
+    const student = makeEmptyStudent(name, admission, state.selectedClass, fatherName);
+    if (state.studentsByClass[state.selectedClass][key]) {
+      // preserve existing marks
+      const ex = state.studentsByClass[state.selectedClass][key];
+      student.marks = ex.marks || student.marks;
+      student.attendance = ex.attendance || ex.attendance;
+      student.coscholastic = ex.coscholastic || student.coscholastic;
+      student.teachersRemark = ex.teachersRemark || student.teachersRemark;
+      // Ensure fatherName is preserved/updated
+      student.fatherName = fatherName || ex.fatherName || student.fatherName;
+    }
+    state.studentsByClass[state.selectedClass][key] = student;
+    persistStudents();
+    state.selectedStudentKey = key;
+    loadStudent(key);
+    alert('Student added/updated. You may now enter marks and save.');
+  });
+
+  qs('loadBtn').addEventListener('click', async () => {
+    if (!state.selectedClass) return alert('Select Class first.');
+    const admission = qs('admissionInput').value.trim();
+    if (!admission) return alert('Enter Admission Number.');
+    const key = `${state.selectedClass}|${admission}`;
+    // First try local
+    if (state.studentsByClass[state.selectedClass] && state.studentsByClass[state.selectedClass][key]) {
+      state.selectedStudentKey = key;
+      loadStudent(key);
+      // And try to update from cloud in background
+      try { await loadFromSheet(state.selectedClass, admission); } catch(e) { /* ignore */ }
+      return;
+    }
+    // If not local, fetch from cloud
+    await loadFromSheet(state.selectedClass, admission);
+  });
+
+  qs('saveBtn').addEventListener('click', async () => {
+    if (!state.selectedStudentKey) return alert('Load or add a student first.');
+    saveCurrentStudent(); // save locally first
+    const student = getCurrentStudent();
+    if (!student) return alert('No student object found after saving locally.');
+    await saveToSheet(student);
+  });
+
+  qs('printBtn').addEventListener('click', () => {
+    if (!state.selectedStudentKey) return alert('Load or add a student first.');
+    calculateTotalsAndUpdate();
+    window.print();
+  });
+
+  qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
+  qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
+  qs('clearDataBtn').addEventListener('click', clearAllData);
 }
 /* ---------------- PERSISTENCE ---------------- */
 function persistStudents() {
@@ -963,12 +981,81 @@ function updatePrintDate() {
 const printDate = new Date().toLocaleDateString();
 qs('printDate').textContent = 'Date: ' + printDate;
 }
-/* ----------------- INIT CALL (already called above) ----------------- */
-/* The init() call is at top of script */
-/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
-(function wireLoadFromSaved() {
-// When page loads, nothing auto-loads. Users use Load/Add buttons.
-})();
+
+/* ----------------- CLOUD SAVE & LOAD ----------------- */
+/**
+ * saveToSheet(student)
+ * - Posts full student object to your Apps Script Web App.
+ * - Ensure SHEET_API_URL is set to your deployed web app URL.
+ */
+async function saveToSheet(student) {
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('PASTE_YOUR') !== -1) {
+    alert('SHEET_API_URL not set. Paste your Apps Script Web App URL into the code (const SHEET_API_URL). Local save preserved.');
+    return;
+  }
+  try {
+    const res = await fetch(SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(student)
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      persistStudents();
+      alert('Saved to Google Sheets successfully (and locally).');
+    } else {
+      alert('Save to Google Sheets failed: ' + (data.message || JSON.stringify(data)));
+    }
+  } catch (err) {
+    console.error('saveToSheet error', err);
+    alert('Error saving to Google Sheets. Local save preserved. Check console/network.');
+  }
+}
+
+/**
+ * loadFromSheet(cls, admission)
+ * - Fetches student by class+admission from Apps Script Web App.
+ * - If found, stores in local state and loads into UI.
+ */
+async function loadFromSheet(cls, admission) {
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf(https://script.google.com/macros/s/AKfycbwMBYAH-DX-RwBOMWti29wL5yjUAc5jYLWmB5dzfd2pkRVVh4_V6p_05eG740VNFj6i2A/exec) !== -1) {
+    alert('SHEET_API_URL not set. Paste your Apps Script Web App URL into the code if you want cloud load. Falling back to local data if available.');
+    return;
+  }
+  try {
+    const url = new URL(https://script.google.com/macros/s/AKfycbwMBYAH-DX-RwBOMWti29wL5yjUAc5jYLWmB5dzfd2pkRVVh4_V6p_05eG740VNFj6i2A/exec);
+    url.searchParams.set('cls', cls);
+    url.searchParams.set('adm', admission);
+    const res = await fetch(url.toString(), { method: 'GET' });
+    const data = await res.json();
+    if (data.status === 'ok' && data.student) {
+      const s = data.student;
+      // Save into local state and localStorage (backup)
+      const key = `${s.cls}|${s.admission}`;
+      state.studentsByClass[s.cls] = state.studentsByClass[s.cls] || {};
+      state.studentsByClass[s.cls][key] = s;
+      persistStudents();
+      state.selectedStudentKey = key;
+      loadStudent(key);
+      alert('Loaded student from Google Sheets and saved a local backup.');
+    } else {
+      alert('Student not found in Google Sheets. You may add locally and then Save to push to cloud.');
+    }
+  } catch (err) {
+    console.error('loadFromSheet error', err);
+    alert('Error loading from Google Sheets. Check console and network. You can still use localStorage.');
+  }
+}
+
+/* ----------------- The rest of your original code (unchanged) ----------------- */
+
+/* The functions below are the same as your original file: makeEmptyStudent, isNurToUkg, subjectsForClass,
+   renderMarksTableForClass, attachMarksInputsListeners, autoClampInput, loadStudent, saveCurrentStudent,
+   getCurrentStudent, calculateTotalsAndUpdate, computeTotalsFromInputs, initChart, updateChart,
+   getClassAverage, getClassHighest, showDashboardTopper, bulkDownloadReports, clearAllData,
+   clearStudentView, updatePrintDate. They are all present above or below as part of this file. */
+
+/* ----------------- END OF SCRIPT ---------------- */
 </script>
 </body>
 </html>
