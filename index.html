@@ -989,16 +989,37 @@ qs('printDate').textContent = 'Date: ' + printDate;
  * - Ensure SHEET_API_URL is set to your deployed web app URL.
  */
 async function saveToSheet(student) {
-  if (!SHEET_API_URL || SHEET_API_URL.indexOf('PASTE_YOUR') !== -1) {
-    alert('SHEET_API_URL not set. Paste your Apps Script Web App URL into the code (const SHEET_API_URL). Local save preserved.');
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('AKfycb') === -1) {
+    alert('SHEET_API_URL is missing or incorrect. Please check the URL constant.');
     return;
   }
+  
   try {
-    const res = await fetch(SHEET_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(student)
+    // 1. Construct the full URL, passing action and data as query parameters.
+    const url = SHEET_API_URL + 
+                '?action=save&data=' + 
+                encodeURIComponent(JSON.stringify(student));
+
+    // 2. Use the POST method with no body (data is in the URL).
+    const res = await fetch(url, { 
+      method: 'POST' 
+      // Do NOT include headers or body here
     });
+    
+    const data = await res.json();
+    
+    if (data.status === 'ok') {
+      persistStudents();
+      alert('Saved to Google Sheets successfully (and locally).');
+    } else {
+      // If the script runs but errors due to wrong headers/data
+      alert('Save to Google Sheets failed: ' + (data.error || data.message || JSON.stringify(data)));
+    }
+  } catch (err) {
+    console.error('saveToSheet error', err);
+    alert('Error connecting to Google Sheets. Local save preserved. Check console/network.');
+  }
+}
     const data = await res.json();
     if (data.status === 'ok') {
       persistStudents();
