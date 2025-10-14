@@ -985,12 +985,13 @@ qs('printDate').textContent = 'Date: ' + printDate;
 /* ----------------- CLOUD SAVE & LOAD ----------------- */
 /**
  * saveToSheet(student)
- * - Posts full student object to your Apps Script Web App.
- * - Ensure SHEET_API_URL is set to your deployed web app URL.
+ * - Posts full student object to your Apps Script Web App using URL parameters.
+ * - This structure is NECESSARY for Google Apps Script Web Apps.
  */
 async function saveToSheet(student) {
-  if (!SHEET_API_URL || SHEET_API_URL.indexOf('AKfycb') === -1) {
-    alert('SHEET_API_URL is missing or incorrect. Please check the URL constant.');
+  // Check the URL for the correct format
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('/exec') === -1) {
+    alert('SHEET_API_URL is missing or incorrect. Please ensure it ends with /exec.');
     return;
   }
   
@@ -1000,10 +1001,9 @@ async function saveToSheet(student) {
                 '?action=save&data=' + 
                 encodeURIComponent(JSON.stringify(student));
 
-    // 2. Use the POST method with no body (data is in the URL).
+    // 2. Use the POST method with NO body. Data is ONLY in the URL.
     const res = await fetch(url, { 
       method: 'POST' 
-      // Do NOT include headers or body here
     });
     
     const data = await res.json();
@@ -1012,24 +1012,12 @@ async function saveToSheet(student) {
       persistStudents();
       alert('Saved to Google Sheets successfully (and locally).');
     } else {
-      // If the script runs but errors due to wrong headers/data
+      // The script ran, but there was an error processing the data (e.g., bad headers in the sheet)
       alert('Save to Google Sheets failed: ' + (data.error || data.message || JSON.stringify(data)));
     }
   } catch (err) {
     console.error('saveToSheet error', err);
     alert('Error connecting to Google Sheets. Local save preserved. Check console/network.');
-  }
-}
-    const data = await res.json();
-    if (data.status === 'ok') {
-      persistStudents();
-      alert('Saved to Google Sheets successfully (and locally).');
-    } else {
-      alert('Save to Google Sheets failed: ' + (data.message || JSON.stringify(data)));
-    }
-  } catch (err) {
-    console.error('saveToSheet error', err);
-    alert('Error saving to Google Sheets. Local save preserved. Check console/network.');
   }
 }
 
@@ -1039,16 +1027,17 @@ async function saveToSheet(student) {
  * - If found, stores in local state and loads into UI.
  */
 async function loadFromSheet(cls, admission) {
-  if (!SHEET_API_URL || SHEET_API_URL.indexOf('PASTE_YOUR') !== -1) {
-    alert('SHEET_API_URL not set. Paste your Apps Script Web App URL into the code if you want cloud load. Falling back to local data if available.');
+  if (!SHEET_API_URL || SHEET_API_URL.indexOf('/exec') === -1) {
+    alert('SHEET_API_URL not set or incorrect. Check the URL constant. Falling back to local data.');
     return;
   }
   try {
-    const url = new URL(SHEET_API_URL);
-    url.searchParams.set('cls', cls);
-    url.searchParams.set('adm', admission);
-    const res = await fetch(url.toString(), { method: 'GET' });
+    // Construct URL using template literal for maximum compatibility
+    const url = `${SHEET_API_URL}?action=load&cls=${encodeURIComponent(cls)}&admission=${encodeURIComponent(admission)}`;
+    
+    const res = await fetch(url, { method: 'GET' });
     const data = await res.json();
+    
     if (data.status === 'ok' && data.student) {
       const s = data.student;
       // Save into local state and localStorage (backup)
