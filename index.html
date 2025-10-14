@@ -6,7 +6,6 @@
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.min.js"></script>
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
 @media print {
@@ -841,7 +840,7 @@ if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
 /* ----------------- CHART ----------------- */
 function initChart() {
-const ctx = qs('marksChart').getContext('d');
+const ctx = qs('marksChart').getContext('2d');
 state.chart = new Chart(ctx, {
 type: 'bar',
 data: { labels: [], datasets: [] },
