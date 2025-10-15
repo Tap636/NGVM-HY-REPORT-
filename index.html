@@ -46,7 +46,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.05; /* REDUCED from 0.1 to 0.05 */
+opacity: 0.1; 
 pointer-events: none;
 z-index: 0;
 }
@@ -166,8 +166,7 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
 select.grade-select { padding:4px; border-radius:4px; }
-
-/* minor utility */
+/* Added back for button styling */
 .small-btn { padding:6px 8px; border-radius:6px; font-size:0.9rem; }
 </style>
 </head>
@@ -341,7 +340,6 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="no-print text-center mt-6">
 <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
-
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
 const SUBJECTS_NUR_TO_UKG = [
@@ -888,7 +886,6 @@ const classHigh = labels.map(l => getClassHighest(student.cls, l));
 // 1. Obtained: Solid Black
 const obtainedColor = 'rgba(0,0,0,1)';
 // 2. Class Average: White with pattern (Black diagonal lines on a white background)
-// pattern.draw(type, color, backgroundColor, size) supported by patternomaly v1.0.4
 const classAvgPattern = pattern.draw('diagonal', 'rgba(0,0,0,1)', 'rgba(255,255,255,1)', 6); 
 // 3. Class Highest: Solid Gray (mid-tone gray for contrast with black and white)
 const classHighColor = 'rgba(150,150,150,1)'; 
@@ -940,7 +937,7 @@ if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
 qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
 qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
 }
-/* ---------------- BULK DOWNLOAD (Excel) ---------------- */
+/* ---------------- BULK DOWNLOAD (Excel/SheetJS) ---------------- */
 function bulkDownloadReports() {
 const clsInput = qs('dashboardClassSelect').value || state.selectedClass;
 if (!clsInput) return alert('Select a class for bulk download.');
@@ -952,9 +949,9 @@ const students = Object.keys(state.studentsByClass[cls]).map(k => state.students
 
 let subjects = [];
 if (isNurToUkg(cls)) {
-subjects = SUBJECTS_NUR_TO_UKG.map(s => s.name);
+    subjects = SUBJECTS_NUR_TO_UKG.map(s => s.name);
 } else {
-subjects = subjectsForClass(cls);
+    subjects = subjectsForClass(cls);
 }
 
 const rows = students.map(s => {
@@ -990,8 +987,19 @@ const rows = students.map(s => {
   const totalUT = (s.marks || []).reduce((a,b) => a + (Number(b.ut) || 0), 0);
   const totalHY = (s.marks || []).reduce((a,b) => a + (Number(b.hy) || 0), 0);
   const overall = (s.marks || []).reduce((a,b) => a + (Number(b.total) || 0), 0);
-  const numericCount = (s.marks || []).filter(m => !m.isGrade).length || 1;
-  const percentage = numericCount > 0 ? ((overall / (numericCount * 100)) * 100).toFixed(2) : '0.00';
+  const numericMarks = (s.marks || []).filter(m => !m.isGrade);
+  const numericCount = numericMarks.length || 1;
+  let maxPossible = 0;
+  if (isNurToUkg(cls)) {
+    // 4 subjects: English (100), Hindi (100), Maths (100), Drawing (100) = 400 total
+    // NOTE: This assumes 4 numeric subjects, check SUBJECTS_NUR_TO_UKG for max
+    maxPossible = numericCount * 100;
+  } else {
+    // Classes 1-9: UT(20) + HY(80) = 100 per non-graded subject
+    maxPossible = numericCount * 100;
+  }
+  const percentage = maxPossible > 0 ? ((overall / maxPossible) * 100).toFixed(2) : '0.00';
+
 
   base['Total UT'] = totalUT;
   base['Total HY'] = totalHY;
@@ -1006,7 +1014,7 @@ const wb = XLSX.utils.book_new();
 const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
 XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
 
-// Apply simple styling: header color + alternate row fill (works in many XLSX viewers)
+// Apply simple styling: header color + alternate row fill
 const range = XLSX.utils.decode_range(ws['!ref']);
 for (let R = range.s.r; R <= range.e.r; ++R) {
   for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -1073,11 +1081,10 @@ qs('printDate').textContent = 'Date: ' + printDate;
 }
 /* ----------------- INIT CALL (already called above) ----------------- */
 /* The init() call is at top of script */
-/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ----------------- */
+/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
 (function wireLoadFromSaved() {
-// no-op: UI controlled loading
+// When page loads, nothing auto-loads. Users use Load/Add buttons.
 })();
 </script>
 </body>
 </html>
-
