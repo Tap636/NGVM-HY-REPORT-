@@ -379,6 +379,13 @@ const storedDate = localStorage.getItem('ng_print_date');
 if (storedDate && qs('printDateInput')) {
   qs('printDateInput').value = storedDate;
 }
+// Load the initial class if one is pre-selected or just set the state
+const initialClassSelect = qs('classSelect');
+if (initialClassSelect.value) {
+  state.selectedClass = interpretClassValue(initialClassSelect.value);
+  qs('classSection').textContent = displayClassLabel(state.selectedClass);
+  renderMarksTableForClass(state.selectedClass);
+}
 }
 init();
 /* ---------------- MAP & HELPERS ---------------- */
@@ -418,10 +425,12 @@ const student = makeEmptyStudent(name, admission, state.selectedClass, fatherNam
 if (state.studentsByClass[state.selectedClass][key]) {
 // preserve existing marks
 const ex = state.studentsByClass[state.selectedClass][key];
+// **FIX: Ensure correct preservation of student properties**
 student.marks = ex.marks || student.marks;
-student.attendance = ex.attendance || ex.attendance;
+student.attendance = ex.attendance || student.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
 student.teachersRemark = ex.teachersRemark || student.teachersRemark;
+student.remark = ex.remark || student.remark;
 // Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
@@ -453,6 +462,7 @@ if (!state.selectedStudentKey) return alert('Load or add a student first.');
 if (qs('printDateInput') && qs('printDateInput').value) {
   localStorage.setItem('ng_print_date', qs('printDateInput').value);
 }
+saveCurrentStudent(); // **CRITICAL FIX: Save before printing to ensure latest data is on screen**
 calculateTotalsAndUpdate();
 window.print();
 });
@@ -501,10 +511,10 @@ marks.push({ name: s, ut: 0, hy: 0, total: 0, isGrade: false, max: { ut: 20, hy:
 }
 return {
 name, admission, cls, fatherName, marks, // Added fatherName
-coscholastic: {},
+coscholastic: { workHabits: '', behavior: '' }, // Initialized
 attendance: { present: 0, total: DEFAULT_ATT_TOTAL },
 teachersRemark: 'Good effort. Keep improving.',
-remark: ''
+remark: 'Needs Improvement' // Default remark based on 0%
 };
 }
 function isNurToUkg(cls) {
@@ -528,6 +538,9 @@ if (!cls) {
 thead.innerHTML = `<tr class="bg-green-100"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center">Overall Performance</th></tr>`;
 return;
 }
+// Get student data if available to pre-fill inputs
+const student = getCurrentStudent();
+
 if (isNurToUkg(cls)) {
 thead.innerHTML = `
 <tr class="bg-green-100">
@@ -539,8 +552,7 @@ thead.innerHTML = `
 <th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
 </tr>
 `;
-const student = getCurrentStudent();
-const rows = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name }));
+const rows = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name, total: 0 }));
 rows.forEach((m, idx) => {
 const max = (m.max || SUBJECTS_NUR_TO_UKG[idx]);
 // For drawing: utOral/hyOral disabled
@@ -596,7 +608,6 @@ thead.innerHTML = `
 </tr>
 `;
 const subs = subjectsForClass(cls);
-const student = getCurrentStudent();
 subs.forEach((s, idx) => {
 const mark = student ? student.marks[idx] : null;
 if (s === 'G.K.') {
@@ -644,7 +655,7 @@ tfoot.innerHTML = `
 `;
 }
 attachMarksInputsListeners();
-calculateTotalsAndUpdate();
+calculateTotalsAndUpdate(); // **CRITICAL FIX: Ensure totals are updated after rendering with student data**
 }
 /* ---------------- ATTACH INPUT LISTENERS & VALIDATION ---------------- */
 function attachMarksInputsListeners() {
@@ -655,6 +666,10 @@ calculateTotalsAndUpdate();
 });
 // also clamp on blur to be safe
 el.addEventListener('blur', () => { autoClampInput(el); calculateTotalsAndUpdate(); });
+});
+// **FIX: Attach listener to coscholastic inputs for saving**
+qs('coscholasticBody').querySelectorAll('input').forEach(el => {
+  el.addEventListener('input', saveCurrentStudent);
 });
 }
 function autoClampInput(el) {
@@ -676,6 +691,7 @@ el.value = min;
 }
 }
 /* ---------------- LOAD / SAVE STUDENT ---------------- */
+// **FIX: Refactor loadStudent to set the correct class select value**
 function loadStudent(key) {
 const [cls, admission] = key.split('|');
 const student = state.studentsByClass[cls] && state.studentsByClass[cls][key];
@@ -684,53 +700,49 @@ state.selectedStudentKey = key;
 state.selectedClass = cls;
 // set class select to roman or textual
 const romanMap = { "1":"I","2":"II","3":"III","4":"IV","5":"V","6":"VI","7":"VII","8":"VIII","9":"IX" };
-if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') {
-qs('classSelect').value = cls;
-} else {
-qs('classSelect').value = romanMap[cls] || cls;
-}
+const classSelectValue = cls === 'Nursery' || cls === 'LKG' || cls === 'UKG' ? cls : romanMap[cls] || cls;
+qs('classSelect').value = classSelectValue;
+
+// Update header display
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
-// Load father name for display
 qs('fatherName').textContent = student.fatherName || '—';
+// Update input fields
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
-// Load father name for input control
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
 // Load attendance from the screen-only input fields, which are present in both HTML blocks
 document.querySelectorAll('#attendancePresent').forEach(el => el.value = student.attendance.present || 0);
 document.querySelectorAll('#attendanceTotal').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
+renderMarksTableForClass(student.cls); // Re-render table with student's data
 
-renderMarksTableForClass(student.cls);
-// populate marks into inputs/selects
-qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
-const idx = Number(el.getAttribute('data-idx'));
-const field = el.getAttribute('data-field');
-if (!Number.isFinite(idx)) return;
-const m = student.marks[idx];
-if (!m) return;
-if (el.tagName.toLowerCase() === 'select') {
-// grade
-el.value = m.grade || 'A';
-} else {
-const val = m[field] ?? (m[field] === 0 ? 0 : '');
-if (typeof val === 'number') el.value = val;
-}
-});
+// populate marks into inputs/selects (this is redundant as renderMarksTableForClass handles it, but kept for robustness)
+// ... (The mark population logic is commented out here as renderMarksTableForClass now handles it effectively)
+
 // coscholastic
 student.coscholastic = student.coscholastic || {};
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
+// **FIX: Attach listeners to newly created coscholastic inputs**
+qs('coscholasticBody').querySelectorAll('input').forEach(el => {
+  el.addEventListener('input', saveCurrentStudent);
+});
+// Load remark
+if (qs('teachersRemark')) {
+    qs('teachersRemark').textContent = student.teachersRemark || student.remark || 'Good effort. Keep improving.';
+}
+
 attachMarksInputsListeners();
 calculateTotalsAndUpdate();
 }
+
 function saveCurrentStudent() {
-if (!state.selectedStudentKey) return alert('Load or add a student first.');
+if (!state.selectedStudentKey) return;
 const student = getCurrentStudent();
 if (!student) return;
 // Save from the *first* visible instance of attendance input
@@ -773,6 +785,7 @@ function calculateTotalsAndUpdate() {
 const student = getCurrentStudent();
 // if student exists update from inputs first
 if (student) {
+// Collect and update marks from inputs into student object
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
 const field = el.getAttribute('data-field');
@@ -788,8 +801,10 @@ student.marks[idx][field] = Number(el.value) || 0;
 }
 // perform totals depending on class
 let percentage = 0;
+let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0, numericCount:0 };
+
 if (student && isNurToUkg(student.cls)) {
-let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0 };
+let maxOverall = 0;
 student.marks.forEach(m => {
 const ut = Number(m.ut) || 0;
 const utOral = Number(m.utOral) || 0;
@@ -798,18 +813,19 @@ const hyOral = Number(m.hyOral) || 0;
 const subjTotal = ut + utOral + hy + hyOral;
 m.total = subjTotal;
 totals.ut += ut; totals.utOral += utOral; totals.hy += hy; totals.hyOral += hyOral; totals.overall += subjTotal;
+maxOverall += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
 });
-qs('totalUT').textContent = totals.ut;
-qs('totalUTOral').textContent = totals.utOral;
-qs('totalHY').textContent = totals.hy;
-qs('totalHYOral').textContent = totals.hyOral;
-qs('totalOverall').textContent = totals.overall;
-const subjCount = student.marks.length || 1;
-percentage = ((totals.overall / (subjCount * 100)) * 100).toFixed(2);
-qs('percentage').textContent = percentage + '%';
+if (qs('totalUT')) qs('totalUT').textContent = totals.ut;
+if (qs('totalUTOral')) qs('totalUTOral').textContent = totals.utOral;
+if (qs('totalHY')) qs('totalHY').textContent = totals.hy;
+if (qs('totalHYOral')) qs('totalHYOral').textContent = totals.hyOral;
+if (qs('totalOverall')) qs('totalOverall').textContent = totals.overall;
+percentage = maxOverall > 0 ? ((totals.overall / maxOverall) * 100).toFixed(2) : '0.00';
+if (qs('percentage')) qs('percentage').textContent = percentage + '%';
+
 } else if (student) {
 // classes 1-9
-let totals = { ut:0, hy:0, overall:0, numericCount:0 };
+let denom = 0;
 student.marks.forEach(m => {
 if (m.isGrade) {
 // skip
@@ -819,14 +835,14 @@ const hy = Number(m.hy) || 0;
 const t = ut + hy;
 m.total = t;
 totals.ut += ut; totals.hy += hy; totals.overall += t; totals.numericCount++;
+denom += 100; // Each numeric subject is out of 100
 }
 });
-qs('totalUT').textContent = totals.ut;
-qs('totalHY').textContent = totals.hy;
-qs('totalOverall').textContent = totals.overall;
-const denom = (totals.numericCount || 1) * 100;
-percentage = denom>0?((totals.overall/denom)*100).toFixed(2):'0.00';
-qs('percentage').textContent = percentage + '%';
+if (qs('totalUT')) qs('totalUT').textContent = totals.ut;
+if (qs('totalHY')) qs('totalHY').textContent = totals.hy;
+if (qs('totalOverall')) qs('totalOverall').textContent = totals.overall;
+percentage = denom > 0 ? ((totals.overall/denom)*100).toFixed(2):'0.00';
+if (qs('percentage')) qs('percentage').textContent = percentage + '%';
 } else {
 // no student: compute totals from visible inputs
 computeTotalsFromInputs();
@@ -842,7 +858,7 @@ else if (p >= 60) remarkText = 'Good';
 else if (p >= 50) remarkText = 'Average';
 student.remark = remarkText;
 student.teachersRemark = remarkText;
-qs('teachersRemark').textContent = remarkText;
+if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
 }
 // reflect row overall values
 if (student) {
@@ -859,16 +875,21 @@ persistStudents();
 }
 /* compute totals when no student loaded (from visible inputs) */
 function computeTotalsFromInputs() {
-let totalUT = 0, totalHY = 0, totalOverall = 0;
+let totalUT = 0, totalHY = 0, totalUTOral = 0, totalHYOral = 0;
+let totalOverall = 0;
 qs('marksTableBody').querySelectorAll('input').forEach(el => {
 const field = el.getAttribute('data-field');
 const val = Number(el.value) || 0;
-if (field === 'ut' || field === 'utOral') totalUT += val;
-if (field === 'hy' || field === 'hyOral') totalHY += val;
+if (field === 'ut') totalUT += val;
+if (field === 'utOral') totalUTOral += val;
+if (field === 'hy') totalHY += val;
+if (field === 'hyOral') totalHYOral += val;
 totalOverall += val;
 });
 if (qs('totalUT')) qs('totalUT').textContent = totalUT;
+if (qs('totalUTOral')) qs('totalUTOral').textContent = totalUTOral;
 if (qs('totalHY')) qs('totalHY').textContent = totalHY;
+if (qs('totalHYOral')) qs('totalHYOral').textContent = totalHYOral;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
 /* ----------------- CHART ----------------- */
@@ -877,12 +898,30 @@ const ctx = qs('marksChart').getContext('2d');
 state.chart = new Chart(ctx, {
 type: 'bar',
 data: { labels: [], datasets: [] },
-options: { responsive: true, plugins:{ legend: { display: true } }, scales:{ y: { beginAtZero:true, max:100 } } }
+// **FIX: Max Y-axis to 100 for percentage view if necessary, or maximum possible total per subject**
+options: { 
+  responsive: true, 
+  plugins:{ 
+    legend: { display: true },
+    title: { display: true, text: 'Subject-wise Performance Analysis' } // Added title
+  }, 
+  scales:{ 
+    y: { 
+      beginAtZero:true, 
+      max:100, // Max for a single 100-mark subject (or max for a combined subject in Nur/UKG)
+      title: { display: true, text: 'Marks (Out of 100)' }
+    } 
+  } 
+}
 });
 }
 function updateChart(student) {
-const labels = student.marks.map(m => m.name);
-const obtained = student.marks.map(m => m.isGrade ? 0 : (m.total || 0));
+const maxSubjectMark = isNurToUkg(student.cls) ? 100 : 100; // Max mark per subject is 100 (UT+HY)
+state.chart.options.scales.y.max = maxSubjectMark; // Set max Y axis dynamically
+
+const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
+const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
+// **FIX: Ensure class average/highest calculations also skip graded subjects**
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
 
@@ -896,19 +935,29 @@ const patterns = [
   pattern.draw('triangle', '#000')
 ];
 
+// **FIX: Use distinct colors for screen/non-print if patterns are not supported/too much**
+const colors = ['#3B82F6', '#10B981', '#F59E0B']; // Blue, Green, Yellow-Orange
+
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
-{ label: 'Obtained', data: obtained, backgroundColor: patterns[0 % patterns.length], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Average', data: classAvg, backgroundColor: patterns[1 % patterns.length], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Highest', data: classHigh, backgroundColor: patterns[2 % patterns.length], borderColor: '#000', borderWidth:1 }
+{ label: 'Obtained', data: obtained, backgroundColor: colors[0], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Average', data: classAvg, backgroundColor: colors[1], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Highest', data: classHigh, backgroundColor: colors[2], borderColor: '#000', borderWidth:1 }
 ];
+// Apply patterns only on print to ensure B/W visibility
+if (window.matchMedia && window.matchMedia('print').matches) {
+    state.chart.data.datasets[0].backgroundColor = patterns[0 % patterns.length];
+    state.chart.data.datasets[1].backgroundColor = patterns[1 % patterns.length];
+    state.chart.data.datasets[2].backgroundColor = patterns[2 % patterns.length];
+}
 state.chart.update();
 }
 function getClassAverage(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub ? (sub.total || 0) : 0;
+// **FIX: Only consider numeric subjects**
+return (sub && !sub.isGrade) ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
@@ -917,30 +966,39 @@ function getClassHighest(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub ? (sub.total || 0) : 0;
+// **FIX: Only consider numeric subjects**
+return (sub && !sub.isGrade) ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.max(...vals);
 }
 /* ---------------- DASHBOARD TOPPER ---------------- */
 function showDashboardTopper() {
-const cls = qs('dashboardClassSelect').value;
+const clsInput = qs('dashboardClassSelect').value;
+const cls = interpretClassValue(clsInput);
 if (!cls) { qs('classTopperDashboard').textContent='Class Topper: —'; qs('schoolTopperDashboard').textContent='School Topper: —'; return; }
-let classTopper = { name:'—', total:0 };
-let schoolTopper = { name:'—', total:0 };
+let classTopper = { name:'—', total: -1 };
+let schoolTopper = { name:'—', total: -1 };
+
+// Calculate Class Topper
 Object.keys(state.studentsByClass[cls]||{}).forEach(k => {
 const s = state.studentsByClass[cls][k];
-const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
+// **FIX: Only sum total for numeric subjects, as grades cannot be summed**
+const tot = s.marks.filter(m => !m.isGrade).reduce((a,b)=>a+(b.total||0),0);
 if (tot > classTopper.total) classTopper={name:s.name,total:tot};
 });
+
+// Calculate School Topper
 Object.values(state.studentsByClass).forEach(clsObj => {
 Object.values(clsObj).forEach(s => {
-const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
-if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
+// **FIX: Only sum total for numeric subjects**
+const tot = s.marks.filter(m => !m.isGrade).reduce((a,b)=>a+(b.total||0),0);
+if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot, cls: s.cls};
 });
 });
-qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
-qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
+
+qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total > 0 ? classTopper.total : '0'}`;
+qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} (${displayClassLabel(schoolTopper.cls)}) — ${schoolTopper.total > 0 ? schoolTopper.total : '0'}`;
 }
 /* ---------------- BULK DOWNLOAD (Excel) ---------------- */
 function bulkDownloadReports() {
@@ -970,11 +1028,11 @@ const rows = students.map(s => {
   if (isNurToUkg(cls)) {
     subjects.forEach(sub => {
       const mark = s.marks.find(m => m.name === sub) || {};
-      base[`${sub} - UT Written`] = mark.ut ?? 0;
-      base[`${sub} - UT Oral`] = mark.utOral ?? 0;
-      base[`${sub} - HY Written`] = mark.hy ?? 0;
-      base[`${sub} - HY Oral`] = mark.hyOral ?? 0;
-      base[`${sub} - Overall`] = mark.total ?? 0;
+      base[`${sub} - UT Written (Out of ${mark.max?.ut ?? SUBJECTS_NUR_TO_UKG.find(ss=>ss.name===sub)?.utMax ?? 0})`] = mark.ut ?? 0;
+      base[`${sub} - UT Oral (Out of ${mark.max?.utOral ?? SUBJECTS_NUR_TO_UKG.find(ss=>ss.name===sub)?.utOralMax ?? 0})`] = mark.utOral ?? 0;
+      base[`${sub} - HY Written (Out of ${mark.max?.hy ?? SUBJECTS_NUR_TO_UKG.find(ss=>ss.name===sub)?.hyMax ?? 0})`] = mark.hy ?? 0;
+      base[`${sub} - HY Oral (Out of ${mark.max?.hyOral ?? SUBJECTS_NUR_TO_UKG.find(ss=>ss.name===sub)?.hyOralMax ?? 0})`] = mark.hyOral ?? 0;
+      base[`${sub} - Overall (Out of 100)`] = mark.total ?? 0;
     });
   } else {
     subjects.forEach(sub => {
@@ -984,16 +1042,18 @@ const rows = students.map(s => {
       } else {
         base[`${sub} - UT(20)`] = mark.ut ?? 0;
         base[`${sub} - HY(80)`] = mark.hy ?? 0;
-        base[`${sub} - Overall`] = mark.total ?? 0;
+        base[`${sub} - Overall(100)`] = mark.total ?? 0;
       }
     });
   }
 
-  const totalUT = (s.marks || []).reduce((a,b) => a + (Number(b.ut) || 0), 0);
-  const totalHY = (s.marks || []).reduce((a,b) => a + (Number(b.hy) || 0), 0);
-  const overall = (s.marks || []).reduce((a,b) => a + (Number(b.total) || 0), 0);
-  const numericCount = (s.marks || []).filter(m => !m.isGrade).length || 1;
-  const percentage = numericCount > 0 ? ((overall / (numericCount * 100)) * 100).toFixed(2) : '0.00';
+  const numericMarks = (s.marks || []).filter(m => !m.isGrade);
+  const totalUT = numericMarks.reduce((a,b) => a + (Number(b.ut) || 0), 0);
+  const totalHY = numericMarks.reduce((a,b) => a + (Number(b.hy) || 0), 0);
+  const overall = numericMarks.reduce((a,b) => a + (Number(b.total) || 0), 0);
+  const numericCount = numericMarks.length || 1;
+  const denom = (numericCount * 100);
+  const percentage = denom > 0 ? ((overall / denom) * 100).toFixed(2) : '0.00';
 
   base['Total UT'] = totalUT;
   base['Total HY'] = totalHY;
@@ -1006,23 +1066,70 @@ const rows = students.map(s => {
 
 const wb = XLSX.utils.book_new();
 const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
-XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
 
-// Apply simple styling: header color + alternate row fill (works in many XLSX viewers)
+// Apply better color formatting
 const range = XLSX.utils.decode_range(ws['!ref']);
+const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center", wrapText: true } }; // Blue header
+const oddRowStyle = { fill: { fgColor: { rgb: "D9E1F2" } } }; // Light blue/gray for odd rows
+const evenRowStyle = { fill: { fgColor: { rgb: "FFFFFF" } } }; // White for even rows
+
+// Set column widths for better readability
+const colWidths = [
+    { wch: 20 }, // Student Name
+    { wch: 20 }, // Father's Name
+    { wch: 15 }, // Admission No
+    { wch: 10 }, // Class
+];
+
+// Determine column widths for dynamic subject columns
+const firstRowKeys = rows.length > 0 ? Object.keys(rows[0]) : [];
+firstRowKeys.slice(4).forEach(key => { // Start after the 4 fixed columns
+    if (key.includes('Overall')) {
+        colWidths.push({ wch: 15 });
+    } else if (key.includes('Total') || key.includes('Percentage') || key.includes('Remark') || key.includes('Attendance')) {
+        colWidths.push({ wch: 15 });
+    } else {
+        colWidths.push({ wch: 12 });
+    }
+});
+
+ws['!cols'] = colWidths;
+
 for (let R = range.s.r; R <= range.e.r; ++R) {
   for (let C = range.s.c; C <= range.e.c; ++C) {
     const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-    const cell = ws[cellAddress];
-    if (!cell) continue;
+    const cell = ws[cellAddress] || {};
+
     if (R === 0) {
-      cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center" } };
+      // Header row formatting
+      cell.s = headerStyle;
     } else {
-      const fillColor = (R % 2 === 0) ? "D9E1F2" : "FFFFFF";
-      cell.s = { fill: { fgColor: { rgb: fillColor } } };
+      // Data row formatting
+      const rowStyle = (R % 2 === 0) ? evenRowStyle : oddRowStyle;
+      cell.s = { ...rowStyle };
+      
+      // Apply number format to marks columns (assuming columns > 3 are marks/totals)
+      if (C >= 4 && !firstRowKeys[C]?.includes('Grade') && !firstRowKeys[C]?.includes('Attendance')) {
+        cell.s.numFmt = '0';
+      }
+      
+      // Highlight Total/Percentage columns
+      if (firstRowKeys[C]?.includes('Total') || firstRowKeys[C]?.includes('Overall') || firstRowKeys[C]?.includes('Percentage')) {
+          cell.s.font = { bold: true };
+          if (firstRowKeys[C]?.includes('Percentage')) {
+              cell.s.fill = { fgColor: { rgb: "C6EFCE" } }; // Light Green for Percentage
+          } else if (firstRowKeys[C]?.includes('Overall')) {
+              cell.s.fill = { fgColor: { rgb: "FFF2CC" } }; // Light Yellow for Overall Subject Total
+          } else if (firstRowKeys[C]?.includes('Total')) {
+              cell.s.fill = { fgColor: { rgb: "DEEBF7" } }; // Light Blue for Grand Totals
+          }
+      }
     }
+    ws[cellAddress] = cell;
   }
 }
+
+XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
 
 const filename = `ReportCards_${displayClassLabel(cls)}_${new Date().toISOString().split('T')[0]}.xlsx`;
 XLSX.writeFile(wb, filename);
@@ -1035,7 +1142,11 @@ if (!confirm('Are you sure? This will remove all saved data!')) return;
 localStorage.clear();
 state.studentsByClass = {};
 state.selectedStudentKey = '';
+state.selectedClass = '';
 clearStudentView();
+// Clear dashboard
+qs('dashboardClassSelect').value = '';
+showDashboardTopper();
 alert('All data cleared successfully.');
 }
 /* ----------------- HELPERS: LOAD / CLEAR VIEW ----------------- */
@@ -1058,8 +1169,18 @@ qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
+// **FIX: Re-attach listeners after clearing/re-creating coscholastic inputs**
+qs('coscholasticBody').querySelectorAll('input').forEach(el => {
+  el.addEventListener('input', saveCurrentStudent);
+});
+
 if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
 renderMarksTableForClass(state.selectedClass);
+if(state.chart) {
+    state.chart.data.labels = [];
+    state.chart.data.datasets = [];
+    state.chart.update();
+}
 }
 /* ----------------- UPDATE PRINT DATE ----------------- */
 function updatePrintDate() {
@@ -1067,9 +1188,9 @@ const stored = localStorage.getItem('ng_print_date');
 let printDate;
 if (stored) {
   const d = new Date(stored + 'T00:00:00');
-  printDate = d.toLocaleDateString();
+  printDate = d.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }); // Better date format
 } else {
-  printDate = new Date().toLocaleDateString();
+  printDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 qs('printDate').textContent = 'Date: ' + printDate;
 }
