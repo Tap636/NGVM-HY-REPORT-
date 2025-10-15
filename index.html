@@ -6,6 +6,10 @@
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- patternomaly for patterns in Chart.js (black & white friendly) -->
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.0.4/dist/patternomaly.min.js"></script>
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
 @media print {
@@ -42,7 +46,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.1; 
+opacity: 0.05; /* reduced from 0.1 -> 0.05 as requested */
 pointer-events: none;
 z-index: 0;
 }
@@ -185,8 +189,11 @@ select.grade-select { padding:4px; border-radius:4px; }
 </select>
 <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
 <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-<div class="mt-3 flex gap-2">
+<div class="mt-3 flex gap-2 items-center">
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
+<!-- New: date input for printing all cards -->
+<label class="text-sm text-gray-700 ml-3">Set Print Date:</label>
+<input id="printDateInput" type="date" class="border rounded px-2 py-1" />
 </div>
 </div>
 <div class="page">
@@ -362,6 +369,11 @@ attachEventListeners();
 initChart();
 updatePrintDate();
 renderMarksTableForClass(''); // initial empty
+// populate print date input from storage if present
+const storedDate = localStorage.getItem('ng_print_date');
+if (storedDate && qs('printDateInput')) {
+  qs('printDateInput').value = storedDate;
+}
 }
 init();
 /* ---------------- MAP & HELPERS ---------------- */
@@ -432,12 +444,28 @@ alert('Saved locally.');
 });
 qs('printBtn').addEventListener('click', () => {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
+// If user has set a print date in the input, save it and use it
+if (qs('printDateInput') && qs('printDateInput').value) {
+  localStorage.setItem('ng_print_date', qs('printDateInput').value);
+}
 calculateTotalsAndUpdate();
 window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
 qs('clearDataBtn').addEventListener('click', clearAllData);
+// print date input change
+if (qs('printDateInput')) {
+  qs('printDateInput').addEventListener('change', () => {
+    const v = qs('printDateInput').value;
+    if (v) {
+      localStorage.setItem('ng_print_date', v);
+    } else {
+      localStorage.removeItem('ng_print_date');
+    }
+    updatePrintDate();
+  });
+}
 }
 /* ---------------- PERSISTENCE ---------------- */
 function persistStudents() {
@@ -852,11 +880,20 @@ const labels = student.marks.map(m => m.name);
 const obtained = student.marks.map(m => m.isGrade ? 0 : (m.total || 0));
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
+/* Use patternomaly to provide black & white patterns for each dataset */
+const patterns = [
+  pattern.draw('diagonal', '#000'),
+  pattern.draw('square', '#000'),
+  pattern.draw('circle', '#000'),
+  pattern.draw('zigzag', '#000'),
+  pattern.draw('plus', '#000'),
+  pattern.draw('triangle', '#000')
+];
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
-{ label: 'Obtained', data: obtained },
-{ label: 'Class Average', data: classAvg },
-{ label: 'Class Highest', data: classHigh }
+{ label: 'Obtained', data: obtained, backgroundColor: patterns[0 % patterns.length], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Average', data: classAvg, backgroundColor: patterns[1 % patterns.length], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Highest', data: classHigh, backgroundColor: patterns[2 % patterns.length], borderColor: '#000', borderWidth:1 }
 ];
 state.chart.update();
 }
@@ -898,31 +935,79 @@ if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
 qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
 qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
 }
-/* ---------------- BULK DOWNLOAD ---------------- */
+/* ---------------- BULK DOWNLOAD (Excel) ---------------- */
 function bulkDownloadReports() {
-const cls = qs('dashboardClassSelect').value || state.selectedClass;
-if (!cls) return alert('Select a class for bulk download.');
+const clsInput = qs('dashboardClassSelect').value || state.selectedClass;
+if (!clsInput) return alert('Select a class for bulk download.');
+const cls = interpretClassValue(clsInput);
 if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
-const arr = [];
-Object.keys(state.studentsByClass[cls]).forEach(key => {
-const s = state.studentsByClass[cls][key];
-// Added Father Name to the report
-let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
-s.marks.forEach(m => {
-if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
-else report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
+
+// Build sheet data: first row = headers
+const students = Object.keys(state.studentsByClass[cls]).map(k => state.studentsByClass[cls][k]);
+
+// decide subjects list depending on class
+let subjects = [];
+if (isNurToUkg(cls)) {
+subjects = SUBJECTS_NUR_TO_UKG.map(s => s.name);
+} else {
+subjects = subjectsForClass(cls);
+}
+
+// Create array of objects for json_to_sheet
+const rows = students.map(s => {
+  const base = {
+    'Student Name': s.name || '',
+    "Father's Name": s.fatherName || '',
+    'Admission No': s.admission || '',
+    'Class': displayClassLabel(s.cls || cls),
+  };
+
+  // For NUR-UKG put UT written, UT oral, HY written, HY oral columns per subject
+  if (isNurToUkg(cls)) {
+    subjects.forEach(sub => {
+      const mark = s.marks.find(m => m.name === sub) || {};
+      base[`${sub} - UT Written`] = mark.ut ?? 0;
+      base[`${sub} - UT Oral`] = mark.utOral ?? 0;
+      base[`${sub} - HY Written`] = mark.hy ?? 0;
+      base[`${sub} - HY Oral`] = mark.hyOral ?? 0;
+      base[`${sub} - Overall`] = mark.total ?? 0;
+    });
+  } else {
+    // Classes 1-9: UT & HY columns
+    subjects.forEach(sub => {
+      const mark = s.marks.find(m => m.name === sub) || {};
+      if (mark.isGrade) {
+        base[`${sub} - Grade`] = mark.grade || '';
+      } else {
+        base[`${sub} - UT(20)`] = mark.ut ?? 0;
+        base[`${sub} - HY(80)`] = mark.hy ?? 0;
+        base[`${sub} - Overall`] = mark.total ?? 0;
+      }
+    });
+  }
+
+  // Totals and percentage
+  const totalUT = (s.marks || []).reduce((a,b) => a + (Number(b.ut) || 0), 0);
+  const totalHY = (s.marks || []).reduce((a,b) => a + (Number(b.hy) || 0), 0);
+  const overall = (s.marks || []).reduce((a,b) => a + (Number(b.total) || 0), 0);
+  // compute percentage using numeric subjects count * 100 as earlier
+  const numericCount = (s.marks || []).filter(m => !m.isGrade).length || 1;
+  const percentage = numericCount > 0 ? ((overall / (numericCount * 100)) * 100).toFixed(2) : '0.00';
+  base['Total UT'] = totalUT;
+  base['Total HY'] = totalHY;
+  base['Total Overall'] = overall;
+  base['Percentage'] = percentage + '%';
+  base['Attendance'] = `${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}`;
+  base['Teacher Remark'] = s.teachersRemark || s.remark || '';
+  return base;
 });
-report += `\nTotals: UT ${s.marks.reduce((a,b)=>a+(b.ut||0),0)}, HY ${s.marks.reduce((a,b)=>a+(b.hy||0),0)}, Overall ${s.marks.reduce((a,b)=>a+(b.total||0),0)}\n`;
-report += `Percentage: ${((s.marks.reduce((a,b)=>a+(b.total||0),0)/(s.marks.filter(m=>!m.isGrade).length*100))*100).toFixed(2)}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher:\nPrincipal:\n\n--------------------------------------------------\n\n`;
-arr.push(report);
-});
-const blob = new Blob(arr, { type: 'text/plain' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
-a.click();
-URL.revokeObjectURL(url);
+
+// Create workbook and sheet
+const wb = XLSX.utils.book_new();
+const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
+const filename = `ReportCards_${displayClassLabel(cls)}_${new Date().toISOString().split('T')[0]}.xlsx`;
+XLSX.writeFile(wb, filename);
 }
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
@@ -960,7 +1045,15 @@ renderMarksTableForClass(state.selectedClass);
 }
 /* ----------------- UPDATE PRINT DATE ----------------- */
 function updatePrintDate() {
-const printDate = new Date().toLocaleDateString();
+const stored = localStorage.getItem('ng_print_date');
+let printDate;
+if (stored) {
+  // stored is yyyy-mm-dd from input type=date
+  const d = new Date(stored + 'T00:00:00'); // ensure correct parsing
+  printDate = d.toLocaleDateString();
+} else {
+  printDate = new Date().toLocaleDateString();
+}
 qs('printDate').textContent = 'Date: ' + printDate;
 }
 /* ----------------- INIT CALL (already called above) ----------------- */
