@@ -16,11 +16,7 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 .screen-only { display: none !important; }
-.print-only { display: block !important; } 
-
-/* **FIX: Hide canvas and show print image for chart** */
-#marksChart { display: none !important; }
-#marksChartPrint { display: block !important; max-width: 100%; height: auto !important; } 
+.print-only { display: block !important; } /* Attendance box visibility */
 
 /* AGGRESSIVE PADDING REDUCTION (Fixes 2-page issue) */
 .page {
@@ -153,8 +149,6 @@ tr { page-break-inside:avoid; page-break-after:relative; }
 body { background: #ffffff; }
 /* Hide print-only attendance block on screen */
 .print-only { display: none; } 
-/* **FIX: Hide print chart image on screen** */
-#marksChartPrint { display: none; } 
 
 .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a;
 }
@@ -309,8 +303,8 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div class="border p-4 mt-4 print-only">
         <h3 class="font-semibold mb-2">Attendance</h3>
         <div class="flex gap-2 items-center">
-            <input type="number" class="attendance-print-present" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-            <input type="number" class="attendance-print-total" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+            <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
         </div>
     </div>
     
@@ -319,7 +313,6 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div class="border p-4">
     <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
     <canvas id="marksChart" height="180"></canvas>
-    <img id="marksChartPrint" class="print-only" style="width:100%; height:180px;" alt="Marks Chart Print Preview" />
     </div>
     </div>
     </div>
@@ -459,21 +452,6 @@ if (qs('printDateInput') && qs('printDateInput').value) {
   localStorage.setItem('ng_print_date', qs('printDateInput').value);
 }
 calculateTotalsAndUpdate();
-
-// **FIX: Convert chart canvas to image for reliable printing**
-const chartPrintImg = qs('marksChartPrint');
-if (state.chart && chartPrintImg) {
-    // Force chart update before capturing image
-    state.chart.options.animation = false;
-    state.chart.update();
-    // Capture image
-    chartPrintImg.src = state.chart.toBase64Image();
-    // Restore chart options
-    state.chart.options.animation = true;
-    state.chart.update();
-}
-// **END CHART PRINT FIX**
-
 window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
@@ -720,13 +698,9 @@ qs('admissionInput').value = student.admission || '';
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
-// Load attendance from the screen input fields and update print fields
-qs('attendancePresent').value = student.attendance.present || 0;
-document.querySelectorAll('.attendance-print-present').forEach(el => el.value = student.attendance.present || 0);
-
-qs('attendanceTotal').value = student.attendance.total || DEFAULT_ATT_TOTAL;
-document.querySelectorAll('.attendance-print-total').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
-
+// Load attendance from the screen-only input fields, which are present in both HTML blocks
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = student.attendance.present || 0);
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
 
 renderMarksTableForClass(student.cls);
 // populate marks into inputs/selects
@@ -757,13 +731,12 @@ function saveCurrentStudent() {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 const student = getCurrentStudent();
 if (!student) return;
-// Save from the primary (screen) input fields
-student.attendance.present = Number(qs('attendancePresent').value) || 0;
-student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
-// Update the print fields to match
-document.querySelectorAll('.attendance-print-present').forEach(el => el.value = student.attendance.present || 0);
-document.querySelectorAll('.attendance-print-total').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
-
+// Save from the *first* visible instance of attendance input
+const attPresentEls = document.querySelectorAll('#attendancePresent');
+const attTotalEls = document.querySelectorAll('#attendanceTotal');
+// prefer first visible (not readonly?) Use first in DOM
+student.attendance.present = Number(attPresentEls[0].value) || 0;
+student.attendance.total = Number(attTotalEls[0].value) || DEFAULT_ATT_TOTAL;
 // Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
@@ -911,21 +884,21 @@ const obtained = student.marks.map(m => m.isGrade ? 0 : (m.total || 0));
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
 
-/* Pattern array for B/W visibility using patternomaly */
-const patterns = [
-  pattern.draw('diagonal', '#000'),
-  pattern.draw('square', '#000'),
-  pattern.draw('circle', '#000'),
-  pattern.draw('zigzag', '#000'),
-  pattern.draw('plus', '#000'),
-  pattern.draw('triangle', '#000')
-];
+/* --- MODIFIED for B&W printing (Obtained: Black, Class Average: Patterned-White, Class Highest: Gray) --- */
+// 1. Obtained: Solid Black
+const obtainedColor = 'rgba(0,0,0,1)';
+// 2. Class Average: White with pattern (Black diagonal lines on a white background)
+// pattern.draw(type, color, backgroundColor, size) supported by patternomaly v1.0.4
+const classAvgPattern = pattern.draw('diagonal', 'rgba(0,0,0,1)', 'rgba(255,255,255,1)', 6); 
+// 3. Class Highest: Solid Gray (mid-tone gray for contrast with black and white)
+const classHighColor = 'rgba(150,150,150,1)'; 
+/* --- MODIFIED END --- */
 
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
-{ label: 'Obtained', data: obtained, backgroundColor: patterns[0 % patterns.length], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Average', data: classAvg, backgroundColor: patterns[1 % patterns.length], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Highest', data: classHigh, backgroundColor: patterns[2 % patterns.length], borderColor: '#000', borderWidth:1 }
+{ label: 'Obtained', data: obtained, backgroundColor: obtainedColor, borderColor: '#000', borderWidth:1 },
+{ label: 'Class Average', data: classAvg, backgroundColor: classAvgPattern, borderColor: '#000', borderWidth:1 },
+{ label: 'Class Highest', data: classHigh, backgroundColor: classHighColor, borderColor: '#000', borderWidth:1 }
 ];
 state.chart.update();
 }
@@ -1075,14 +1048,9 @@ qs('admissionInput').value = '';
 // Clear father name input
 if (qs('fatherNameInput')) qs('fatherNameInput').value = '';
 qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
-
-// Clear primary (screen) attendance inputs
-if(qs('attendancePresent')) qs('attendancePresent').value = '';
-if(qs('attendanceTotal')) qs('attendanceTotal').value = DEFAULT_ATT_TOTAL;
-
-// Clear print-only attendance inputs (using the new classes)
-document.querySelectorAll('.attendance-print-present').forEach(el => el.value = '');
-document.querySelectorAll('.attendance-print-total').forEach(el => el.value = DEFAULT_ATT_TOTAL);
+// Clear *both* sets of attendance inputs
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = '');
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = DEFAULT_ATT_TOTAL);
 
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
@@ -1112,3 +1080,4 @@ qs('printDate').textContent = 'Date: ' + printDate;
 </script>
 </body>
 </html>
+
