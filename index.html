@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Library for creating patterns in the chart -->
 <script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.min.js"></script>
-<!-- Library for Excel file generation -->
+<!-- Library for Excel file generation (FIXED) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
@@ -319,7 +319,8 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div class="border p-4 mt-4 print-only">
         <h3 class="font-semibold mb-2">Attendance</h3>
         <div class="flex gap-2 items-center">
-            <input type="number" id="attendancePresentPrint" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <!-- These are read from the screen inputs and synchronized when printing -->
+            <input type="number" id="attendancePresentPrint" min="0" max="130" readonly value="0" class="border px-2 py-1 rounded w-32" />
             <input type="number" id="attendanceTotalPrint" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
         </div>
     </div>
@@ -417,20 +418,17 @@ const admission = qs('admissionInput').value.trim();
 if (!admission) return alert('Enter Admission Number.');
 const name = qs('studentNameInput').value.trim();
 if (!name) return alert('Enter Student Name.');
-// Capture Father Name input
 const fatherName = qs('fatherNameInput').value.trim();
 const key = `${state.selectedClass}|${admission}`;
 state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
-// Passed fatherName to makeEmptyStudent
 const student = makeEmptyStudent(name, admission, state.selectedClass, fatherName);
 if (state.studentsByClass[state.selectedClass][key]) {
-// preserve existing marks
+// preserve existing marks and other data
 const ex = state.studentsByClass[state.selectedClass][key];
 student.marks = ex.marks || student.marks;
-student.attendance = ex.attendance || ex.attendance;
+student.attendance = ex.attendance || student.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
 student.teachersRemark = ex.teachersRemark || student.teachersRemark;
-// Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
 state.studentsByClass[state.selectedClass][key] = student;
@@ -439,6 +437,7 @@ state.selectedStudentKey = key;
 loadStudent(key);
 alert('Student added/updated. You may now enter marks and save.');
 });
+// FIX: Load button functionality
 qs('loadBtn').addEventListener('click', () => {
 if (!state.selectedClass) return alert('Select Class first.');
 const admission = qs('admissionInput').value.trim();
@@ -450,15 +449,28 @@ return alert('Student not found. Add student first.');
 state.selectedStudentKey = key;
 loadStudent(key);
 });
+// FIX: Save button functionality
 qs('saveBtn').addEventListener('click', () => {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 saveCurrentStudent();
 alert('Saved locally.');
 });
+// FIX: Print button functionality (ensure save happens first, and sync print inputs)
 qs('printBtn').addEventListener('click', () => {
-if (!state.selectedStudentKey) return alert('Load or add a student first.');
-calculateTotalsAndUpdate();
-window.print();
+    if (!state.selectedStudentKey) return alert('Load or add a student first.');
+    
+    // 1. Save all current input values (marks, attendance, etc.) to the student object
+    saveCurrentStudent(); 
+    
+    // 2. Load the latest values into the print-only attendance fields
+    const student = getCurrentStudent();
+    if (student) {
+        qs('attendancePresentPrint').value = student.attendance.present;
+        qs('attendanceTotalPrint').value = student.attendance.total;
+    }
+    
+    // 3. Print
+    window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('downloadExcelBtn').addEventListener('click', downloadExcelReport);
@@ -494,8 +506,9 @@ marks.push({ name: s, ut: 0, hy: 0, total: 0, isGrade: false, max: { ut: 20, hy:
 });
 }
 return {
-name, admission, cls, fatherName, marks,
-coscholastic: {},
+name, admission, cls, fatherName,
+marks,
+coscholastic: { workHabits: '', behavior: '' },
 attendance: { present: 0, total: DEFAULT_ATT_TOTAL },
 teachersRemark: 'Good effort. Keep improving.',
 remark: ''
@@ -526,11 +539,11 @@ if (isNurToUkg(cls)) {
 thead.innerHTML = `
 <tr class="bg-green-100">
 <th class="border px-3 py-2 text-left">Subject</th>
-<th class="border px-3 py-2 text-center">Unit Test Written</th>
-<th class="border px-3 py-2 text-center">Unit Test Oral</th>
-<th class="border px-3 py-2 text-center">Half Yearly Written</th>
-<th class="border px-3 py-2 text-center">Half Yearly Oral</th>
-<th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
+<th class="border px-3 py-2 text-center">Unit Test Written (${SUBJECTS_NUR_TO_UKG[0].utMax})</th>
+<th class="border px-3 py-2 text-center">Unit Test Oral (${SUBJECTS_NUR_TO_UKG[0].utOralMax})</th>
+<th class="border px-3 py-2 text-center">Half Yearly Written (${SUBJECTS_NUR_TO_UKG[0].hyMax})</th>
+<th class="border px-3 py-2 text-center">Half Yearly Oral (${SUBJECTS_NUR_TO_UKG[0].hyOralMax})</th>
+<th class="border px-3 py-2 text-center font-semibold">Overall Performance (100)</th>
 </tr>
 `;
 const student = getCurrentStudent();
@@ -584,7 +597,7 @@ thead.innerHTML = `
 <th class="border px-3 py-2 text-left">Subject</th>
 <th class="border px-3 py-2 text-center">Unit Test - 20</th>
 <th class="border px-3 py-2 text-center">Half Yearly - 80</th>
-<th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
+<th class="border px-3 py-2 text-center font-semibold">Overall Performance (100)</th>
 </tr>
 `;
 const subs = subjectsForClass(cls);
@@ -679,17 +692,22 @@ qs('classSelect').value = cls;
 } else {
 qs('classSelect').value = romanMap[cls] || cls;
 }
+// Update display fields
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
 qs('fatherName').textContent = student.fatherName || '—';
+// Update input fields
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
+// Update attendance inputs (screen only)
 qs('attendancePresent').value = student.attendance.present || 0;
 qs('attendanceTotal').value = student.attendance.total || DEFAULT_ATT_TOTAL;
+
+// Update print-only attendance fields (synchronize for potential print)
 qs('attendancePresentPrint').value = student.attendance.present || 0;
 qs('attendanceTotalPrint').value = student.attendance.total || DEFAULT_ATT_TOTAL;
 
@@ -712,34 +730,47 @@ qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
+qs('teachersRemark').textContent = student.teachersRemark;
+
 attachMarksInputsListeners();
 calculateTotalsAndUpdate();
 }
+// FIX: Ensure all non-mark inputs are saved when the save button is clicked.
 function saveCurrentStudent() {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 const student = getCurrentStudent();
 if (!student) return;
-student.attendance.present = Number(qs('attendancePresent').value) || 0;
-student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+
+// 1. Read student info from input fields
+student.name = qs('studentNameInput').value.trim();
+student.admission = qs('admissionInput').value.trim();
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
+
+// 2. Read attendance from SCREEN inputs and set to student object
+const present = Number(qs('attendancePresent').value) || 0;
+const total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+student.attendance.present = present;
+student.attendance.total = total;
+
+// 3. Read co-scholastic and remark
 student.coscholastic = {
 workHabits: qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '',
 behavior: qs('behaviorInput') ? qs('behaviorInput').value.trim() : ''
 };
-qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
-const idx = Number(el.getAttribute('data-idx'));
-const field = el.getAttribute('data-field');
-if (!Number.isFinite(idx)) return;
-student.marks[idx] = student.marks[idx] || {};
-if (el.tagName.toLowerCase() === 'select') {
-student.marks[idx].grade = el.value;
-student.marks[idx].isGrade = true;
-} else {
-student.marks[idx][field] = Number(el.value) || 0;
-}
-});
-calculateTotalsAndUpdate();
-persistStudents();
+// Teacher's remark is generated in calculateTotalsAndUpdate, but let's read the current displayed value
+student.teachersRemark = qs('teachersRemark').textContent;
+
+
+// 4. Force marks read, calculation/display update, and persistence.
+// This function handles reading marks from the table inputs, doing the math, updating the UI totals, and calling persistStudents().
+calculateTotalsAndUpdate(); 
+
+// 5. Update the display fields (in case name/father name were edited)
+qs('studentName').textContent = student.name;
+qs('admissionNo').textContent = student.admission || '—';
+qs('fatherName').textContent = student.fatherName || '—';
+
+// Note: attendancePrint inputs are updated in the printBtn handler and loadStudent.
 }
 /* ---------------- GET STUDENT ---------------- */
 function getCurrentStudent() {
@@ -751,6 +782,7 @@ return state.studentsByClass[cls] && state.studentsByClass[cls][state.selectedSt
 function calculateTotalsAndUpdate() {
 const student = getCurrentStudent();
 if (student) {
+// 1. Read marks from inputs into student object
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
 const field = el.getAttribute('data-field');
@@ -911,100 +943,112 @@ return Math.max(...vals);
 function showDashboardTopper() {
 const cls = qs('dashboardClassSelect').value;
 if (!cls) { qs('classTopperDashboard').textContent='Class Topper: —'; qs('schoolTopperDashboard').textContent='School Topper: —'; return; }
-let classTopper = { name:'—', total:0 };
-let schoolTopper = { name:'—', total:0 };
+let classTopper = { name:'—', total:-1 };
+let schoolTopper = { name:'—', total:-1 };
+
+// Calculate Topper for selected class
 Object.keys(state.studentsByClass[cls]||{}).forEach(k => {
 const s = state.studentsByClass[cls][k];
 const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
 if (tot > classTopper.total) classTopper={name:s.name,total:tot};
 });
+
+// Calculate School Topper (across all classes)
 Object.values(state.studentsByClass).forEach(clsObj => {
 Object.values(clsObj).forEach(s => {
 const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
 if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
 });
 });
-qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
-qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
+
+qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total > 0 ? classTopper.total : 0} marks`;
+qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total > 0 ? schoolTopper.total : 0} marks`;
 }
-/* ---------------- BULK DOWNLOAD TO EXCEL ---------------- */
+/* ---------------- BULK DOWNLOAD TO EXCEL (FIXED) ---------------- */
 function downloadExcelReport() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class to download the Excel report.');
     if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
 
-    const wb = XLSX.utils.book_new();
     const studentsInClass = Object.values(state.studentsByClass[cls]);
+    const isNurUkg = isNurToUkg(cls);
 
-    // 1. Create a summary sheet
-    const summaryData = [
-        ["Admission No.", "Student Name", "Father's Name", "Total Marks", "Percentage"]
-    ];
-    studentsInClass.forEach(s => {
-        const numericMarks = s.marks.filter(m => !m.isGrade);
-        const totalMarks = numericMarks.reduce((a, b) => a + (b.total || 0), 0);
-        const maxTotalMarks = numericMarks.length * 100;
-        const percentage = maxTotalMarks > 0 ? ((totalMarks / maxTotalMarks) * 100).toFixed(2) + '%' : '0.00%';
-        summaryData.push([s.admission, s.name, s.fatherName || '—', totalMarks, percentage]);
+    const wb = XLSX.utils.book_new();
+
+    // 1. Determine Subject Headers dynamically from an example student
+    const studentExample = studentsInClass[0];
+    const numericSubjects = studentExample.marks.filter(m => !m.isGrade);
+
+    let mainHeaders = ["Admission No.", "Student Name", "Father's Name", "Class/Section", "Attendance (P/T)"];
+
+    numericSubjects.forEach(sub => {
+        if (isNurUkg) {
+            mainHeaders.push(`${sub.name} (UT W)`, `${sub.name} (UT O)`, `${sub.name} (HY W)`, `${sub.name} (HY O)`, `${sub.name} (Total / 100)`);
+        } else {
+            mainHeaders.push(`${sub.name} (UT / 20)`, `${sub.name} (HY / 80)`, `${sub.name} (Total / 100)`);
+        }
     });
-    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-    summaryWs['!cols'] = [{wch:15}, {wch:25}, {wch:25}, {wch:12}, {wch:12}];
-    XLSX.utils.book_append_sheet(wb, summaryWs, "Class Summary");
 
-    // 2. Create a detailed sheet for each student
+    // Add grade subject headers (G.K.)
+    const gradeSubjects = studentExample.marks.filter(m => m.isGrade);
+    gradeSubjects.forEach(sub => mainHeaders.push(`${sub.name} (Grade)`));
+
+
+    mainHeaders.push("Total Marks (Numeric)", "Max Marks (Numeric)", "Percentage", "Teacher's Remark", "Work Habits (Grade)", "Behavior (Grade)");
+    
+    const detailedData = [mainHeaders];
+
+    // 2. Populate data rows
     studentsInClass.forEach(s => {
-        const studentSheetData = [];
-        studentSheetData.push(["NANDI GURUKUL VIDYA MANDIR"]);
-        studentSheetData.push(["REPORT CARD - HALF YEARLY EXAMINATION"]);
-        studentSheetData.push([]);
-        studentSheetData.push(["Admission No.:", s.admission, "", "Name:", s.name]);
-        studentSheetData.push(["Father's Name:", s.fatherName || '—', "", "Class:", displayClassLabel(s.cls)]);
-        studentSheetData.push([]);
+        let row = [s.admission, s.name, s.fatherName || '—', displayClassLabel(s.cls), `${s.attendance.present}/${s.attendance.total}`];
 
-        let headers = isNurToUkg(s.cls) 
-            ? ["Subject", "UT Written", "UT Oral", "HY Written", "HY Oral", "Overall"]
-            : ["Subject", "Unit Test", "Half Yearly", "Overall"];
-        studentSheetData.push(headers);
-        
-        let totals = { ut: 0, utOral: 0, hy: 0, hyOral: 0, overall: 0, numericCount: 0 };
-        s.marks.forEach(m => {
-            if (isNurToUkg(s.cls)) {
-                studentSheetData.push([m.name, m.ut, m.utOral, m.hy, m.hyOral, m.total]);
-                totals.ut += m.ut || 0; totals.utOral += m.utOral || 0; totals.hy += m.hy || 0; totals.hyOral += m.hyOral || 0; totals.overall += m.total || 0;
-            } else {
-                if (m.isGrade) {
-                    studentSheetData.push([m.name, '—', '—', `Grade ${m.grade}`]);
+        let totalMarksNumeric = 0;
+        let numericCount = 0;
+
+        // Add numeric marks
+        numericSubjects.forEach(subExample => {
+            const m = s.marks.find(m => m.name === subExample.name);
+            if (m) {
+                if (isNurUkg) {
+                    row.push(m.ut || 0, m.utOral || 0, m.hy || 0, m.hyOral || 0, m.total || 0);
                 } else {
-                    studentSheetData.push([m.name, m.ut, m.hy, m.total]);
-                    totals.ut += m.ut || 0; totals.hy += m.hy || 0; totals.overall += m.total || 0; totals.numericCount++;
+                    row.push(m.ut || 0, m.hy || 0, m.total || 0);
                 }
+                totalMarksNumeric += m.total || 0;
+                numericCount++;
+            } else {
+                row.push('—', '—', '—'); // Placeholder if subject is missing
             }
         });
-        studentSheetData.push([]);
-        if (isNurToUkg(s.cls)) {
-             studentSheetData.push(["Total", totals.ut, totals.utOral, totals.hy, totals.hyOral, totals.overall]);
-        } else {
-             studentSheetData.push(["Total", totals.ut, totals.hy, totals.overall]);
-        }
-        
-        const numericMarks = s.marks.filter(m => !m.isGrade);
-        const maxTotal = numericMarks.length * 100;
-        const percentage = maxTotal > 0 ? ((totals.overall / maxTotal) * 100).toFixed(2) + '%' : '0.00%';
-        studentSheetData.push(["Percentage", "", "", "", percentage]);
-        studentSheetData.push([]);
-        studentSheetData.push(["Attendance:", `${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}`]);
-        studentSheetData.push(["Teacher's Remark:", s.teachersRemark || '—']);
-        
-        const studentWs = XLSX.utils.aoa_to_sheet(studentSheetData);
-        studentWs['!cols'] = [{wch:20}, {wch:12}, {wch:12}, {wch:12}, {wch:12}, {wch:12}];
-        studentWs['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
-        ];
-        let safeSheetName = s.name.replace(/[\/\\?*\[\]]/g, '').substring(0, 30).trim();
-        XLSX.utils.book_append_sheet(wb, studentWs, safeSheetName);
+
+        // Add grade marks (G.K. etc)
+        gradeSubjects.forEach(subExample => {
+             const m = s.marks.find(m => m.name === subExample.name);
+             row.push(m?.grade || '—');
+        });
+
+        const maxTotalMarks = numericCount * 100;
+        const percentage = maxTotalMarks > 0 ? ((totalMarksNumeric / maxTotalMarks) * 100).toFixed(2) + '%' : '0.00%';
+
+        row.push(
+            totalMarksNumeric,
+            maxTotalMarks,
+            percentage,
+            s.teachersRemark || '—',
+            s.coscholastic?.workHabits || '—',
+            s.coscholastic?.behavior || '—'
+        );
+        detailedData.push(row);
     });
+
+    const detailedWs = XLSX.utils.aoa_to_sheet(detailedData);
+    // Auto-width for better display
+    detailedWs['!cols'] = Array(mainHeaders.length).fill({wch:15});
+    detailedWs['!cols'][1].wch = 25; // Student Name
+    detailedWs['!cols'][2].wch = 25; // Father Name
     
+    XLSX.utils.book_append_sheet(wb, detailedWs, `${displayClassLabel(cls)} Detailed Report`);
+
     const dateText = qs('printDate').textContent.replace('Date:', '').trim();
     const safeDateStr = dateText.replace(/[\/\s]/g, '-') || new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `ReportCards_${displayClassLabel(cls)}_${safeDateStr}.xlsx`);
@@ -1034,6 +1078,7 @@ qs('attendancePresent').value = '';
 qs('attendanceTotal').value = DEFAULT_ATT_TOTAL;
 qs('attendancePresentPrint').value = '';
 qs('attendanceTotalPrint').value = DEFAULT_ATT_TOTAL;
+
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
@@ -1043,9 +1088,9 @@ renderMarksTableForClass(state.selectedClass);
 }
 /* ----------------- UPDATE PRINT DATE ----------------- */
 function updatePrintDate() {
-    // This function now only sets the initial date on page load.
-    const today = new Date().toLocaleDateString();
-    qs('printDate').textContent = 'Date: ' + today;
+    // Set initial date on the editable field
+    const printDate = new Date().toLocaleDateString();
+    qs('printDate').textContent = 'Date: ' + printDate;
 }
 </script>
 </body>
