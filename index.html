@@ -4,16 +4,23 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.0.4/dist/patternomaly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
 @media print {
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 .screen-only { display: none !important; }
-.print-only { display: block !important; } /* Attendance box visibility */
+.print-only { display: block !important; } 
+
+/* **FIX: Hide canvas and show print image for chart** */
+#marksChart { display: none !important; }
+#marksChartPrint { display: block !important; max-width: 100%; height: auto !important; } 
 
 /* AGGRESSIVE PADDING REDUCTION (Fixes 2-page issue) */
 .page {
@@ -43,7 +50,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.1; 
+opacity: 0.05; /* REDUCED from 0.1 to 0.05 */
 pointer-events: none;
 z-index: 0;
 }
@@ -66,10 +73,6 @@ z-index: 0;
     margin-bottom: 5px !important; 
 }
 
-/* FIX: Ensure print-only attendance box is block level in print */
-.print-attendance-box.print-only {
-    display: block !important;
-}
 
 /* Footer Container */
 .page-footer-area {
@@ -150,6 +153,8 @@ tr { page-break-inside:avoid; page-break-after:relative; }
 body { background: #ffffff; }
 /* Hide print-only attendance block on screen */
 .print-only { display: none; } 
+/* **FIX: Hide print chart image on screen** */
+#marksChartPrint { display: none; } 
 
 .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a;
 }
@@ -167,13 +172,16 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
 select.grade-select { padding:4px; border-radius:4px; }
+
+/* minor utility */
+.small-btn { padding:6px 8px; border-radius:6px; font-size:0.9rem; }
 </style>
 </head>
 <body class="bg-gray-100 p-6">
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
 <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
 <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
-<select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
+<select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2 small-btn">
 <option value="">-- Select Class --</option>
 <option value="Nursery">Nursery</option>
 <option value="LKG">LKG</option>
@@ -190,8 +198,10 @@ select.grade-select { padding:4px; border-radius:4px; }
 </select>
 <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
 <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-<div class="mt-3 flex gap-2">
-<button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
+<div class="mt-3 flex gap-2 items-center">
+<button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded small-btn">Download Classwise Report Cards</button>
+<label class="block text-sm text-gray-600 ml-3">Set Print Date</label>
+<input id="printDateInput" type="date" class="border rounded px-2 py-1 small-btn" />
 </div>
 </div>
 <div class="page">
@@ -207,7 +217,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 
         <div class="text-right no-print absolute top-0 right-0">
             <label class="block text-xs text-gray-600">Select Class</label>
-            <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+            <select id="classSelect" class="border rounded px-2 py-1 bg-white small-btn">
             <option value="">-- Select Class --</option>
             <option value="Nursery">Nursery</option>
             <option value="LKG">LKG</option>
@@ -239,10 +249,10 @@ select.grade-select { padding:4px; border-radius:4px; }
     <input id="fatherNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Father's full name" />
     </div>
     <div class="col-span-2 flex gap-2 justify-end">
-    <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
-    <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
-    <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add / Update</button>
-    <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
+    <button id="loadBtn" class="px-3 py-1 border rounded small-btn">Load</button>
+    <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded small-btn">Save</button>
+    <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded small-btn">Add / Update</button>
+    <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded small-btn">Print</button>
     </div>
     </div>
     </div>
@@ -272,11 +282,6 @@ select.grade-select { padding:4px; border-radius:4px; }
     <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
     </div>
     </div>
-
-    <div class="print-attendance-box print-only mb-4 p-2 border rounded">
-      <p class="text-sm"><strong>Attendance:</strong> <span id="printAttendancePresent">—</span> / <span id="printAttendanceTotal">—</span></p>
-      <p class="text-sm mt-1"><strong>Result:</strong> <span id="printResult">—</span></p>
-    </div>
     
     <div class="overflow-x-auto">
     <table id="marksTable" class="w-full border-collapse table-auto text-sm">
@@ -301,11 +306,20 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
     </div>
     
+    <div class="border p-4 mt-4 print-only">
+        <h3 class="font-semibold mb-2">Attendance</h3>
+        <div class="flex gap-2 items-center">
+            <input type="number" class="attendance-print-present" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <input type="number" class="attendance-print-total" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+        </div>
+    </div>
+    
     </div>
     <div class="col-span-2">
     <div class="border p-4">
     <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
-    <canvas id="marksChart" height="280"></canvas>
+    <canvas id="marksChart" height="180"></canvas>
+    <img id="marksChartPrint" class="print-only" style="width:100%; height:180px;" alt="Marks Chart Print Preview" />
     </div>
     </div>
     </div>
@@ -334,6 +348,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="no-print text-center mt-6">
 <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
+
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
 const SUBJECTS_NUR_TO_UKG = [
@@ -364,6 +379,11 @@ attachEventListeners();
 initChart();
 updatePrintDate();
 renderMarksTableForClass(''); // initial empty
+// initialize printDateInput from storage if present
+const storedDate = localStorage.getItem('ng_print_date');
+if (storedDate && qs('printDateInput')) {
+  qs('printDateInput').value = storedDate;
+}
 }
 init();
 /* ---------------- MAP & HELPERS ---------------- */
@@ -379,7 +399,7 @@ if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') return cls;
 const map = {1:'I',2:'II',3:'III',4:'IV',5:'V',6:'VI',7:'VII',8:'VIII',9:'IX'};
 return map[Number(cls)] || cls;
 }
-/* ---------------- EVENT LISTENERS (FIXED) ---------------- */
+/* ---------------- EVENT LISTENERS ---------------- */
 function attachEventListeners() {
 qs('classSelect').addEventListener('change', e => {
 const val = interpretClassValue(e.target.value);
@@ -403,11 +423,10 @@ const student = makeEmptyStudent(name, admission, state.selectedClass, fatherNam
 if (state.studentsByClass[state.selectedClass][key]) {
 // preserve existing marks
 const ex = state.studentsByClass[state.selectedClass][key];
-// Ensure correct preservation of student properties
 student.marks = ex.marks || student.marks;
 student.attendance = ex.attendance || ex.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
-student.teachersRemark = ex.teachersRemark || ex.teachersRemark;
+student.teachersRemark = ex.teachersRemark || student.teachersRemark;
 // Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
@@ -435,23 +454,40 @@ alert('Saved locally.');
 });
 qs('printBtn').addEventListener('click', () => {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
-saveCurrentStudent(); // CRITICAL FIX: Save before printing to ensure latest data is on screen
-calculateTotalsAndUpdate();
-// Update print-only attendance and result fields
-const student = getCurrentStudent();
-if (student) {
-    document.getElementById('printAttendancePresent').textContent = student.attendance.present || 0;
-    document.getElementById('printAttendanceTotal').textContent = student.attendance.total || DEFAULT_ATT_TOTAL;
-    // Simple result logic for print-out
-    const percentageText = qs('percentage') ? qs('percentage').textContent : '0%';
-    const percentage = parseFloat(percentageText.replace('%', ''));
-    document.getElementById('printResult').textContent = percentage >= 40 ? 'PASS' : 'FAIL';
+// persist print date if set
+if (qs('printDateInput') && qs('printDateInput').value) {
+  localStorage.setItem('ng_print_date', qs('printDateInput').value);
 }
+calculateTotalsAndUpdate();
+
+// **FIX: Convert chart canvas to image for reliable printing**
+const chartPrintImg = qs('marksChartPrint');
+if (state.chart && chartPrintImg) {
+    // Force chart update before capturing image
+    state.chart.options.animation = false;
+    state.chart.update();
+    // Capture image
+    chartPrintImg.src = state.chart.toBase64Image();
+    // Restore chart options
+    state.chart.options.animation = true;
+    state.chart.update();
+}
+// **END CHART PRINT FIX**
+
 window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
 qs('clearDataBtn').addEventListener('click', clearAllData);
+// print date persisting
+if (qs('printDateInput')) {
+  qs('printDateInput').addEventListener('change', () => {
+    const v = qs('printDateInput').value;
+    if (v) localStorage.setItem('ng_print_date', v);
+    else localStorage.removeItem('ng_print_date');
+    updatePrintDate();
+  });
+}
 }
 /* ---------------- PERSISTENCE ---------------- */
 function persistStudents() {
@@ -539,31 +575,29 @@ const hyOralVal = (student && student.marks[idx]) ? (student.marks[idx].hyOral |
 tbody.insertAdjacentHTML('beforeend', `
 <tr>
 <td class="border px-3 py-2">${m.name}</td>
-<td class="border px-3 py-2 text-center screen-only">
+<td class="border px-3 py-2 text-center">
 <input data-idx="${idx}" data-field="ut" type="number" min="0" max="${utMax}" value="${utVal}" class="w-16 p-1 border rounded" />
-<span class="print-only">${utVal} / ${utMax}</span>
 </td>
-<td class="border px-3 py-2 text-center screen-only">
+<td class="border px-3 py-2 text-center">
 <input data-idx="${idx}" data-field="utOral" type="number" min="0" max="${utOralMax}" value="${utOralVal}" class="w-16 p-1 border rounded" ${utOralMax===0?'disabled':''} />
-<span class="print-only">${utOralVal} / ${utOralMax}</span>
 </td>
-<td class="border px-3 py-2 text-center screen-only">
+<td class="border px-3 py-2 text-center">
 <input data-idx="${idx}" data-field="hy" type="number" min="0" max="${hyMax}" value="${hyVal}" class="w-16 p-1 border rounded" />
-<span class="print-only">${hyVal} / ${hyMax}</span>
 </td>
-<td class="border px-3 py-2 text-center screen-only">
+<td class="border px-3 py-2 text-center">
 <input data-idx="${idx}" data-field="hyOral" type="number" min="0" max="${hyOralMax}" value="${hyOralVal}" class="w-16 p-1 border rounded" ${hyOralMax===0?'disabled':''} />
-<span class="print-only">${hyOralVal} / ${hyOralMax}</span>
 </td>
-<td class="border px-3 py-2 font-semibold text-center">${student ? (student.marks[idx].total || 0) : 0} / 100</td>
+<td class="border px-3 py-2 font-semibold text-center">${student ? (student.marks[idx].total || 0) : 0}</td>
 </tr>
 `);
 });
 tfoot.innerHTML = `
 <tr class="bg-gray-50">
 <td class="border px-3 py-2 font-semibold text-right">Total</td>
-<td id="totalUT" colspan="2" class="border px-3 py-2 font-semibold text-center">0</td>
-<td id="totalHY" colspan="2" class="border px-3 py-2 font-semibold text-center">0</td>
+<td id="totalUT" class="border px-3 py-2 font-semibold text-center">0</td>
+<td id="totalUTOral" class="border px-3 py-2 font-semibold text-center">0</td>
+<td id="totalHY" class="border px-3 py-2 font-semibold text-center">0</td>
+<td id="totalHYOral" class="border px-3 py-2 font-semibold text-center">0</td>
 <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
 </tr>
 <tr class="bg-gray-50">
@@ -593,13 +627,12 @@ tbody.insertAdjacentHTML('beforeend', `
 <td class="border px-3 py-2 text-center">—</td>
 <td class="border px-3 py-2 text-center">—</td>
 <td class="border px-3 py-2 text-center">
-<select data-idx="${idx}" data-field="grade" class="grade-select screen-only">
+<select data-idx="${idx}" data-field="grade" class="grade-select">
 <option value="A"${grade==='A'?' selected':''}>A</option>
 <option value="B"${grade==='B'?' selected':''}>B</option>
 <option value="C"${grade==='C'?' selected':''}>C</option>
 <option value="D"${grade==='D'?' selected':''}>D</option>
 </select>
-<span class="print-only">${grade}</span>
 </td>
 </tr>
 `);
@@ -610,15 +643,9 @@ const overall = mark ? (mark.total || 0) : 0;
 tbody.insertAdjacentHTML('beforeend', `
 <tr>
 <td class="border px-3 py-2">${s}</td>
-<td class="border px-3 py-2 text-center screen-only">
-<input data-idx="${idx}" data-field="ut" type="number" min="0" max="20" value="${utVal}" class="w-16 p-1 border rounded" />
-<span class="print-only">${utVal} / 20</span>
-</td>
-<td class="border px-3 py-2 text-center screen-only">
-<input data-idx="${idx}" data-field="hy" type="number" min="0" max="80" value="${hyVal}" class="w-16 p-1 border rounded" />
-<span class="print-only">${hyVal} / 80</span>
-</td>
-<td class="border px-3 py-2 font-semibold text-center">${overall} / 100</td>
+<td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="ut" type="number" min="0" max="20" value="${utVal}" class="w-16 p-1 border rounded" /></td>
+<td class="border px-3 py-2 text-center"><input data-idx="${idx}" data-field="hy" type="number" min="0" max="80" value="${hyVal}" class="w-16 p-1 border rounded" /></td>
+<td class="border px-3 py-2 font-semibold text-center">${overall}</td>
 </tr>
 `);
 }
@@ -668,7 +695,7 @@ if (!isNaN(min) && val < min) {
 el.value = min;
 }
 }
-/* ---------------- LOAD / SAVE STUDENT (FIXED) ---------------- */
+/* ---------------- LOAD / SAVE STUDENT ---------------- */
 function loadStudent(key) {
 const [cls, admission] = key.split('|');
 const student = state.studentsByClass[cls] && state.studentsByClass[cls][key];
@@ -677,42 +704,52 @@ state.selectedStudentKey = key;
 state.selectedClass = cls;
 // set class select to roman or textual
 const romanMap = { "1":"I","2":"II","3":"III","4":"IV","5":"V","6":"VI","7":"VII","8":"VIII","9":"IX" };
-const classSelectValue = cls === 'Nursery' || cls === 'LKG' || cls === 'UKG' ? cls : romanMap[cls] || cls;
-qs('classSelect').value = classSelectValue;
-
-// Update header display
+if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') {
+qs('classSelect').value = cls;
+} else {
+qs('classSelect').value = romanMap[cls] || cls;
+}
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
+// Load father name for display
 qs('fatherName').textContent = student.fatherName || '—';
-// Update input fields
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
+// Load father name for input control
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
-// Load attendance from the screen-only input fields
-document.querySelectorAll('#attendancePresent').forEach(el => el.value = student.attendance.present || 0);
-document.querySelectorAll('#attendanceTotal').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
-renderMarksTableForClass(student.cls); // Re-render table with student's data
+// Load attendance from the screen input fields and update print fields
+qs('attendancePresent').value = student.attendance.present || 0;
+document.querySelectorAll('.attendance-print-present').forEach(el => el.value = student.attendance.present || 0);
 
-// coscholastic FIX: Use print-only/screen-only classes
+qs('attendanceTotal').value = student.attendance.total || DEFAULT_ATT_TOTAL;
+document.querySelectorAll('.attendance-print-total').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
+
+
+renderMarksTableForClass(student.cls);
+// populate marks into inputs/selects
+qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
+const idx = Number(el.getAttribute('data-idx'));
+const field = el.getAttribute('data-field');
+if (!Number.isFinite(idx)) return;
+const m = student.marks[idx];
+if (!m) return;
+if (el.tagName.toLowerCase() === 'select') {
+// grade
+el.value = m.grade || 'A';
+} else {
+const val = m[field] ?? (m[field] === 0 ? 0 : '');
+if (typeof val === 'number') el.value = val;
+}
+});
+// coscholastic
 student.coscholastic = student.coscholastic || {};
 qs('coscholasticBody').innerHTML = `
-<tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full screen-only" />
-<span class="print-only">${student.coscholastic.workHabits || ''}</span></td></tr>
-<tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full screen-only"/>
-<span class="print-only">${student.coscholastic.behavior || ''}</span></td></tr>
+<tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+<tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
-// Attach listeners to newly created coscholastic inputs
-qs('coscholasticBody').querySelectorAll('input').forEach(el => {
-  el.addEventListener('input', saveCurrentStudent);
-});
-// Load remark
-if (qs('teachersRemark')) {
-    qs('teachersRemark').textContent = student.teachersRemark || student.remark || 'Good effort. Keep improving.';
-}
-
 attachMarksInputsListeners();
 calculateTotalsAndUpdate();
 }
@@ -720,9 +757,13 @@ function saveCurrentStudent() {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 const student = getCurrentStudent();
 if (!student) return;
-// Save from the *first* visible instance of attendance input
-student.attendance.present = Number(document.getElementById('attendancePresent').value) || 0;
-student.attendance.total = Number(document.getElementById('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+// Save from the primary (screen) input fields
+student.attendance.present = Number(qs('attendancePresent').value) || 0;
+student.attendance.total = Number(qs('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
+// Update the print fields to match
+document.querySelectorAll('.attendance-print-present').forEach(el => el.value = student.attendance.present || 0);
+document.querySelectorAll('.attendance-print-total').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
+
 // Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
@@ -788,11 +829,8 @@ qs('totalUTOral').textContent = totals.utOral;
 qs('totalHY').textContent = totals.hy;
 qs('totalHYOral').textContent = totals.hyOral;
 qs('totalOverall').textContent = totals.overall;
-const totalMax = student.marks.reduce((sum, m) => {
-    const max = m.max || {};
-    return sum + (max.ut || 0) + (max.utOral || 0) + (max.hy || 0) + (max.hyOral || 0);
-}, 0) || 1;
-percentage = ((totals.overall / totalMax) * 100).toFixed(2);
+const subjCount = student.marks.length || 1;
+percentage = ((totals.overall / (subjCount * 100)) * 100).toFixed(2);
 qs('percentage').textContent = percentage + '%';
 } else if (student) {
 // classes 1-9
@@ -837,7 +875,7 @@ qs('marksTableBody').querySelectorAll('tr').forEach((tr, idx) => {
 const m = student.marks[idx];
 if (!m) return;
 const overallCell = tr.children[tr.children.length - 1];
-overallCell.textContent = m.isGrade ? (m.grade || '—') : (m.total || 0) + (m.isGrade ? '' : ' / 100'); // FIX: Added / 100
+overallCell.textContent = m.isGrade ? (m.grade || '—') : (m.total || 0);
 });
 }
 // update chart
@@ -858,111 +896,93 @@ if (qs('totalUT')) qs('totalUT').textContent = totalUT;
 if (qs('totalHY')) qs('totalHY').textContent = totalHY;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
-/* ----------------- CHART (FIXED) ----------------- */
+/* ----------------- CHART ----------------- */
 function initChart() {
 const ctx = qs('marksChart').getContext('2d');
-// FIX: Ensure the chart is destroyed if it already exists to prevent duplicates
-if (state.chart) {
-    state.chart.destroy();
-}
 state.chart = new Chart(ctx, {
 type: 'bar',
 data: { labels: [], datasets: [] },
-options: { 
-  responsive: true, 
-  maintainAspectRatio: false,
-  plugins:{ 
-    legend: { display: true },
-    title: { display: true, text: 'Subject-wise Performance Analysis' }
-  }, 
-  scales:{ 
-    y: { 
-      beginAtZero:true, 
-      max:100, 
-      title: { display: true, text: 'Marks (Out of 100)' }
-    } 
-  } ,
-  animation: false,
-}
+options: { responsive: true, plugins:{ legend: { display: true } }, scales:{ y: { beginAtZero:true, max:100 } } }
 });
 }
 function updateChart(student) {
-if (!state.chart) initChart(); 
-// Max mark calculation (assuming all non-grade subjects are 100 max)
-const maxSubjectMark = isNurToUkg(student.cls) ? 100 : 100;
-state.chart.options.scales.y.max = maxSubjectMark;
-
-// Filter out graded subjects for chart data
-const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
-const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
+const labels = student.marks.map(m => m.name);
+const obtained = student.marks.map(m => m.isGrade ? 0 : (m.total || 0));
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
 
-const colors = ['#3B82F6', '#10B981', '#F59E0B']; // Blue, Green, Yellow-Orange
+/* Pattern array for B/W visibility using patternomaly */
+const patterns = [
+  pattern.draw('diagonal', '#000'),
+  pattern.draw('square', '#000'),
+  pattern.draw('circle', '#000'),
+  pattern.draw('zigzag', '#000'),
+  pattern.draw('plus', '#000'),
+  pattern.draw('triangle', '#000')
+];
 
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
-{ label: 'Obtained', data: obtained, backgroundColor: colors[0], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Average', data: classAvg, backgroundColor: colors[1], borderColor: '#000', borderWidth:1 },
-{ label: 'Class Highest', data: classHigh, backgroundColor: colors[2], borderColor: '#000', borderWidth:1 }
+{ label: 'Obtained', data: obtained, backgroundColor: patterns[0 % patterns.length], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Average', data: classAvg, backgroundColor: patterns[1 % patterns.length], borderColor: '#000', borderWidth:1 },
+{ label: 'Class Highest', data: classHigh, backgroundColor: patterns[2 % patterns.length], borderColor: '#000', borderWidth:1 }
 ];
 state.chart.update();
 }
 function getClassAverage(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
-// Only consider non-graded subjects for average
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub && !sub.isGrade ? (sub.total || 0) : null;
+return sub ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
 }
 function getClassHighest(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
-// Only consider non-graded subjects for highest
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub && !sub.isGrade ? (sub.total || 0) : null;
+return sub ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.max(...vals);
 }
 /* ---------------- DASHBOARD TOPPER ---------------- */
 function showDashboardTopper() {
-const cls = interpretClassValue(qs('dashboardClassSelect').value); // FIX: Ensure class is interpreted
+const cls = qs('dashboardClassSelect').value;
 if (!cls) { qs('classTopperDashboard').textContent='Class Topper: —'; qs('schoolTopperDashboard').textContent='School Topper: —'; return; }
-let classTopper = { name:'—', total:-1 };
-let schoolTopper = { name:'—', total:-1 };
+let classTopper = { name:'—', total:0 };
+let schoolTopper = { name:'—', total:0 };
 Object.keys(state.studentsByClass[cls]||{}).forEach(k => {
 const s = state.studentsByClass[cls][k];
-const tot = s.marks.filter(m=>!m.isGrade).reduce((a,b)=>a+(b.total||0),0);
+const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
 if (tot > classTopper.total) classTopper={name:s.name,total:tot};
 });
 Object.values(state.studentsByClass).forEach(clsObj => {
 Object.values(clsObj).forEach(s => {
-const tot = s.marks.filter(m=>!m.isGrade).reduce((a,b)=>a+(b.total||0),0);
+const tot = s.marks.reduce((a,b)=>a+(b.total||0),0);
 if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
 });
 });
-qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total > 0 ? classTopper.total : '—'}`;
-qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total > 0 ? schoolTopper.total : '—'}`;
+qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
+qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
 }
-/* ---------------- BULK DOWNLOAD (FIXED FOR EXCEL COLORING) ---------------- */
+/* ---------------- BULK DOWNLOAD (Excel) ---------------- */
 function bulkDownloadReports() {
-// Check for SheetJS library, exit if not loaded
-if (typeof XLSX === 'undefined') {
-    alert('SheetJS library (xlsx.full.min.js) is required for Excel download. Ensure the script tag is included in the <head>.');
-    return;
-}
-
 const clsInput = qs('dashboardClassSelect').value || state.selectedClass;
 if (!clsInput) return alert('Select a class for bulk download.');
 const cls = interpretClassValue(clsInput);
 if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
 
+// Build rows (one row per student-subject)
 const students = Object.keys(state.studentsByClass[cls]).map(k => state.studentsByClass[cls][k]);
-let subjects = isNurToUkg(cls) ? SUBJECTS_NUR_TO_UKG.map(s => s.name) : subjectsForClass(cls);
+
+let subjects = [];
+if (isNurToUkg(cls)) {
+subjects = SUBJECTS_NUR_TO_UKG.map(s => s.name);
+} else {
+subjects = subjectsForClass(cls);
+}
 
 const rows = students.map(s => {
   const base = {
@@ -973,15 +993,13 @@ const rows = students.map(s => {
   };
 
   if (isNurToUkg(cls)) {
-    SUBJECTS_NUR_TO_UKG.forEach(sConfig => {
-      const sub = sConfig.name;
+    subjects.forEach(sub => {
       const mark = s.marks.find(m => m.name === sub) || {};
-      
-      base[`${sub} - UT Written (${sConfig.utMax || 0})`] = mark.ut ?? 0;
-      base[`${sub} - UT Oral (${sConfig.utOralMax || 0})`] = mark.utOral ?? 0;
-      base[`${sub} - HY Written (${sConfig.hyMax || 0})`] = mark.hy ?? 0;
-      base[`${sub} - HY Oral (${sConfig.hyOralMax || 0})`] = mark.hyOral ?? 0;
-      base[`${sub} - Overall (100)`] = mark.total ?? 0;
+      base[`${sub} - UT Written`] = mark.ut ?? 0;
+      base[`${sub} - UT Oral`] = mark.utOral ?? 0;
+      base[`${sub} - HY Written`] = mark.hy ?? 0;
+      base[`${sub} - HY Oral`] = mark.hyOral ?? 0;
+      base[`${sub} - Overall`] = mark.total ?? 0;
     });
   } else {
     subjects.forEach(sub => {
@@ -991,28 +1009,16 @@ const rows = students.map(s => {
       } else {
         base[`${sub} - UT(20)`] = mark.ut ?? 0;
         base[`${sub} - HY(80)`] = mark.hy ?? 0;
-        base[`${sub} - Overall(100)`] = mark.total ?? 0;
+        base[`${sub} - Overall`] = mark.total ?? 0;
       }
     });
   }
 
-  const numericMarks = (s.marks || []).filter(m => !m.isGrade);
-  const totalUT = numericMarks.reduce((a,b) => a + (Number(b.ut) || 0) + (Number(b.utOral) || 0), 0);
-  const totalHY = numericMarks.reduce((a,b) => a + (Number(b.hy) || 0) + (Number(b.hyOral) || 0), 0);
-  const overall = numericMarks.reduce((a,b) => a + (Number(b.total) || 0), 0);
-  
-  let denom = 0;
-  if (isNurToUkg(cls)) {
-      denom = numericMarks.reduce((a, b) => {
-          const maxConfig = SUBJECTS_NUR_TO_UKG.find(ss => ss.name === b.name) || {};
-          return a + (maxConfig.utMax || 0) + (maxConfig.utOralMax || 0) + (maxConfig.hyMax || 0) + (maxConfig.hyOralMax || 0);
-      }, 0) || 1;
-  } else {
-      const numericCount = numericMarks.length || 1;
-      denom = (numericCount * 100);
-  }
-  
-  const percentage = denom > 0 ? ((overall / denom) * 100).toFixed(2) : '0.00';
+  const totalUT = (s.marks || []).reduce((a,b) => a + (Number(b.ut) || 0), 0);
+  const totalHY = (s.marks || []).reduce((a,b) => a + (Number(b.hy) || 0), 0);
+  const overall = (s.marks || []).reduce((a,b) => a + (Number(b.total) || 0), 0);
+  const numericCount = (s.marks || []).filter(m => !m.isGrade).length || 1;
+  const percentage = numericCount > 0 ? ((overall / (numericCount * 100)) * 100).toFixed(2) : '0.00';
 
   base['Total UT'] = totalUT;
   base['Total HY'] = totalHY;
@@ -1025,71 +1031,23 @@ const rows = students.map(s => {
 
 const wb = XLSX.utils.book_new();
 const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
 
-// Apply color formatting
+// Apply simple styling: header color + alternate row fill (works in many XLSX viewers)
 const range = XLSX.utils.decode_range(ws['!ref']);
-const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center", wrapText: true } }; // Blue header
-const oddRowStyle = { fill: { fgColor: { rgb: "D9E1F2" } } }; // Light blue/gray for odd rows
-const evenRowStyle = { fill: { fgColor: { rgb: "FFFFFF" } } }; // White for even rows
-
-// Determine column widths
-const colWidths = [
-    { wch: 20 }, // Student Name
-    { wch: 20 }, // Father's Name
-    { wch: 15 }, // Admission No
-    { wch: 10 }, // Class
-];
-
-const firstRowKeys = rows.length > 0 ? Object.keys(rows[0]) : [];
-firstRowKeys.slice(4).forEach(key => { // Start after the 4 fixed columns
-    if (key.includes('Overall')) {
-        colWidths.push({ wch: 15 });
-    } else if (key.includes('Total') || key.includes('Percentage') || key.includes('Remark') || key.includes('Attendance')) {
-        colWidths.push({ wch: 15 });
-    } else {
-        colWidths.push({ wch: 12 });
-    }
-});
-
-ws['!cols'] = colWidths;
-
 for (let R = range.s.r; R <= range.e.r; ++R) {
   for (let C = range.s.c; C <= range.e.c; ++C) {
     const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-    const cell = ws[cellAddress] || {};
-
+    const cell = ws[cellAddress];
+    if (!cell) continue;
     if (R === 0) {
-      // Header row formatting
-      cell.s = headerStyle;
+      cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } }, alignment: { horizontal: "center" } };
     } else {
-      // Data row formatting
-      const rowStyle = (R % 2 === 0) ? evenRowStyle : oddRowStyle;
-      cell.s = cell.s || {}; 
-      cell.s.fill = rowStyle.fill;
-      
-      // Apply number format to marks columns 
-      if (C >= 4 && !firstRowKeys[C]?.includes('Grade') && !firstRowKeys[C]?.includes('Attendance') && !firstRowKeys[C]?.includes('Remark') && !firstRowKeys[C]?.includes('Percentage')) {
-        cell.s.numFmt = '0';
-      }
-      
-      // Highlight Total/Percentage columns
-      if (firstRowKeys[C]?.includes('Total') || firstRowKeys[C]?.includes('Overall(100)')) {
-          cell.s.font = cell.s.font || {};
-          cell.s.font.bold = true;
-          if (firstRowKeys[C]?.includes('Percentage')) {
-              cell.s.fill = { fgColor: { rgb: "C6EFCE" } }; // Light Green for Percentage
-          } else if (firstRowKeys[C]?.includes('Overall(100)')) {
-              cell.s.fill = { fgColor: { rgb: "FFF2CC" } }; // Light Yellow for Overall Subject Total
-          } else if (firstRowKeys[C]?.includes('Total')) {
-              cell.s.fill = { fgColor: { rgb: "DEEBF7" } }; // Light Blue for Grand Totals
-          }
-      }
+      const fillColor = (R % 2 === 0) ? "D9E1F2" : "FFFFFF";
+      cell.s = { fill: { fgColor: { rgb: fillColor } } };
     }
-    ws[cellAddress] = cell;
   }
 }
-
-XLSX.utils.book_append_sheet(wb, ws, `Class_${displayClassLabel(cls)}`);
 
 const filename = `ReportCards_${displayClassLabel(cls)}_${new Date().toISOString().split('T')[0]}.xlsx`;
 XLSX.writeFile(wb, filename);
@@ -1117,28 +1075,39 @@ qs('admissionInput').value = '';
 // Clear father name input
 if (qs('fatherNameInput')) qs('fatherNameInput').value = '';
 qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
-// Clear *both* sets of attendance inputs
-document.querySelectorAll('#attendancePresent').forEach(el => el.value = '');
-document.querySelectorAll('#attendanceTotal').forEach(el => el.value = DEFAULT_ATT_TOTAL);
 
-// FIX: Ensure coscholastic inputs are screen-only
+// Clear primary (screen) attendance inputs
+if(qs('attendancePresent')) qs('attendancePresent').value = '';
+if(qs('attendanceTotal')) qs('attendanceTotal').value = DEFAULT_ATT_TOTAL;
+
+// Clear print-only attendance inputs (using the new classes)
+document.querySelectorAll('.attendance-print-present').forEach(el => el.value = '');
+document.querySelectorAll('.attendance-print-total').forEach(el => el.value = DEFAULT_ATT_TOTAL);
+
 qs('coscholasticBody').innerHTML = `
-<tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full screen-only" /><span class="print-only"></span></td></tr>
-<tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full screen-only"/><span class="print-only"></span></td></tr>
+<tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+<tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
 if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
 renderMarksTableForClass(state.selectedClass);
 }
 /* ----------------- UPDATE PRINT DATE ----------------- */
 function updatePrintDate() {
-const printDate = new Date().toLocaleDateString();
+const stored = localStorage.getItem('ng_print_date');
+let printDate;
+if (stored) {
+  const d = new Date(stored + 'T00:00:00');
+  printDate = d.toLocaleDateString();
+} else {
+  printDate = new Date().toLocaleDateString();
+}
 qs('printDate').textContent = 'Date: ' + printDate;
 }
 /* ----------------- INIT CALL (already called above) ----------------- */
 /* The init() call is at top of script */
-/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
+/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ----------------- */
 (function wireLoadFromSaved() {
-// When page loads, nothing auto-loads. Users use Load/Add buttons.
+// no-op: UI controlled loading
 })();
 </script>
 </body>
