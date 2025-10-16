@@ -1024,7 +1024,8 @@ a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
 a.click();
 URL.revokeObjectURL(url);
 }
-// MODIFICATION 1: Function to download marks as Excel (CSV)
+
+// MODIFICATION 1: REFACTORED FUNCTION TO DOWNLOAD MARKS AS EXCEL (CSV)
 function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for Excel download.');
@@ -1034,28 +1035,44 @@ function downloadMarksExcel() {
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
 
-    let header;
-    let subjectHeader;
-
-    if (isNurUkg) {
-        // Headers for Nursery/LKG/UKG
-        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
-    } else {
-        // Headers for Classes 1-9
-        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
-    }
+    // --- 1. Determine Subjects and dynamically build Subject Headers ---
+    // Use the subject configuration list based on the class for consistent ordering
+    const subjectConfigs = isNurUkg ? SUBJECTS_NUR_TO_UKG : subjectsForClass(cls).map(name => ({name}));
     
-    // Core headers required by the user
-    const coreHeader = "Admission No.,Student Name,Father Name,Class";
-    const overallHeader = "Overall Total Marks,Overall Percentage";
-    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
+    let subjectHeaders = [];
+    subjectConfigs.forEach(s => {
+        const baseName = s.name.replace(/\./g, '').trim(); // Remove dots for header cleanliness
+        if (s.name === 'G.K.') {
+            // G.K. is always a grade
+            subjectHeaders.push(`Grade ${baseName}`);
+        } else if (isNurUkg) {
+            // Nursery/LKG/UKG: UT Written, UT Oral, HY Written, HY Oral, Total
+            subjectHeaders.push(
+                `UT Written ${baseName}`, `UT Oral ${baseName}`, 
+                `HY Written ${baseName}`, `HY Oral ${baseName}`, `Total ${baseName}`
+            );
+        } else {
+            // Classes 1-9: UT, HY, Total
+            subjectHeaders.push(`UT ${baseName}`, `HY ${baseName}`, `Total ${baseName}`);
+        }
+    });
 
-    let csvContent = header;
+    // --- 2. Define Core Headers ---
+    const coreHeaders = [
+        "Admission No.", "Student Name", "Father's Name", "Class", 
+        "Percentage", "Overall Remark", "Work Habits", "Behavior", 
+        "Days Present", "Days Total"
+    ];
 
+    // --- 3. Construct the Full Header Row ---
+    let headerRow = coreHeaders.join(',') + ',' + subjectHeaders.join(',') + '\n';
+    let csvContent = headerRow;
+
+    // --- 4. Populate Data Rows (One student per row) ---
     students.forEach(s => {
-        // Calculate overall totals and percentage for the overall columns
-        const studentNumericMarks = s.marks.filter(m => !m.isGrade);
-        const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
+        // Recalculate Totals/Percentage for data accuracy
+        const numericMarks = s.marks.filter(m => !m.isGrade);
+        const overallTotal = numericMarks.reduce((a, b) => a + (b.total || 0), 0);
         let maxPossible = 0;
         
         if (isNurUkg) {
@@ -1063,45 +1080,51 @@ function downloadMarksExcel() {
                 maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
             });
         } else {
-            maxPossible = studentNumericMarks.length * 100;
+            maxPossible = numericMarks.length * 100;
         }
-
         const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
 
-        // Base student info, only for the first line of the student
-        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
+        // Core Data Fields
+        let dataFields = [
+            `"${s.admission}"`,
+            `"${s.name}"`,
+            `"${s.fatherName}"`,
+            `"${classLabel}"`,
+            `"${percentage}"`,
+            `"${s.remark || '—'}"`,
+            `"${s.coscholastic.workHabits || '—'}"`,
+            `"${s.coscholastic.behavior || '—'}"`,
+            s.attendance.present || 0,
+            s.attendance.total || DEFAULT_ATT_TOTAL
+        ];
 
-        s.marks.forEach((m, index) => {
-            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
-            row += `,"${m.name}",`;
-            
-            let marksData;
-            if (m.isGrade) {
-                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
-                if (isNurUkg) {
-                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
-                } else {
-                    marksData = `—,—,Grade ${m.grade || '—'}`;
-                }
+        // Subject Marks Fields
+        subjectConfigs.forEach(config => {
+            const mark = s.marks.find(m => m.name === config.name) || {};
+
+            if (config.name === 'G.K.') {
+                // G.K. Grade
+                dataFields.push(`"${mark.grade || '—'}"`);
             } else if (isNurUkg) {
-                // Nur-UKG numerical: UT W/O, HY W/O
-                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
+                // Nur-UKG: UT W/O, HY W/O, Total
+                dataFields.push(
+                    mark.ut || 0,
+                    mark.utOral || 0,
+                    mark.hy || 0,
+                    mark.hyOral || 0,
+                    mark.total || 0
+                );
             } else {
-                // 1-9 numerical: UT, HY
-                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
+                // 1-9: UT, HY, Total
+                dataFields.push(
+                    mark.ut || 0,
+                    mark.hy || 0,
+                    mark.total || 0
+                );
             }
-
-            row += marksData;
-
-            // Append overall total and percentage only to the first subject row
-            if (index === 0) {
-                row += `,${overallTotal},"${percentage}"`;
-            } else {
-                // Leave the overall columns empty for subsequent rows
-                row += `,,`; 
-            }
-            csvContent += row + "\n";
         });
+
+        csvContent += dataFields.join(',') + '\n';
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1112,6 +1135,7 @@ function downloadMarksExcel() {
     a.click();
     URL.revokeObjectURL(url);
 }
+
 
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
