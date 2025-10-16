@@ -189,6 +189,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="mt-3 flex gap-2">
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
 <button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download Classwise Marks (Excel)</button>
+<button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
 </div>
 </div>
 <div class="page">
@@ -343,7 +344,6 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
-const PASSWORD = '2006'; // NEW: Access Password
 const SUBJECTS_NUR_TO_UKG = [
 { name: "English", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
 { name: "Hindi", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
@@ -355,48 +355,37 @@ const SUBJECTS_1_TO_5 = ["Hindi", "English", "Mathematics", "Computer", "E.V.S."
 const SUBJECTS_6_TO_8 = ["Hindi", "English", "Mathematics", "Computer", "Drawing", "G.K.", "Science", "S.S.T."];
 const SUBJECTS_9 = ["Hindi", "English", "Mathematics", "Science", "S.S.T.", "Drawing"];
 const DEFAULT_ATT_TOTAL = 130;
+
+// --- MODIFICATIONS FOR PASSWORD LOGIN AND MANAGEMENT ---
+const LOGIN_PASSWORD_KEY = 'ng_loginPassword';
+const DEFAULT_LOGIN_PASSWORD = '2006'; // Initial required login password
+const ADMIN_PASSWORD = '1234';         // Password to change the login password
+// -----------------------------------------------------
+
 /* ---------------- STATE ---------------- */
 let state = {
 selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: null // Added for MODIFICATION 2
+reportPrintDate: null, // Added for MODIFICATION 2
+loginPassword: DEFAULT_LOGIN_PASSWORD // ADDED: Current login password
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 
-/* ---------------- ACCESS CONTROL ---------------- */
-// Function to check password before allowing access. Uses sessionStorage.
-function checkAccess() {
-    // Check if the user has already unlocked this session
-    if (sessionStorage.getItem('isUnlocked') === 'true') {
-        return true;
-    }
-
-    const enteredPassword = prompt("NANDI GURUKUL VIDYA MANDIR\n\nEnter the password to access the Report Card Editor:");
-    
-    if (enteredPassword === PASSWORD) {
-        sessionStorage.setItem('isUnlocked', 'true');
-        return true;
-    }
-    
-    // Block access if the password is wrong
-    return false;
-}
-
-
 /* ---------------- INIT ---------------- */
 function init() {
-    // NEW: Check password first
-    if (!checkAccess()) {
-        // If access is denied, stop initialization and replace the body content
-        document.body.innerHTML = '<div style="text-align:center; padding:50px; font-size:1.5rem; color:#4f46e5; background:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center;">ACCESS DENIED. Please refresh the page to try again.</div>';
-        return; // Stop execution
-    }
+    // 1. Password Check (MUST BE FIRST)
+    if (!checkLogin()) return; // Stop initialization if login fails
 
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
+    
+    // Load stored password or set default
+    const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
+    state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
+
     // Load stored print date if available
     const storedDate = localStorage.getItem('ng_reportPrintDate');
     if (storedDate) {
@@ -408,7 +397,48 @@ function init() {
     updatePrintDate();
     renderMarksTableForClass(''); // initial empty
 }
-init();
+
+/* ---------------- LOGIN FUNCTIONS ---------------- */
+
+function checkLogin() {
+    // Load the most current password from local storage or use the default
+    const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
+    state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
+
+    // Temporarily hide content until login is successful
+    document.body.style.display = 'none'; 
+    
+    let password = prompt('Enter Login Password (Default: ' + state.loginPassword + ')');
+
+    if (password === state.loginPassword) {
+        // Successful login
+        document.body.style.display = 'block'; // Show content
+        return true;
+    } else {
+        document.body.style.display = 'block'; 
+        alert('Incorrect Password! Access Denied.');
+        document.body.innerHTML = '<div style="margin: 50px; text-align: center;"><h1 style="color: red;">ACCESS DENIED. Incorrect Password.</h1></div>';
+        return false;
+    }
+}
+
+function changeLoginPassword() {
+    const adminPass = prompt('Enter Admin Password to change Login Password (Default: ' + ADMIN_PASSWORD + ')');
+    
+    if (adminPass !== ADMIN_PASSWORD) {
+        return alert('Incorrect Admin Password! Cannot change login password.');
+    }
+    
+    const newPass = prompt('Enter New Login Password:');
+    
+    if (!newPass || newPass.trim() === '') {
+        return alert('New password cannot be empty.');
+    }
+    
+    state.loginPassword = newPass;
+    localStorage.setItem(LOGIN_PASSWORD_KEY, newPass);
+    alert(`Login Password successfully updated to: ${newPass}. Please remember it for the next login.`);
+}
 /* ---------------- MAP & HELPERS ---------------- */
 function interpretClassValue(val) {
 if (!val) return '';
@@ -486,6 +516,9 @@ qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
 qs('downloadExcelBtn').addEventListener('click', downloadMarksExcel);
 // MODIFICATION 2: Attach Set Print Date event listener
 qs('setPrintDateBtn').addEventListener('click', setReportPrintDate);
+
+// ADDED: Attach Set New Login Password event listener
+qs('setNewLoginPassBtn').addEventListener('click', changeLoginPassword);
 
 qs('clearDataBtn').addEventListener('click', clearAllData);
 }
@@ -1053,8 +1086,7 @@ a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
 a.click();
 URL.revokeObjectURL(url);
 }
-
-// MODIFICATION 1: REFACTORED FUNCTION TO DOWNLOAD MARKS AS EXCEL (CSV)
+// MODIFICATION 1: Function to download marks as Excel (CSV)
 function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for Excel download.');
@@ -1064,44 +1096,28 @@ function downloadMarksExcel() {
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
 
-    // --- 1. Determine Subjects and dynamically build Subject Headers ---
-    // Use the subject configuration list based on the class for consistent ordering
-    const subjectConfigs = isNurUkg ? SUBJECTS_NUR_TO_UKG : subjectsForClass(cls).map(name => ({name}));
+    let header;
+    let subjectHeader;
+
+    if (isNurUkg) {
+        // Headers for Nursery/LKG/UKG
+        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
+    } else {
+        // Headers for Classes 1-9
+        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
+    }
     
-    let subjectHeaders = [];
-    subjectConfigs.forEach(s => {
-        const baseName = s.name.replace(/\./g, '').trim(); // Remove dots for header cleanliness
-        if (s.name === 'G.K.') {
-            // G.K. is always a grade
-            subjectHeaders.push(`Grade ${baseName}`);
-        } else if (isNurUkg) {
-            // Nursery/LKG/UKG: UT Written, UT Oral, HY Written, HY Oral, Total
-            subjectHeaders.push(
-                `UT Written ${baseName}`, `UT Oral ${baseName}`, 
-                `HY Written ${baseName}`, `HY Oral ${baseName}`, `Total ${baseName}`
-            );
-        } else {
-            // Classes 1-9: UT, HY, Total
-            subjectHeaders.push(`UT ${baseName}`, `HY ${baseName}`, `Total ${baseName}`);
-        }
-    });
+    // Core headers required by the user
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Total Marks,Overall Percentage";
+    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
 
-    // --- 2. Define Core Headers ---
-    const coreHeaders = [
-        "Admission No.", "Student Name", "Father's Name", "Class", 
-        "Percentage", "Overall Remark", "Work Habits", "Behavior", 
-        "Days Present", "Days Total"
-    ];
+    let csvContent = header;
 
-    // --- 3. Construct the Full Header Row ---
-    let headerRow = coreHeaders.join(',') + ',' + subjectHeaders.join(',') + '\n';
-    let csvContent = headerRow;
-
-    // --- 4. Populate Data Rows (One student per row) ---
     students.forEach(s => {
-        // Recalculate Totals/Percentage for data accuracy
-        const numericMarks = s.marks.filter(m => !m.isGrade);
-        const overallTotal = numericMarks.reduce((a, b) => a + (b.total || 0), 0);
+        // Calculate overall totals and percentage for the overall columns
+        const studentNumericMarks = s.marks.filter(m => !m.isGrade);
+        const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
         let maxPossible = 0;
         
         if (isNurUkg) {
@@ -1109,51 +1125,45 @@ function downloadMarksExcel() {
                 maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
             });
         } else {
-            maxPossible = numericMarks.length * 100;
+            maxPossible = studentNumericMarks.length * 100;
         }
+
         const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
 
-        // Core Data Fields
-        let dataFields = [
-            `"${s.admission}"`,
-            `"${s.name}"`,
-            `"${s.fatherName}"`,
-            `"${classLabel}"`,
-            `"${percentage}"`,
-            `"${s.remark || '—'}"`,
-            `"${s.coscholastic.workHabits || '—'}"`,
-            `"${s.coscholastic.behavior || '—'}"`,
-            s.attendance.present || 0,
-            s.attendance.total || DEFAULT_ATT_TOTAL
-        ];
+        // Base student info, only for the first line of the student
+        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
 
-        // Subject Marks Fields
-        subjectConfigs.forEach(config => {
-            const mark = s.marks.find(m => m.name === config.name) || {};
-
-            if (config.name === 'G.K.') {
-                // G.K. Grade
-                dataFields.push(`"${mark.grade || '—'}"`);
+        s.marks.forEach((m, index) => {
+            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
+            row += `,"${m.name}",`;
+            
+            let marksData;
+            if (m.isGrade) {
+                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
+                if (isNurUkg) {
+                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
+                } else {
+                    marksData = `—,—,Grade ${m.grade || '—'}`;
+                }
             } else if (isNurUkg) {
-                // Nur-UKG: UT W/O, HY W/O, Total
-                dataFields.push(
-                    mark.ut || 0,
-                    mark.utOral || 0,
-                    mark.hy || 0,
-                    mark.hyOral || 0,
-                    mark.total || 0
-                );
+                // Nur-UKG numerical: UT W/O, HY W/O
+                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
             } else {
-                // 1-9: UT, HY, Total
-                dataFields.push(
-                    mark.ut || 0,
-                    mark.hy || 0,
-                    mark.total || 0
-                );
+                // 1-9 numerical: UT, HY
+                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
             }
-        });
 
-        csvContent += dataFields.join(',') + '\n';
+            row += marksData;
+
+            // Append overall total and percentage only to the first subject row
+            if (index === 0) {
+                row += `,${overallTotal},"${percentage}"`;
+            } else {
+                // Leave the overall columns empty for subsequent rows
+                row += `,,`; 
+            }
+            csvContent += row + "\n";
+        });
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1165,14 +1175,12 @@ function downloadMarksExcel() {
     URL.revokeObjectURL(url);
 }
 
-
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
 const password = prompt('Enter password to clear ALL data:');
 if (password !== '1234') return alert('Incorrect password!');
 if (!confirm('Are you sure? This will remove all saved data!')) return;
 localStorage.clear();
-sessionStorage.removeItem('isUnlocked'); // Ensure session is locked again
 state.studentsByClass = {};
 state.selectedStudentKey = '';
 state.reportPrintDate = null; // Clear print date
@@ -1235,8 +1243,10 @@ function setReportPrintDate() {
 }
 
 
-/* ----------------- INIT CALL (already called above) ----------------- */
-/* The init() call is at top of script */
+/* ----------------- INIT CALL ----------------- */
+// The original init() call has been moved to the end to ensure all functions are defined first.
+init(); 
+
 /* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
 (function wireLoadFromSaved() {
 // When page loads, nothing auto-loads. Users use Load/Add buttons.
