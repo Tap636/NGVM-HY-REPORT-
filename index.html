@@ -12,14 +12,13 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 .screen-only { display: none !important; }
-.print-only { display: block !important; } /* Attendance box visibility */
+.print-only { display: block !important; } 
 
-/* A4 SIZE & MARGIN REDUCTION */
+/* A4 SIZE & MARGIN REDUCTION (Reduced padding: 5mm 10mm) */
 .page {
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
-  /* MODIFICATION: Reduced horizontal padding for more content space */
   padding: 5mm 10mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
@@ -43,7 +42,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.05; /* PREVIOUS MODIFICATION: Reduced opacity */
+opacity: 0.05; 
 pointer-events: none;
 z-index: 0;
 }
@@ -59,19 +58,30 @@ z-index: 0;
 
 /* MARGIN COMPACTION FOR HEADER/BODY */
 .page-content-wrapper > .border-b {
-    padding-bottom: 7px !important; 
-    margin-bottom: 7px !important; 
+    padding-bottom: 5px !important; /* Tighter spacing */
+    margin-bottom: 5px !important; /* Tighter spacing */
 }
 .page-content-wrapper > .grid.grid-cols-4 {
-    margin-bottom: 5px !important; 
+    margin-bottom: 3px !important; /* Tighter spacing */
 }
+
+/* MODIFICATION: Tighter Table Padding for A4 Fit */
+#marksTable th, #marksTable td {
+    padding: 3px 6px !important; 
+}
+/* Also apply to Co-Scholastic table for consistency */
+#coscholasticTable td {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+
 
 /* Ensure the flexbox for the bottom section works horizontally on print */
 .print-bottom-layout {
     display: flex;
-    flex-direction: row; /* Ensure horizontal alignment */
-    gap: 10px; /* Adjust gap for print */
-    margin-top: 15px;
+    flex-direction: row; 
+    gap: 10px; 
+    margin-top: 10px; /* Reduced top margin */
 }
 .print-bottom-layout > div {
     width: 33.33%;
@@ -86,14 +96,12 @@ z-index: 0;
 }
 
 /* --- COLOR FIXES --- */
-/* Ensure all text in the footer area is black when printing */
 .page-footer-area, #finalFooter, #disclaimer, #printDate {
     color: black !important;
 }
 .muted { 
     color: black !important; 
 }
-/* HEADER COLOR FIX: Override the screen's indigo color with black */
 .school-name-color { 
     color: black !important; 
 }
@@ -112,7 +120,6 @@ z-index: 0;
     width: 33%; 
     box-sizing: border-box; 
     text-align: center; 
-    /* Principal alignment fix */
     display: flex; 
     flex-direction: column;
     justify-content: flex-end; 
@@ -138,7 +145,7 @@ z-index: 0;
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 5px; /* MODIFICATION: Increased margin after signatures */
+  margin-top: 5px; 
   z-index: 2;
 }
 #printDate {
@@ -205,7 +212,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="page">
   <div class="page-content-wrapper">
     <div class="pb-6 border-b mb-6 relative">
-        <img src="logo.png" class="w-24 h-24 rounded-md absolute top-0 left-3" alt="School Logo" />
+        <img src="logo.png" class="w-24 h-24 rounded-md absolute top-2 left-3" alt="School Logo" />
 
         <div class="text-center ml-[112px] mr-[112px]"> 
             <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
@@ -288,10 +295,10 @@ select.grade-select { padding:4px; border-radius:4px; }
     </table>
     </div>
     
-    <div class="mt-6"> 
+    <div class="mt-4"> 
         <div class="border p-4">
             <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
-            <canvas id="marksChart" height="180"></canvas>
+            <canvas id="marksChart" height="120"></canvas>
         </div>
     </div>
 
@@ -371,7 +378,7 @@ selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: null // Added for MODIFICATION 2
+reportPrintDate: null
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
@@ -464,14 +471,11 @@ window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
-// MODIFICATION 1: Attach Download Excel event listener
 qs('downloadExcelBtn').addEventListener('click', downloadMarksExcel);
-// MODIFICATION 2: Attach Set Print Date event listener
 qs('setPrintDateBtn').addEventListener('click', setReportPrintDate);
 
 qs('clearDataBtn').addEventListener('click', clearAllData);
 
-// MODIFICATION: Add listener for the new teachers remark input
 if(qs('teachersRemarkInput')) {
     qs('teachersRemarkInput').addEventListener('input', (e) => {
         qs('teachersRemark').textContent = e.target.value;
@@ -938,7 +942,6 @@ if (qs('totalHY')) qs('totalHY').textContent = totalHY;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
 /* ----------------- CHART ----------------- */
-// MODIFICATION 3: Define chart colors
 const CHART_COLORS = {
     OBTAINED: 'rgba(0, 0, 0, 1)', // Black
     AVG: 'rgba(107, 114, 128, 1)', // Gray
@@ -957,7 +960,10 @@ options: {
         legend: { display: true } 
     }, 
     scales:{ 
-        y: { beginAtZero:true, max:100 } 
+        y: { 
+            beginAtZero:true, 
+            max: 100 // Set max to 100 as all subjects have a 100 max score
+        } 
     },
     // Fixes spacing for white/black bars
     categoryPercentage: 0.9, 
@@ -970,6 +976,16 @@ const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
 const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
+
+// Ensure max Y scale is sufficient for all classes
+const allValues = [...obtained, ...classAvg, ...classHigh].filter(v => typeof v === 'number');
+let maxY = 100; 
+if(allValues.length > 0) {
+    // Use the hardcoded 100, as all subjects max out at 100.
+    // This makes the chart consistent across classes.
+    maxY = 100; 
+}
+state.chart.options.scales.y.max = maxY;
 
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
@@ -1077,7 +1093,6 @@ a.click();
 URL.revokeObjectURL(url);
 }
 
-// MODIFICATION 2: Function to download marks as Excel (CSV) - REWRITTEN FOR ONE ROW PER STUDENT
 function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for Excel download.');
@@ -1124,7 +1139,7 @@ function downloadMarksExcel() {
     students.forEach(s => {
         let rowData = [];
 
-        // --- Core Info ---
+        // --- Core Info (Recalculate Totals/Percentage for data integrity) ---
         const studentNumericMarks = s.marks.filter(m => !m.isGrade);
         const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
         
