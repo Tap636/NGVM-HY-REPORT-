@@ -14,13 +14,14 @@ body { -webkit-print-color-adjust: exact; }
 .screen-only { display: none !important; }
 .print-only { display: block !important; } 
 
-/* A4 SIZE & MARGIN REDUCTION (Reduced padding: 5mm 10mm) */
+/* A4 SIZE & AGGRESSIVE MARGIN REDUCTION (Now 5mm all around) */
 .page {
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
-  padding: 5mm 10mm; 
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  padding: 5mm !important; /* Reduced to minimum padding for A4 fit */
+  box-sizing: border-box; /* Ensures width is exactly 210mm including padding */
+  box-shadow: none; /* Hide box shadow on print */
   background: white;
   position: relative;
   page-break-inside: avoid; 
@@ -52,27 +53,27 @@ z-index: 0;
   flex-grow: 1; 
   display: flex;
   flex-direction: column;
-  min-height: calc(297mm - 10mm); 
+  min-height: calc(297mm - 10mm); /* Adjusted for new 5mm padding (5mm top + 5mm bottom) */
   box-sizing: border-box;
 }
 
 /* MARGIN COMPACTION FOR HEADER/BODY */
 .page-content-wrapper > .border-b {
-    padding-bottom: 5px !important; /* Tighter spacing */
-    margin-bottom: 5px !important; /* Tighter spacing */
+    padding-bottom: 3px !important; /* Tighter spacing */
+    margin-bottom: 3px !important; /* Tighter spacing */
 }
 .page-content-wrapper > .grid.grid-cols-4 {
     margin-bottom: 3px !important; /* Tighter spacing */
 }
 
-/* MODIFICATION: Tighter Table Padding for A4 Fit */
+/* Tighter Table Padding for A4 Fit */
 #marksTable th, #marksTable td {
-    padding: 3px 6px !important; 
+    padding: 2px 5px !important; /* Reduced even more */
 }
 /* Also apply to Co-Scholastic table for consistency */
 #coscholasticTable td {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
 }
 
 
@@ -80,8 +81,8 @@ z-index: 0;
 .print-bottom-layout {
     display: flex;
     flex-direction: row; 
-    gap: 10px; 
-    margin-top: 10px; /* Reduced top margin */
+    gap: 5px; /* Reduced gap */
+    margin-top: 5px; /* Reduced top margin */
 }
 .print-bottom-layout > div {
     width: 33.33%;
@@ -92,7 +93,7 @@ z-index: 0;
 .page-footer-area {
   margin-top: auto; 
   width: 100%;
-  padding-top: 3mm; 
+  padding-top: 2mm; /* Reduced footer space */
 }
 
 /* --- COLOR FIXES --- */
@@ -123,7 +124,7 @@ z-index: 0;
     display: flex; 
     flex-direction: column;
     justify-content: flex-end; 
-    min-height: 80px; 
+    min-height: 50px; /* Reduced minimum height */
 }
 #finalFooter .left { text-align: left; }
 #finalFooter .right { text-align: right; }
@@ -133,9 +134,9 @@ z-index: 0;
     display:block; 
 }
 .principal-img {
-    height: 48px; 
+    height: 40px; /* Reduced principal image size */
     display: block; 
-    margin: 0 auto 6px; 
+    margin: 0 auto 4px; 
     object-fit: contain;
 }
 
@@ -144,15 +145,15 @@ z-index: 0;
 #disclaimer {
   width: 100%;
   text-align: center;
-  font-size: 10px;
-  margin-top: 5px; 
+  font-size: 9px; /* Reduced font size */
+  margin-top: 3px; 
   z-index: 2;
 }
 #printDate {
   width: 100%;
   text-align: center;
-  font-size: 10px;
-  margin-top: 2px; 
+  font-size: 9px; /* Reduced font size */
+  margin-top: 1px; 
   z-index: 2;
 }
 /* table print behavior */
@@ -380,6 +381,14 @@ studentsByClass: {},
 chart: null,
 reportPrintDate: null
 };
+/* ---------------- CHART COLORS (FIXED: Class Highest is now visible blue) ---------------- */
+const CHART_COLORS = {
+    OBTAINED: 'rgba(0, 0, 0, 1)', 
+    AVG: 'rgba(107, 114, 128, 1)', 
+    HIGHEST: 'rgba(59, 130, 246, 1)', // Light Blue/Indigo for visibility
+    STROKE: 'rgba(0, 0, 0, 1)' 
+};
+
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 /* ---------------- INIT ---------------- */
@@ -942,12 +951,6 @@ if (qs('totalHY')) qs('totalHY').textContent = totalHY;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
 /* ----------------- CHART ----------------- */
-const CHART_COLORS = {
-    OBTAINED: 'rgba(0, 0, 0, 1)', // Black
-    AVG: 'rgba(107, 114, 128, 1)', // Gray
-    HIGHEST: 'rgba(255, 255, 255, 1)', // White
-    STROKE: 'rgba(0, 0, 0, 1)' // Black stroke
-};
 
 function initChart() {
 const ctx = qs('marksChart').getContext('2d');
@@ -962,7 +965,7 @@ options: {
     scales:{ 
         y: { 
             beginAtZero:true, 
-            max: 100 // Set max to 100 as all subjects have a 100 max score
+            max: 100 // FIXED: Y-axis max is 100 for all relevant classes.
         } 
     },
     // Fixes spacing for white/black bars
@@ -972,20 +975,25 @@ options: {
 });
 }
 function updateChart(student) {
+// Filter out graded subjects (like G.K. for Classes 1-9)
 const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
 const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
 const classHigh = labels.map(l => getClassHighest(student.cls, l));
 
-// Ensure max Y scale is sufficient for all classes
-const allValues = [...obtained, ...classAvg, ...classHigh].filter(v => typeof v === 'number');
-let maxY = 100; 
-if(allValues.length > 0) {
-    // Use the hardcoded 100, as all subjects max out at 100.
-    // This makes the chart consistent across classes.
-    maxY = 100; 
+// Check if chart instance exists and if there is data to plot
+if (!state.chart || labels.length === 0) {
+    // If no numerical data, clear the chart to prevent errors
+    if(state.chart) {
+        state.chart.data.labels = [];
+        state.chart.data.datasets = [];
+        state.chart.update();
+    }
+    return;
 }
-state.chart.options.scales.y.max = maxY;
+
+// FIXED: Y-axis max is always 100, which is the maximum score for all graphed subjects.
+state.chart.options.scales.y.max = 100;
 
 state.chart.data.labels = labels;
 state.chart.data.datasets = [
@@ -1305,7 +1313,7 @@ function setReportPrintDate() {
 /* The init() call is at top of script */
 /* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
 (function wireLoadFromSaved() {
-// When page loads, nothing auto-loads. Users use Load/Add buttons.
+// When page loads, nothing auto-loads...
 })();
 </script>
 </body>
