@@ -12,14 +12,14 @@
 body { -webkit-print-color-adjust: exact; }
 .no-print { display: none !important; }
 .screen-only { display: none !important; }
-.print-only { display: block !important; } 
+.print-only { display: block !important; } /* Attendance box visibility */
 
-/* MODIFICATION: REDUCED PADDING FOR BETTER A4 FIT */
+/* AGGRESSIVE PADDING REDUCTION (Fixes 2-page issue) */
 .page {
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
-  padding: 5mm 10mm; /* Reduced padding: 5mm 10mm */
+  padding: 5mm 12.7mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
   position: relative;
@@ -42,7 +42,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.1; 
+opacity: 0.05; /* MODIFICATION: Reduced opacity */
 pointer-events: none;
 z-index: 0;
 }
@@ -58,26 +58,11 @@ z-index: 0;
 
 /* MARGIN COMPACTION FOR HEADER/BODY */
 .page-content-wrapper > .border-b {
-    padding-bottom: 5px !important; /* Tighter spacing */
-    margin-bottom: 5px !important; /* Tighter spacing */
+    padding-bottom: 7px !important; 
+    margin-bottom: 7px !important; 
 }
 .page-content-wrapper > .grid.grid-cols-4 {
-    margin-bottom: 3px !important; /* Tighter spacing */
-}
-
-/* MODIFICATION: Force horizontal layout for the bottom section in print */
-.print-bottom-layout {
-    display: flex;
-    flex-direction: row; 
-    gap: 10px; /* Reduced gap */
-    margin-top: 10px; /* Reduced top margin */
-    /* Ensure the print-only attendance block is visible in the row */
-}
-.print-bottom-layout > div {
-    width: 33.33%; /* Equal width for the three boxes in print */
-}
-.print-bottom-layout .print-only {
-    display: block !important;
+    margin-bottom: 5px !important; 
 }
 
 
@@ -89,12 +74,14 @@ z-index: 0;
 }
 
 /* --- COLOR FIXES --- */
+/* Ensure all text in the footer area is black when printing */
 .page-footer-area, #finalFooter, #disclaimer, #printDate {
     color: black !important;
 }
 .muted { 
     color: black !important; 
 }
+/* HEADER COLOR FIX: Override the screen's indigo color with black */
 .school-name-color { 
     color: black !important; 
 }
@@ -113,6 +100,7 @@ z-index: 0;
     width: 33%; 
     box-sizing: border-box; 
     text-align: center; 
+    /* Principal alignment fix */
     display: flex; 
     flex-direction: column;
     justify-content: flex-end; 
@@ -138,7 +126,7 @@ z-index: 0;
   width: 100%;
   text-align: center;
   font-size: 10px;
-  margin-top: 5px; 
+  margin-top: 3px; 
   z-index: 2;
 }
 #printDate {
@@ -155,7 +143,7 @@ tr { page-break-inside:avoid; page-break-after:relative; }
 
 /* ---------------- SCREEN ---------------- */
 body { background: #ffffff; }
-/* Hide print-only elements on screen */
+/* Hide print-only attendance block on screen */
 .print-only { display: none; } 
 
 .page { width: 900px; margin: 20px auto; padding: 18px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border: 2px solid #0f172a;
@@ -199,13 +187,13 @@ select.grade-select { padding:4px; border-radius:4px; }
 <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
 <div class="mt-3 flex gap-2">
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
-<button id="exportExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Export to Excel (CSV)</button>
+<button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download Classwise Marks (Excel)</button>
 </div>
 </div>
 <div class="page">
   <div class="page-content-wrapper">
     <div class="pb-6 border-b mb-6 relative">
-        <img src="logo.png" class="w-24 h-24 rounded-md absolute top-2 left-3" alt="School Logo" />
+        <img src="logo.png" class="w-24 h-24 rounded-md absolute top-0 left-3" alt="School Logo" />
 
         <div class="text-center ml-[112px] mr-[112px]"> 
             <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
@@ -230,10 +218,6 @@ select.grade-select { padding:4px; border-radius:4px; }
             <option value="8">VIII</option>
             <option value="9">IX</option>
             </select>
-            <div class="mt-2">
-                <label class="block text-xs text-gray-600">Report Date</label>
-                <input type="date" id="reportDateInput" class="border rounded px-2 py-1 bg-white text-xs" />
-            </div>
         </div>
     </div>
     <div class="no-print mb-4">
@@ -256,6 +240,13 @@ select.grade-select { padding:4px; border-radius:4px; }
     <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add / Update</button>
     <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
     </div>
+    </div>
+    <div class="mt-4 flex gap-4 items-center">
+        <div>
+            <label class="text-sm text-gray-600">Report Print Date (Optional)</label>
+            <input id="reportPrintDateInput" type="date" class="border px-2 py-1 rounded" />
+        </div>
+        <button id="setPrintDateBtn" class="px-3 py-1 border rounded self-end">Set Date</button>
     </div>
     </div>
     <div class="grid grid-cols-4 gap-4 mb-4 mt-4">
@@ -280,8 +271,8 @@ select.grade-select { padding:4px; border-radius:4px; }
     <div class="mb-4 screen-only">
     <label class="text-sm text-gray-600 font-semibold">Attendance</label>
     <div class="flex gap-2 items-center">
-    <input type="number" id="attendancePresentInput" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-    <input type="number" id="attendanceTotalInput" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+    <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+    <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
     </div>
     </div>
     
@@ -292,37 +283,37 @@ select.grade-select { padding:4px; border-radius:4px; }
     <tfoot id="marksTableFoot"></tfoot>
     </table>
     </div>
+    <div class="grid grid-cols-3 gap-4 mt-6"> 
+    <div class="col-span-1">
+    <div class="border p-4">
+    <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
+    <table class="w-full text-sm" id="coscholasticTable">
+    <tbody id="coscholasticBody">
+    <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+    <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+    </tbody>
+    </table>
+    </div>
+    <div class="border p-4 mt-4">
+    <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
+    <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
+    </div>
     
-    <div class="mt-4"> 
-        <div class="border p-4">
-            <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
-            <canvas id="marksChart" height="120"></canvas>
+    <div class="border p-4 mt-4 print-only">
+        <h3 class="font-semibold mb-2">Attendance</h3>
+        <div class="flex gap-2 items-center">
+            <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
         </div>
     </div>
-
-    <div class="flex flex-col md:flex-row gap-4 mt-6 print-bottom-layout"> 
     
-        <div class="border p-4 w-full md:w-1/3">
-            <h3 class="font-semibold mb-2">Co-Scholastic Grades</h3>
-            <table class="w-full text-sm" id="coscholasticTable">
-            <tbody id="coscholasticBody">
-            <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-            <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
-            </tbody>
-            </table>
-        </div>
-
-        <div class="border p-4 w-full md:w-1/3">
-            <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-            <textarea id="teachersRemarkInput" class="w-full p-2 text-sm border rounded screen-only" rows="3" placeholder="Enter teacher's remark"></textarea>
-            <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50 print-only" style="min-height: 80px;">Good effort. Keep improving.</div>
-        </div>
-        
-        <div class="border p-4 w-full md:w-1/3 print-only">
-            <h3 class="font-semibold mb-2">Attendance</h3>
-            <p>Days Present: <span id="attendancePresentDisplay" class="font-semibold">0</span> / <span id="attendanceTotalDisplay" class="font-semibold">130</span></p>
-            <p class="mt-2 text-xs text-gray-600">(Total Working Days)</p>
-        </div>
+    </div>
+    <div class="col-span-2">
+    <div class="border p-4">
+    <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
+    <canvas id="marksChart" height="180"></canvas>
+    </div>
+    </div>
     </div>
   </div>
   <div class="page-footer-area">
@@ -368,7 +359,7 @@ selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: new Date().toISOString().split('T')[0] // MODIFICATION: Store as YYYY-MM-DD
+reportPrintDate: null // Added for MODIFICATION 2
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
@@ -380,10 +371,11 @@ state.studentsByClass = stored ? JSON.parse(stored) : {};
 const storedDate = localStorage.getItem('ng_reportPrintDate');
 if (storedDate) {
     state.reportPrintDate = storedDate;
+    qs('reportPrintDateInput').value = storedDate; // Update the input field
 }
 attachEventListeners();
 initChart();
-updatePrintDateDisplay(); // Use the new function name
+updatePrintDate();
 renderMarksTableForClass(''); // initial empty
 }
 init();
@@ -415,16 +407,20 @@ const admission = qs('admissionInput').value.trim();
 if (!admission) return alert('Enter Admission Number.');
 const name = qs('studentNameInput').value.trim();
 if (!name) return alert('Enter Student Name.');
+// Capture Father Name input
 const fatherName = qs('fatherNameInput').value.trim();
 const key = `${state.selectedClass}|${admission}`;
 state.studentsByClass[state.selectedClass] = state.studentsByClass[state.selectedClass] || {};
+// Passed fatherName to makeEmptyStudent
 const student = makeEmptyStudent(name, admission, state.selectedClass, fatherName);
 if (state.studentsByClass[state.selectedClass][key]) {
+// preserve existing marks
 const ex = state.studentsByClass[state.selectedClass][key];
 student.marks = ex.marks || student.marks;
 student.attendance = ex.attendance || ex.attendance;
-student.coscholastic = ex.coscholastic || { workHabits: '', behavior: '' };
+student.coscholastic = ex.coscholastic || student.coscholastic;
 student.teachersRemark = ex.teachersRemark || student.teachersRemark;
+// Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
 state.studentsByClass[state.selectedClass][key] = student;
@@ -451,33 +447,24 @@ alert('Saved locally.');
 });
 qs('printBtn').addEventListener('click', () => {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
-saveCurrentStudent(); // Ensure marks/totals are updated before print
+calculateTotalsAndUpdate();
 window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
-qs('exportExcelBtn').addEventListener('click', exportToCSV); // MODIFICATION: New button handler
+// MODIFICATION 1: Attach Download Excel event listener
+qs('downloadExcelBtn').addEventListener('click', downloadMarksExcel);
+// MODIFICATION 2: Attach Set Print Date event listener
+qs('setPrintDateBtn').addEventListener('click', setReportPrintDate);
+
 qs('clearDataBtn').addEventListener('click', clearAllData);
-
-// MODIFICATION: Link report date input to state and display
-qs('reportDateInput').addEventListener('change', (e) => {
-    state.reportPrintDate = e.target.value;
-    localStorage.setItem('ng_reportPrintDate', state.reportPrintDate);
-    updatePrintDateDisplay();
-});
-
-// MODIFICATION: Link textarea input to display div
-if(qs('teachersRemarkInput')) {
-    qs('teachersRemarkInput').addEventListener('input', (e) => {
-        qs('teachersRemark').textContent = e.target.value;
-    });
-}
 }
 /* ---------------- PERSISTENCE ---------------- */
 function persistStudents() {
 localStorage.setItem('ng_students', JSON.stringify(state.studentsByClass));
 }
 /* ---------------- STUDENT FACTORY ---------------- */
+// Added fatherName as an argument
 function makeEmptyStudent(name, admission, cls, fatherName='') {
 const marks = [];
 if (isNurToUkg(cls)) {
@@ -503,8 +490,8 @@ marks.push({ name: s, ut: 0, hy: 0, total: 0, isGrade: false, max: { ut: 20, hy:
 });
 }
 return {
-name, admission, cls, fatherName, marks, 
-coscholastic: { workHabits: '', behavior: '' },
+name, admission, cls, fatherName, marks, // Added fatherName
+coscholastic: {},
 attendance: { present: 0, total: DEFAULT_ATT_TOTAL },
 teachersRemark: 'Good effort. Keep improving.',
 remark: ''
@@ -546,6 +533,7 @@ const student = getCurrentStudent();
 const rows = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name }));
 rows.forEach((m, idx) => {
 const max = (m.max || SUBJECTS_NUR_TO_UKG[idx]);
+// For drawing: utOral/hyOral disabled
 const utMax = max.ut;
 const utOralMax = max.utOral;
 const hyMax = max.hy;
@@ -684,6 +672,7 @@ const student = state.studentsByClass[cls] && state.studentsByClass[cls][key];
 if (!student) return alert('Student data not found.');
 state.selectedStudentKey = key;
 state.selectedClass = cls;
+// set class select to roman or textual
 const romanMap = { "1":"I","2":"II","3":"III","4":"IV","5":"V","6":"VI","7":"VII","8":"VIII","9":"IX" };
 if (cls === 'Nursery' || cls === 'LKG' || cls === 'UKG') {
 qs('classSelect').value = cls;
@@ -693,24 +682,20 @@ qs('classSelect').value = romanMap[cls] || cls;
 qs('studentName').textContent = student.name;
 qs('admissionNo').textContent = student.admission || '—';
 qs('classSection').textContent = displayClassLabel(student.cls);
+// Load father name for display
 qs('fatherName').textContent = student.fatherName || '—';
 qs('studentNameInput').value = student.name;
 qs('admissionInput').value = student.admission || '';
+// Load father name for input control
 if (qs('fatherNameInput')) {
 qs('fatherNameInput').value = student.fatherName || '';
 }
-
-// Load attendance
-const present = student.attendance.present || 0;
-const total = student.attendance.total || DEFAULT_ATT_TOTAL;
-// MODIFICATION: Use correct IDs for screen inputs
-if (qs('attendancePresentInput')) qs('attendancePresentInput').value = present;
-if (qs('attendanceTotalInput')) qs('attendanceTotalInput').value = total;
-// MODIFICATION: Update display spans for print view
-if (qs('attendancePresentDisplay')) qs('attendancePresentDisplay').textContent = present;
-if (qs('attendanceTotalDisplay')) qs('attendanceTotalDisplay').textContent = total;
+// Load attendance from the screen-only input fields, which are present in both HTML blocks
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = student.attendance.present || 0);
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = student.attendance.total || DEFAULT_ATT_TOTAL);
 
 renderMarksTableForClass(student.cls);
+// populate marks into inputs/selects
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
 const field = el.getAttribute('data-field');
@@ -718,6 +703,7 @@ if (!Number.isFinite(idx)) return;
 const m = student.marks[idx];
 if (!m) return;
 if (el.tagName.toLowerCase() === 'select') {
+// grade
 el.value = m.grade || 'A';
 } else {
 const val = m[field] ?? (m[field] === 0 ? 0 : '');
@@ -730,12 +716,6 @@ qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" value="${student.coscholastic.workHabits || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" value="${student.coscholastic.behavior || ''}" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
-
-// Teacher's Remark
-const remark = student.teachersRemark || 'Good effort. Keep improving.';
-if (qs('teachersRemarkInput')) qs('teachersRemarkInput').value = remark;
-if (qs('teachersRemark')) qs('teachersRemark').textContent = remark;
-
 attachMarksInputsListeners();
 calculateTotalsAndUpdate();
 }
@@ -743,15 +723,9 @@ function saveCurrentStudent() {
 if (!state.selectedStudentKey) return alert('Load or add a student first.');
 const student = getCurrentStudent();
 if (!student) return;
-
-// Save attendance from the *screen-only* input fields
-student.attendance.present = Number(qs('attendancePresentInput') ? qs('attendancePresentInput').value : 0) || 0;
-student.attendance.total = Number(qs('attendanceTotalInput') ? qs('attendanceTotalInput').value : DEFAULT_ATT_TOTAL) || DEFAULT_ATT_TOTAL;
-
-// Update attendance displays
-if (qs('attendancePresentDisplay')) qs('attendancePresentDisplay').textContent = student.attendance.present;
-if (qs('attendanceTotalDisplay')) qs('attendanceTotalDisplay').textContent = student.attendance.total;
-
+// Save from the *first* visible instance of attendance input
+student.attendance.present = Number(document.getElementById('attendancePresent').value) || 0;
+student.attendance.total = Number(document.getElementById('attendanceTotal').value) || DEFAULT_ATT_TOTAL;
 // Save Father Name from input control
 student.fatherName = qs('fatherNameInput') ? qs('fatherNameInput').value.trim() : '';
 // coscholastic
@@ -759,12 +733,6 @@ student.coscholastic = {
 workHabits: qs('workHabitsInput') ? qs('workHabitsInput').value.trim() : '',
 behavior: qs('behaviorInput') ? qs('behaviorInput').value.trim() : ''
 };
-
-// Teacher's Remark
-const remarkInput = qs('teachersRemarkInput') ? qs('teachersRemarkInput').value.trim() : 'Good effort. Keep improving.';
-student.teachersRemark = remarkInput;
-if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkInput;
-
 // collect marks from inputs
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
@@ -790,6 +758,7 @@ return state.studentsByClass[cls] && state.studentsByClass[cls][state.selectedSt
 /* ---------------- CALCULATIONS & REMARKS ---------------- */
 function calculateTotalsAndUpdate() {
 const student = getCurrentStudent();
+// if student exists update from inputs first
 if (student) {
 qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
@@ -804,10 +773,11 @@ student.marks[idx][field] = Number(el.value) || 0;
 }
 });
 }
+// perform totals depending on class
 let percentage = 0;
 if (student && isNurToUkg(student.cls)) {
 let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0 };
-let maxOverall = 0; 
+let maxOverall = 0; // Correctly calculate max overall
 student.marks.forEach(m => {
 const ut = Number(m.ut) || 0;
 const utOral = Number(m.utOral) || 0;
@@ -816,6 +786,7 @@ const hyOral = Number(m.hyOral) || 0;
 const subjTotal = ut + utOral + hy + hyOral;
 m.total = subjTotal;
 totals.ut += ut; totals.utOral += utOral; totals.hy += hy; totals.hyOral += hyOral; totals.overall += subjTotal;
+// Calculate max overall for Nur/LKG/UKG based on SUBJECTS_NUR_TO_UKG
 const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === m.name);
 if(subjConfig) maxOverall += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
 });
@@ -861,18 +832,8 @@ else if (p >= 70) remarkText = 'Very Good';
 else if (p >= 60) remarkText = 'Good';
 else if (p >= 50) remarkText = 'Average';
 student.remark = remarkText;
-
-// Only update teachersRemark if it hasn't been manually edited or is still the default
-const currentRemarkInput = qs('teachersRemarkInput') ? qs('teachersRemarkInput').value.trim() : student.teachersRemark;
-if (currentRemarkInput === 'Good effort. Keep improving.' || currentRemarkInput === student.teachersRemark || !student.teachersRemark) {
-    student.teachersRemark = remarkText;
-    if (qs('teachersRemarkInput')) qs('teachersRemarkInput').value = remarkText;
-    if (qs('teachersRemark')) qs('teachersRemark').textContent = remarkText;
-} else {
-    // If the input was manually changed, preserve it for the student object
-    student.teachersRemark = currentRemarkInput;
-    if (qs('teachersRemark')) qs('teachersRemark').textContent = currentRemarkInput;
-}
+student.teachersRemark = remarkText;
+qs('teachersRemark').textContent = remarkText;
 }
 // reflect row overall values
 if (student) {
@@ -890,8 +851,9 @@ persistStudents();
 /* compute totals when no student loaded (from visible inputs) */
 function computeTotalsFromInputs() {
 let totalUT = 0, totalHY = 0, totalOverall = 0;
-let totalUTOral = 0, totalHYOral = 0;
+let totalUTOral = 0, totalHYOral = 0; // Added for Nur-UKG
 const cls = state.selectedClass;
+// Check if it's Nur-UKG to determine which inputs to check
 const isNurUkg = isNurToUkg(cls);
 
 qs('marksTableBody').querySelectorAll('input').forEach(el => {
@@ -904,6 +866,7 @@ if (isNurUkg) {
     else if (field === 'hy') totalHY += val;
     else if (field === 'hyOral') totalHYOral += val;
 } else {
+    // Classes 1-9
     if (field === 'ut') totalUT += val;
     else if (field === 'hy') totalHY += val;
 }
@@ -922,12 +885,12 @@ if (qs('totalHY')) qs('totalHY').textContent = totalHY;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
 }
 /* ----------------- CHART ----------------- */
-// MODIFICATION: Define chart colors
+// MODIFICATION 3: Define chart colors
 const CHART_COLORS = {
     OBTAINED: 'rgba(0, 0, 0, 1)', // Black
     AVG: 'rgba(107, 114, 128, 1)', // Gray
-    HIGHEST: 'rgba(255, 255, 255, 1)', // White fill
-    STROKE: 'rgba(0, 0, 0, 1)' // Black border
+    HIGHEST: 'rgba(255, 255, 255, 1)', // White
+    STROKE: 'rgba(0, 0, 0, 1)' // Black stroke
 };
 
 function initChart() {
@@ -941,61 +904,51 @@ options: {
         legend: { display: true } 
     }, 
     scales:{ 
-        y: { 
-            beginAtZero:true, 
-            max: 100 // Hardcoded max to 100 
-        } 
+        y: { beginAtZero:true, max:100 } 
     },
+    // Fixes spacing for white/black bars
     categoryPercentage: 0.9, 
     barPercentage: 0.8
 }
 });
 }
 function updateChart(student) {
-    // MODIFICATION: Filter out graded subjects (G.K.)
-    const numericMarks = student.marks.filter(m => !m.isGrade);
-    
-    const labels = numericMarks.map(m => m.name);
-    const obtained = numericMarks.map(m => m.total || 0);
-    
-    // Ensure Class Avg/Highest also only use numeric subjects
-    const classAvg = labels.map(l => getClassAverage(student.cls, l));
-    const classHigh = labels.map(l => getClassHighest(student.cls, l));
-    
-    state.chart.data.labels = labels;
-    state.chart.data.datasets = [
-        { 
-            label: 'Obtained', 
-            data: obtained,
-            backgroundColor: CHART_COLORS.OBTAINED,
-            borderColor: CHART_COLORS.STROKE,
-            borderWidth: 1
-        },
-        { 
-            label: 'Class Average', 
-            data: classAvg,
-            backgroundColor: CHART_COLORS.AVG,
-            borderColor: CHART_COLORS.STROKE,
-            borderWidth: 1
-        },
-        { 
-            label: 'Class Highest', 
-            data: classHigh,
-            backgroundColor: CHART_COLORS.HIGHEST,
-            borderColor: CHART_COLORS.STROKE,
-            borderWidth: 1
-        }
-    ];
-    
-    state.chart.options.scales.y.max = 100;
-    
-    state.chart.update();
+const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
+const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
+const classAvg = labels.map(l => getClassAverage(student.cls, l));
+const classHigh = labels.map(l => getClassHighest(student.cls, l));
+
+state.chart.data.labels = labels;
+state.chart.data.datasets = [
+{ 
+    label: 'Obtained', 
+    data: obtained,
+    backgroundColor: CHART_COLORS.OBTAINED,
+    borderColor: CHART_COLORS.STROKE,
+    borderWidth: 1
+},
+{ 
+    label: 'Class Average', 
+    data: classAvg,
+    backgroundColor: CHART_COLORS.AVG,
+    borderColor: CHART_COLORS.STROKE,
+    borderWidth: 1
+},
+{ 
+    label: 'Class Highest', 
+    data: classHigh,
+    backgroundColor: CHART_COLORS.HIGHEST,
+    borderColor: CHART_COLORS.STROKE,
+    borderWidth: 1
+}
+];
+state.chart.update();
 }
 function getClassAverage(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub && !sub.isGrade ? (sub.total || 0) : 0;
+return sub ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
@@ -1004,7 +957,7 @@ function getClassHighest(cls, subjectName) {
 if (!state.studentsByClass[cls]) return 0;
 const vals = Object.values(state.studentsByClass[cls]).map(s => {
 const sub = s.marks.find(m => m.name === subjectName);
-return sub && !sub.isGrade ? (sub.total || 0) : 0;
+return sub ? (sub.total || 0) : 0;
 }).filter(v => typeof v === 'number');
 if (!vals.length) return 0;
 return Math.max(...vals);
@@ -1029,156 +982,136 @@ if (tot > schoolTopper.total) schoolTopper={name:s.name,total:tot};
 qs('classTopperDashboard').textContent = `Class Topper: ${classTopper.name} — ${classTopper.total}`;
 qs('schoolTopperDashboard').textContent = `School Topper: ${schoolTopper.name} — ${schoolTopper.total}`;
 }
+/* ---------------- BULK DOWNLOAD ---------------- */
+function bulkDownloadReports() {
+const cls = qs('dashboardClassSelect').value || state.selectedClass;
+if (!cls) return alert('Select a class for bulk download.');
+if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
+const arr = [];
+Object.keys(state.studentsByClass[cls]).forEach(key => {
+const s = state.studentsByClass[cls][key];
+// Added Father Name to the report
+let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
+s.marks.forEach(m => {
+if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
+else report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
+});
+// Re-calculate totals and percentage correctly to ensure data accuracy for download
+const numericMarks = s.marks.filter(m=>!m.isGrade);
+const totalOverall = numericMarks.reduce((a,b)=>a+(b.total||0),0);
+const numericCount = numericMarks.length;
+let maxPossible = 0;
+if (isNurToUkg(s.cls)) {
+    s.marks.forEach(m => {
+        maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
+    });
+} else {
+    maxPossible = numericCount * 100; // 20 (UT) + 80 (HY) = 100
+}
 
-/* ---------------- EXPORT TO CSV (EXCEL) ---------------- */
-function exportToCSV() {
+const percentage = maxPossible > 0 ? ((totalOverall/maxPossible)*100).toFixed(2) : '0.00';
+
+report += `\nTotals: Overall ${totalOverall}\n`;
+report += `Percentage: ${percentage}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher:\nPrincipal:\n\n--------------------------------------------------\n\n`;
+arr.push(report);
+});
+const blob = new Blob(arr, { type: 'text/plain' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
+a.click();
+URL.revokeObjectURL(url);
+}
+// MODIFICATION 1: Function to download marks as Excel (CSV)
+function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
-    if (!cls) return alert('Select a class to export data.');
+    if (!cls) return alert('Select a class for Excel download.');
     if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
-
+    
     const students = Object.values(state.studentsByClass[cls]);
     const isNurUkg = isNurToUkg(cls);
-    const subjectList = isNurUkg ? SUBJECTS_NUR_TO_UKG : subjectsForClass(cls).filter(s => s !== 'G.K.').map(s => ({ name: s }));
-    const headerCols = ["Admission No", "Student Name", "Father's Name", "Class", "Percentage", "Overall Remark", "Work Habits", "Behavior", "Days Present"];
-    
-    // Add dynamic subject headers
+    const classLabel = displayClassLabel(cls);
+
+    let header;
+    let subjectHeader;
+
     if (isNurUkg) {
-        subjectList.forEach(s => {
-            headerCols.push(`${s.name} (UT W)`, `${s.name} (UT O)`, `${s.name} (HY W)`, `${s.name} (HY O)`, `${s.name} (Total)`);
-        });
+        // Headers for Nursery/LKG/UKG
+        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
     } else {
-        subjectList.forEach(s => {
-            headerCols.push(`${s.name} (UT 20)`, `${s.name} (HY 80)`, `${s.name} (Total 100)`);
-        });
-        // Add G.K. grade separately
-        if (subjectsForClass(cls).includes('G.K.')) {
-            headerCols.push("G.K. (Grade)");
-        }
+        // Headers for Classes 1-9
+        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
     }
     
-    let csvContent = headerCols.join(",") + "\n";
+    // Core headers required by the user
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Total Marks,Overall Percentage";
+    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
+
+    let csvContent = header;
 
     students.forEach(s => {
-        const row = [
-            `"${s.admission}"`,
-            `"${s.name}"`,
-            `"${s.fatherName || ''}"`,
-            `"${displayClassLabel(s.cls)}"`,
-        ];
-
-        // Recalculate Totals/Percentage for accuracy
-        let totalOverall = 0;
-        let maxOverall = 0;
-        const numericMarks = s.marks.filter(m => !m.isGrade);
-
+        // Calculate overall totals and percentage for the overall columns
+        const studentNumericMarks = s.marks.filter(m => !m.isGrade);
+        const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
+        let maxPossible = 0;
+        
         if (isNurUkg) {
-            numericMarks.forEach(m => {
-                totalOverall += m.total || 0;
-                const subjConfig = SUBJECTS_NUR_TO_UKG.find(subj => subj.name === m.name) || {};
-                maxOverall += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
+             s.marks.forEach(m => {
+                maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
             });
         } else {
-            totalOverall = numericMarks.reduce((a,b)=>a+(b.total||0),0);
-            maxOverall = numericMarks.length * 100;
+            maxPossible = studentNumericMarks.length * 100;
         }
 
-        const percentage = maxOverall > 0 ? ((totalOverall/maxOverall)*100).toFixed(2) : '0.00';
-        row.push(`"${percentage}%"`);
-        row.push(`"${s.remark || ''}"`);
-        row.push(`"${s.coscholastic.workHabits || ''}"`);
-        row.push(`"${s.coscholastic.behavior || ''}"`);
-        row.push(`"${s.attendance.present || 0}"`);
+        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
 
+        // Base student info, only for the first line of the student
+        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
 
-        // Add subject marks
-        subjectList.forEach(subConfig => {
-            const m = s.marks.find(mark => mark.name === subConfig.name);
-            if (!m) {
-                // Should not happen, but a fallback
-                isNurUkg ? row.push('', '', '', '', '') : row.push('', '', '');
-                return;
-            }
-
-            if (isNurUkg) {
-                row.push(m.ut || 0, m.utOral || 0, m.hy || 0, m.hyOral || 0, m.total || 0);
+        s.marks.forEach((m, index) => {
+            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
+            row += `,"${m.name}",`;
+            
+            let marksData;
+            if (m.isGrade) {
+                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
+                if (isNurUkg) {
+                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
+                } else {
+                    marksData = `—,—,Grade ${m.grade || '—'}`;
+                }
+            } else if (isNurUkg) {
+                // Nur-UKG numerical: UT W/O, HY W/O
+                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
             } else {
-                row.push(m.ut || 0, m.hy || 0, m.total || 0);
+                // 1-9 numerical: UT, HY
+                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
             }
+
+            row += marksData;
+
+            // Append overall total and percentage only to the first subject row
+            if (index === 0) {
+                row += `,${overallTotal},"${percentage}"`;
+            } else {
+                // Leave the overall columns empty for subsequent rows
+                row += `,,`; 
+            }
+            csvContent += row + "\n";
         });
-
-        // Add G.K. grade if applicable
-        if (!isNurUkg && subjectsForClass(cls).includes('G.K.')) {
-            const gkMark = s.marks.find(m => m.name === 'G.K.');
-            row.push(`"${gkMark ? gkMark.grade : '—'}"`);
-        }
-
-
-        csvContent += row.join(",") + "\n";
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ReportCards_Data_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 }
 
-/* ---------------- BULK DOWNLOAD ---------------- */
-function bulkDownloadReports() {
-    const cls = qs('dashboardClassSelect').value || state.selectedClass;
-    if (!cls) return alert('Select a class for bulk download.');
-    if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
-    const arr = [];
-    Object.keys(state.studentsByClass[cls]).forEach(key => {
-        const s = state.studentsByClass[cls][key];
-        
-        // Recalculate Totals/Percentage/Remark for data integrity before downloading
-        const numericMarks = s.marks.filter(m => !m.isGrade);
-        let totalOverall = 0;
-        let maxPossible = 0;
-        
-        if (isNurToUkg(s.cls)) {
-            totalOverall = s.marks.reduce((a,b)=>a+(b.total||0),0);
-            s.marks.forEach(m => {
-                const subjConfig = SUBJECTS_NUR_TO_UKG.find(subj => subj.name === m.name) || {};
-                maxPossible += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
-            });
-        } else {
-            totalOverall = numericMarks.reduce((a,b)=>a+(b.total||0),0);
-            maxPossible = numericMarks.length * 100;
-        }
-
-        const percentage = maxPossible > 0 ? ((totalOverall/maxPossible)*100).toFixed(2) : '0.00';
-
-        let remarkText = 'Needs Improvement';
-        const p = Number(percentage);
-        if (p >= 90) remarkText = 'Outstanding';
-        else if (p >= 80) remarkText = 'Excellent';
-        else if (p >= 70) remarkText = 'Very Good';
-        else if (p >= 60) remarkText = 'Good';
-        else if (p >= 50) remarkText = 'Average';
-        s.remark = remarkText;
-
-
-        let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
-        s.marks.forEach(m => {
-            if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
-            else report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
-        });
-        report += `\nTotals: Overall ${totalOverall}\n`;
-        report += `Percentage: ${percentage}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher:\nPrincipal:\n\n--------------------------------------------------\n\n`;
-        arr.push(report);
-    });
-    const blob = new Blob(arr, { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
 const password = prompt('Enter password to clear ALL data:');
@@ -1187,10 +1120,10 @@ if (!confirm('Are you sure? This will remove all saved data!')) return;
 localStorage.clear();
 state.studentsByClass = {};
 state.selectedStudentKey = '';
-// Reset print date to today's date
-state.reportPrintDate = new Date().toISOString().split('T')[0];
+state.reportPrintDate = null; // Clear print date
+qs('reportPrintDateInput').value = '';
 clearStudentView();
-updatePrintDateDisplay();
+updatePrintDate();
 alert('All data cleared successfully.');
 }
 /* ----------------- HELPERS: LOAD / CLEAR VIEW ----------------- */
@@ -1198,44 +1131,61 @@ function clearStudentView() {
 state.selectedStudentKey = '';
 qs('studentName').textContent = '—';
 qs('admissionNo').textContent = '—';
+// Clear father name display
 if (qs('fatherName')) qs('fatherName').textContent = '—';
 qs('studentNameInput').value = '';
 qs('admissionInput').value = '';
+// Clear father name input
 if (qs('fatherNameInput')) qs('fatherNameInput').value = '';
 qs('classSection').textContent = state.selectedClass ? displayClassLabel(state.selectedClass) : '—';
-
-// Clear attendance inputs and displays
-if (qs('attendancePresentInput')) qs('attendancePresentInput').value = '';
-if (qs('attendanceTotalInput')) qs('attendanceTotalInput').value = DEFAULT_ATT_TOTAL;
-if (qs('attendancePresentDisplay')) qs('attendancePresentDisplay').textContent = 0;
-if (qs('attendanceTotalDisplay')) qs('attendanceTotalDisplay').textContent = DEFAULT_ATT_TOTAL;
+// Clear *both* sets of attendance inputs
+document.querySelectorAll('#attendancePresent').forEach(el => el.value = '');
+document.querySelectorAll('#attendanceTotal').forEach(el => el.value = DEFAULT_ATT_TOTAL);
 
 qs('coscholasticBody').innerHTML = `
 <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
 <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
 `;
-
-// Clear teachers remark inputs
-const defaultRemark = 'Good effort. Keep improving.';
-if (qs('teachersRemarkInput')) qs('teachersRemarkInput').value = defaultRemark;
-if (qs('teachersRemark')) qs('teachersRemark').textContent = defaultRemark;
-
+if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep improving.';
 renderMarksTableForClass(state.selectedClass);
 }
 
-/* ----------------- UPDATE PRINT DATE ----------------- */
-function updatePrintDateDisplay() {
+/* ----------------- UPDATE PRINT DATE (MODIFICATION 2) ----------------- */
+function updatePrintDate() {
     let dateToDisplay;
     if (state.reportPrintDate) {
-        // Format the stored date (YYYY-MM-DD) to DD/MM/YYYY
-        dateToDisplay = new Date(state.reportPrintDate + 'T00:00:00').toLocaleDateString('en-IN'); 
+        // Format the stored date (YYYY-MM-DD) to a locale string (e.g., 10/26/2023)
+        // Using 'en-IN' for a common date format in the region (DD/MM/YYYY)
+        dateToDisplay = new Date(state.reportPrintDate).toLocaleDateString('en-IN');
     } else {
-        // Fallback to current date
+        // Use the current date as a fallback if nothing is stored/set
         dateToDisplay = new Date().toLocaleDateString('en-IN');
     }
     qs('printDate').textContent = 'Date: ' + dateToDisplay;
-    qs('reportDateInput').value = state.reportPrintDate;
 }
+
+function setReportPrintDate() {
+    const dateInput = qs('reportPrintDateInput').value;
+    if (dateInput) {
+        state.reportPrintDate = dateInput;
+        localStorage.setItem('ng_reportPrintDate', dateInput);
+        updatePrintDate();
+        alert('Report print date set successfully!');
+    } else {
+        state.reportPrintDate = null;
+        localStorage.removeItem('ng_reportPrintDate');
+        updatePrintDate();
+        alert('Report print date cleared. Current date will be used.');
+    }
+}
+
+
+/* ----------------- INIT CALL (already called above) ----------------- */
+/* The init() call is at top of script */
+/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
+(function wireLoadFromSaved() {
+// When page loads, nothing auto-loads. Users use Load/Add buttons.
+})();
 </script>
 </body>
 </html>
