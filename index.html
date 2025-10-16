@@ -57,8 +57,9 @@ z-index: 0;
 }
 
 /* MARGIN COMPACTION FOR HEADER/BODY */
+/* FIX: Increased padding-bottom to ensure logo does not overlap the border-b line when printing */
 .page-content-wrapper > .border-b {
-    padding-bottom: 7px !important; 
+    padding-bottom: 30px !important; /* MODIFICATION: Increased from 7px for logo clearance */
     margin-bottom: 7px !important; 
 }
 .page-content-wrapper > .grid.grid-cols-4 {
