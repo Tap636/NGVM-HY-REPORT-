@@ -42,7 +42,7 @@ background-image: url('watermark.png');
 background-repeat: no-repeat;
 background-position: center;
 background-size: contain;
-opacity: 0.1; 
+opacity: 0.05; /* MODIFICATION: Reduced opacity */
 pointer-events: none;
 z-index: 0;
 }
@@ -777,7 +777,7 @@ student.marks[idx][field] = Number(el.value) || 0;
 let percentage = 0;
 if (student && isNurToUkg(student.cls)) {
 let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0 };
-let maxOverall = 0;
+let maxOverall = 0; // Correctly calculate max overall
 student.marks.forEach(m => {
 const ut = Number(m.ut) || 0;
 const utOral = Number(m.utOral) || 0;
@@ -1002,7 +1002,6 @@ const totalOverall = numericMarks.reduce((a,b)=>a+(b.total||0),0);
 const numericCount = numericMarks.length;
 let maxPossible = 0;
 if (isNurToUkg(s.cls)) {
-    const subjConfig = SUBJECTS_NUR_TO_UKG.find(sc => sc.name === s.marks[0].name); // Assumes first subject has max for its class type
     s.marks.forEach(m => {
         maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
     });
@@ -1034,15 +1033,26 @@ function downloadMarksExcel() {
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
 
-    let header = "Admission No.,Student Name,Father Name,Class,Subject,UT Marks,UT Oral Marks,HY Marks,HY Oral Marks,Total Subject Marks,Overall Total Marks,Overall Percentage\n";
-    if (!isNurUkg) {
-        // Simplify header for 1-9 (no oral)
-        header = "Admission No.,Student Name,Father Name,Class,Subject,UT Marks,HY Marks,Total Subject Marks,Overall Total Marks,Overall Percentage\n";
+    let header;
+    let subjectHeader;
+
+    if (isNurUkg) {
+        // Headers for Nursery/LKG/UKG
+        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
+    } else {
+        // Headers for Classes 1-9
+        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
     }
+    
+    // Core headers required by the user
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Total Marks,Overall Percentage";
+    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
 
     let csvContent = header;
 
     students.forEach(s => {
+        // Calculate overall totals and percentage for the overall columns
         const studentNumericMarks = s.marks.filter(m => !m.isGrade);
         const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
         let maxPossible = 0;
@@ -1057,29 +1067,34 @@ function downloadMarksExcel() {
 
         const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
 
+        // Base student info, only for the first line of the student
+        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
+
         s.marks.forEach((m, index) => {
-            let row = `${s.admission},"${s.name}","${s.fatherName}",${classLabel},"${m.name}",`;
+            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
+            row += `,"${m.name}",`;
             
+            let marksData;
             if (m.isGrade) {
-                // For G.K. or other graded subjects
+                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
                 if (isNurUkg) {
-                    row += `Grade ${m.grade},—,—,—,Grade ${m.grade}`;
+                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
                 } else {
-                    row += `—,`, // UT
-                    row += `—,`, // HY
-                    row += `Grade ${m.grade}`;
+                    marksData = `—,—,Grade ${m.grade || '—'}`;
                 }
             } else if (isNurUkg) {
-                // Nur-UKG numerical
-                row += `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
+                // Nur-UKG numerical: UT W/O, HY W/O
+                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
             } else {
-                // 1-9 numerical
-                row += `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
+                // 1-9 numerical: UT, HY
+                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
             }
+
+            row += marksData;
 
             // Append overall total and percentage only to the first subject row
             if (index === 0) {
-                row += `,${overallTotal},${percentage}`;
+                row += `,${overallTotal},"${percentage}"`;
             } else {
                 // Leave the overall columns empty for subsequent rows
                 row += `,,`; 
@@ -1140,10 +1155,11 @@ function updatePrintDate() {
     let dateToDisplay;
     if (state.reportPrintDate) {
         // Format the stored date (YYYY-MM-DD) to a locale string (e.g., 10/26/2023)
-        dateToDisplay = new Date(state.reportPrintDate).toLocaleDateString();
+        // Using 'en-IN' for a common date format in the region (DD/MM/YYYY)
+        dateToDisplay = new Date(state.reportPrintDate).toLocaleDateString('en-IN');
     } else {
         // Use the current date as a fallback if nothing is stored/set
-        dateToDisplay = new Date().toLocaleDateString();
+        dateToDisplay = new Date().toLocaleDateString('en-IN');
     }
     qs('printDate').textContent = 'Date: ' + dateToDisplay;
 }
