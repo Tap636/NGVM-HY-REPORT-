@@ -408,7 +408,8 @@ function checkLogin() {
     // Temporarily hide content until login is successful
     document.body.style.display = 'none'; 
     
-    let password = prompt('Enter Login Password (Default: ' + state.loginPassword + ')');
+    // MODIFIED: Removed the default password hint from the prompt
+    let password = prompt('Enter Login Password:'); 
 
     if (password === state.loginPassword) {
         // Successful login
@@ -423,7 +424,8 @@ function checkLogin() {
 }
 
 function changeLoginPassword() {
-    const adminPass = prompt('Enter Admin Password to change Login Password (Default: ' + ADMIN_PASSWORD + ')');
+    // MODIFIED: Removed the default password hint from the prompt
+    const adminPass = prompt('Enter Admin Password to change Login Password:'); 
     
     if (adminPass !== ADMIN_PASSWORD) {
         return alert('Incorrect Admin Password! Cannot change login password.');
