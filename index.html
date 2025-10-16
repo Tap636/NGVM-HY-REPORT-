@@ -343,6 +343,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 </div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
+const PASSWORD = '2006'; // NEW: Access Password
 const SUBJECTS_NUR_TO_UKG = [
 { name: "English", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
 { name: "Hindi", utMax: 15, utOralMax: 5, hyMax: 60, hyOralMax: 20 },
@@ -364,20 +365,48 @@ reportPrintDate: null // Added for MODIFICATION 2
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
+
+/* ---------------- ACCESS CONTROL ---------------- */
+// Function to check password before allowing access. Uses sessionStorage.
+function checkAccess() {
+    // Check if the user has already unlocked this session
+    if (sessionStorage.getItem('isUnlocked') === 'true') {
+        return true;
+    }
+
+    const enteredPassword = prompt("NANDI GURUKUL VIDYA MANDIR\n\nEnter the password to access the Report Card Editor:");
+    
+    if (enteredPassword === PASSWORD) {
+        sessionStorage.setItem('isUnlocked', 'true');
+        return true;
+    }
+    
+    // Block access if the password is wrong
+    return false;
+}
+
+
 /* ---------------- INIT ---------------- */
 function init() {
-const stored = localStorage.getItem('ng_students');
-state.studentsByClass = stored ? JSON.parse(stored) : {};
-// Load stored print date if available
-const storedDate = localStorage.getItem('ng_reportPrintDate');
-if (storedDate) {
-    state.reportPrintDate = storedDate;
-    qs('reportPrintDateInput').value = storedDate; // Update the input field
-}
-attachEventListeners();
-initChart();
-updatePrintDate();
-renderMarksTableForClass(''); // initial empty
+    // NEW: Check password first
+    if (!checkAccess()) {
+        // If access is denied, stop initialization and replace the body content
+        document.body.innerHTML = '<div style="text-align:center; padding:50px; font-size:1.5rem; color:#4f46e5; background:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center;">ACCESS DENIED. Please refresh the page to try again.</div>';
+        return; // Stop execution
+    }
+
+    const stored = localStorage.getItem('ng_students');
+    state.studentsByClass = stored ? JSON.parse(stored) : {};
+    // Load stored print date if available
+    const storedDate = localStorage.getItem('ng_reportPrintDate');
+    if (storedDate) {
+        state.reportPrintDate = storedDate;
+        qs('reportPrintDateInput').value = storedDate; // Update the input field
+    }
+    attachEventListeners();
+    initChart();
+    updatePrintDate();
+    renderMarksTableForClass(''); // initial empty
 }
 init();
 /* ---------------- MAP & HELPERS ---------------- */
@@ -1143,6 +1172,7 @@ const password = prompt('Enter password to clear ALL data:');
 if (password !== '1234') return alert('Incorrect password!');
 if (!confirm('Are you sure? This will remove all saved data!')) return;
 localStorage.clear();
+sessionStorage.removeItem('isUnlocked'); // Ensure session is locked again
 state.studentsByClass = {};
 state.selectedStudentKey = '';
 state.reportPrintDate = null; // Clear print date
