@@ -1138,16 +1138,107 @@ function downloadMarksExcel() {
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
 
-    let header;
-    let subjectHeader;
+    // Ensure we have an example student to build the subject header structure
+    const studentExample = students[0];
+    if (!studentExample) return alert('No student data available to determine subject structure.');
 
-    if (isNurUkg) {
-        // Headers for Nursery/LKG/UKG
-        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
-    } else {
-        // Headers for Classes 1-9
-        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
-    }
+    // 1. Build Dynamic Header (One column for each mark field)
+    let subjectColumns = [];
+    const maxMarksMap = {}; // Helper to determine max for header label
+
+    studentExample.marks.forEach(m => {
+        const name = m.name;
+        
+        // Populate maxMarksMap for correct max values in header
+        if (isNurUkg) {
+            const subjConfig = SUBJECTS_NUR_TO_UKG.find(sc => sc.name === name);
+            if (subjConfig) maxMarksMap[name] = subjConfig;
+        } else {
+            maxMarksMap[name] = { utMax: 20, hyMax: 80 };
+        }
+        
+        const max = maxMarksMap[name];
+
+        if (m.isGrade) {
+            subjectColumns.push(`"${name} Grade"`);
+        } else if (isNurUkg) {
+            subjectColumns.push(`"${name} UT Written (Max: ${max.utMax})"`);
+            if ((max.utOralMax || 0) > 0) subjectColumns.push(`"${name} UT Oral (Max: ${max.utOralMax})"`);
+            subjectColumns.push(`"${name} HY Written (Max: ${max.hyMax})"`);
+            if ((max.hyOralMax || 0) > 0) subjectColumns.push(`"${name} HY Oral (Max: ${max.hyOralMax})"`);
+            subjectColumns.push(`"${name} Total"`); 
+        } else { // Classes 1-9
+            subjectColumns.push(`"${name} UT Marks (Max: 20)"`);
+            subjectColumns.push(`"${name} HY Marks (Max: 80)"`);
+            subjectColumns.push(`"${name} Total"`); 
+        }
+    });
+
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Total Marks,Overall Percentage";
+    const header = `${coreHeader},${subjectColumns.join(',')},${overallHeader}\n`;
+    let csvContent = header;
+
+    // 2. Iterate and Build Single Row Data for each student
+    students.forEach(s => {
+        // Recalculate Totals and Percentage
+        let overallTotal = 0;
+        let maxPossible = 0;
+        let numericCount = 0;
+
+        s.marks.forEach(m => {
+            if (!m.isGrade) {
+                // m.total is calculated in saveCurrentStudent or calculateTotalsAndUpdate
+                overallTotal += m.total || 0; 
+                if (isNurUkg) {
+                    const subjConfig = SUBJECTS_NUR_TO_UKG.find(sc => sc.name === m.name);
+                    if (subjConfig) maxPossible += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
+                } else {
+                    numericCount++;
+                }
+            }
+        });
+        
+        if (!isNurUkg) {
+            maxPossible = numericCount * 100;
+        }
+
+        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
+
+        // Base student info
+        const coreInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
+
+        let marksData = [];
+        s.marks.forEach(m => {
+            const max = maxMarksMap[m.name];
+            if (m.isGrade) {
+                marksData.push(`"Grade ${m.grade || '—'}"`);
+            } else if (isNurUkg) {
+                marksData.push(m.ut || 0); // UT Written
+                if ((max.utOralMax || 0) > 0) marksData.push(m.utOral || 0); // UT Oral (if applicable)
+                marksData.push(m.hy || 0); // HY Written
+                if ((max.hyOralMax || 0) > 0) marksData.push(m.hyOral || 0); // HY Oral (if applicable)
+                marksData.push(m.total || 0); // Subject total
+            } else {
+                // 1-9 numerical
+                marksData.push(m.ut || 0, m.hy || 0, m.total || 0); // UT, HY, Subject total
+            }
+        });
+
+        // Combine all data for a single row
+        const row = `${coreInfo},${marksData.join(',')},${overallTotal},"${percentage}"\n`;
+        csvContent += row;
+    });
+
+    // 3. Output CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
     
     // Core headers required by the user
     const coreHeader = "Admission No.,Student Name,Father Name,Class";
