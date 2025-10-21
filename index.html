@@ -163,9 +163,46 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
 select.grade-select { padding:4px; border-radius:4px; }
+
+/* MODIFICATION: INITIAL HIDE OF MAIN CONTENT and MODAL STYLES */
+.main-content {
+    display: none; /* Hidden by default until login successful */
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+}
 </style>
 </head>
 <body class="bg-gray-100 p-6">
+
+<div id="loginModal" class="modal-overlay hidden">
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-96">
+        <h2 class="text-xl font-bold mb-4 text-indigo-600">Secure Login Required</h2>
+        <div class="mb-4">
+            <label for="loginPasswordInput" class="block text-sm font-medium text-gray-700">Enter Password</label>
+            <input type="password" id="loginPasswordInput" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="Password" onkeydown="if(event.key==='Enter') handleLoginAttempt()">
+        </div>
+        <div class="mb-6 flex items-center">
+            <input type="checkbox" id="showPasswordCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" onclick="togglePasswordVisibility()">
+            <label for="showPasswordCheckbox" class="ml-2 block text-sm text-gray-900">
+                Show Password
+            </label>
+        </div>
+        <button id="loginBtn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="handleLoginAttempt()">
+            Login
+        </button>
+    </div>
+</div>
+<div class="main-content">
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
 <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
 <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
@@ -342,6 +379,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="no-print text-center mt-6">
 <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
+</div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
 const SUBJECTS_NUR_TO_UKG = [
@@ -368,63 +406,78 @@ selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: null, // Added for MODIFICATION 2
-loginPassword: DEFAULT_LOGIN_PASSWORD // ADDED: Current login password
+reportPrintDate: null, 
+loginPassword: DEFAULT_LOGIN_PASSWORD 
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 
 /* ---------------- INIT ---------------- */
 function init() {
-    // 1. Password Check (MUST BE FIRST)
-    if (!checkLogin()) return; // Stop initialization if login fails
-
-    const stored = localStorage.getItem('ng_students');
-    state.studentsByClass = stored ? JSON.parse(stored) : {};
-    
-    // Load stored password or set default
-    const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
-    state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
-
-    // Load stored print date if available
-    const storedDate = localStorage.getItem('ng_reportPrintDate');
-    if (storedDate) {
-        state.reportPrintDate = storedDate;
-        qs('reportPrintDateInput').value = storedDate; // Update the input field
-    }
-    attachEventListeners();
-    initChart();
-    updatePrintDate();
-    renderMarksTableForClass(''); // initial empty
+    // 1. Password Check is now handled by showing the modal
+    showLoginModal();
+    // The rest of the initialization will run inside handleLoginAttempt() on success.
 }
 
-/* ---------------- LOGIN FUNCTIONS ---------------- */
+/* ---------------- LOGIN FUNCTIONS (MODIFIED) ---------------- */
 
-function checkLogin() {
+function showLoginModal() {
+    qs('loginModal').classList.remove('hidden');
+    // Focus the password input when the modal opens
+    setTimeout(() => qs('loginPasswordInput').focus(), 100); 
+}
+
+/**
+ * Handles the custom modal login attempt.
+ */
+function handleLoginAttempt() {
+    const password = qs('loginPasswordInput').value;
     // Load the most current password from local storage or use the default
     const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
     state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
 
-    // Temporarily hide content until login is successful
-    document.body.style.display = 'none'; 
-    
-    // MODIFIED: Removed the default password hint from the prompt
-    let password = prompt('Enter Login Password:'); 
-
     if (password === state.loginPassword) {
         // Successful login
-        document.body.style.display = 'block'; // Show content
+        qs('loginModal').classList.add('hidden'); // Hide modal
+        document.querySelector('.main-content').style.display = 'block'; // Show main content
+        
+        // --- RESUME INITIALIZATION ---
+        const stored = localStorage.getItem('ng_students');
+        state.studentsByClass = stored ? JSON.parse(stored) : {};
+
+        const storedDate = localStorage.getItem('ng_reportPrintDate');
+        if (storedDate) {
+            state.reportPrintDate = storedDate;
+            qs('reportPrintDateInput').value = storedDate; // Update the input field
+        }
+        
+        attachEventListeners();
+        initChart();
+        updatePrintDate();
+        renderMarksTableForClass(''); // initial empty
+        
         return true;
     } else {
-        document.body.style.display = 'block'; 
         alert('Incorrect Password! Access Denied.');
-        document.body.innerHTML = '<div style="margin: 50px; text-align: center;"><h1 style="color: red;">ACCESS DENIED. Incorrect Password.</h1></div>';
+        qs('loginPasswordInput').value = '';
         return false;
     }
 }
 
+/**
+ * Toggles the visibility of the password input field.
+ */
+function togglePasswordVisibility() {
+    const passwordInput = qs('loginPasswordInput');
+    const checkbox = qs('showPasswordCheckbox');
+    if (checkbox.checked) {
+        passwordInput.type = 'text';
+    } else {
+        passwordInput.type = 'password';
+    }
+}
+
 function changeLoginPassword() {
-    // MODIFIED: Removed the default password hint from the prompt
     const adminPass = prompt('Enter Admin Password to change Login Password:'); 
     
     if (adminPass !== ADMIN_PASSWORD) {
@@ -1029,7 +1082,7 @@ return Math.max(...vals);
 }
 /* ---------------- DASHBOARD TOPPER ---------------- */
 function showDashboardTopper() {
-const cls = qs('dashboardClassSelect').value;
+const cls = qs('dashboardClassSelect').value || state.selectedClass;
 if (!cls) { qs('classTopperDashboard').textContent='Class Topper: —'; qs('schoolTopperDashboard').textContent='School Topper: —'; return; }
 let classTopper = { name:'—', total:0 };
 let schoolTopper = { name:'—', total:0 };
@@ -1238,12 +1291,11 @@ if (qs('teachersRemark')) qs('teachersRemark').textContent = 'Good effort. Keep 
 renderMarksTableForClass(state.selectedClass);
 }
 
-/* ----------------- UPDATE PRINT DATE (MODIFICATION 2) ----------------- */
+/* ----------------- UPDATE PRINT DATE ----------------- */
 function updatePrintDate() {
     let dateToDisplay;
     if (state.reportPrintDate) {
-        // Format the stored date (YYYY-MM-DD) to a locale string (e.g., 10/26/2023)
-        // Using 'en-IN' for a common date format in the region (DD/MM/YYYY)
+        // Format the stored date (YYYY-MM-DD) to a locale string (DD/MM/YYYY)
         dateToDisplay = new Date(state.reportPrintDate).toLocaleDateString('en-IN');
     } else {
         // Use the current date as a fallback if nothing is stored/set
@@ -1269,7 +1321,6 @@ function setReportPrintDate() {
 
 
 /* ----------------- INIT CALL ----------------- */
-// The original init() call has been moved to the end to ensure all functions are defined first.
 init(); 
 
 /* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
