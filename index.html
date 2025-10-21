@@ -166,198 +166,181 @@ select.grade-select { padding:4px; border-radius:4px; }
 </style>
 </head>
 <body class="bg-gray-100 p-6">
-
-<div id="main-content" style="display: none;">
-  <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
-  <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
-  <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
-  <select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
-  <option value="">-- Select Class --</option>
-  <option value="Nursery">Nursery</option>
-  <option value="LKG">LKG</option>
-  <option value="UKG">UKG</option>
-  <option value="1">I</option>
-  <option value="2">II</option>
-  <option value="3">III</option>
-  <option value="4">IV</option>
-  <option value="5">V</option>
-  <option value="6">VI</option>
-  <option value="7">VII</option>
-  <option value="8">VIII</option>
-  <option value="9">IX</option>
-  </select>
-  <p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
-  <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
-  <div class="mt-3 flex gap-2">
-  <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
-  <button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download Classwise Marks (Excel)</button>
-  <button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
-  </div>
-  </div>
-  <div class="page">
-    <div class="page-content-wrapper">
-      <div class="pb-6 border-b mb-6 relative">
-          <img src="logo.png" class="w-24 h-24 rounded-md absolute top-0 left-3" alt="School Logo" />
-
-          <div class="text-center ml-[112px] mr-[112px]"> 
-              <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
-              <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
-              <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
-          </div>
-
-          <div class="text-right no-print absolute top-0 right-0">
-              <label class="block text-xs text-gray-600">Select Class</label>
-              <select id="classSelect" class="border rounded px-2 py-1 bg-white">
-              <option value="">-- Select Class --</option>
-              <option value="Nursery">Nursery</option>
-              <option value="LKG">LKG</option>
-              <option value="UKG">UKG</option>
-              <option value="1">I</option>
-              <option value="2">II</option>
-              <option value="3">III</option>
-              <option value="4">IV</option>
-              <option value="5">V</option>
-              <option value="6">VI</option>
-              <option value="7">VII</option>
-              <option value="8">VIII</option>
-              <option value="9">IX</option>
-              </select>
-          </div>
-      </div>
-      <div class="no-print mb-4">
-      <div class="grid grid-cols-5 gap-4 items-end">
-      <div>
-      <label class="text-sm text-gray-600">Admission Number</label>
-      <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
-      </div>
-      <div>
-      <label class="text-sm text-gray-600">Student Name</label>
-      <input id="studentNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Student full name" />
-      </div>
-      <div>
-      <label class="text-sm text-gray-600">Father's Name</label>
-      <input id="fatherNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Father's full name" />
-      </div>
-      <div class="col-span-2 flex gap-2 justify-end">
-      <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
-      <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
-      <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add / Update</button>
-      <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
-      </div>
-      </div>
-      <div class="mt-4 flex gap-4 items-center">
-          <div>
-              <label class="text-sm text-gray-600">Report Print Date (Optional)</label>
-              <input id="reportPrintDateInput" type="date" class="border px-2 py-1 rounded" />
-          </div>
-          <button id="setPrintDateBtn" class="px-3 py-1 border rounded self-end">Set Date</button>
-      </div>
-      </div>
-      <div class="grid grid-cols-4 gap-4 mb-4 mt-4">
-      <div>
-      <p class="text-sm text-gray-600">Admission No.</p>
-      <h2 id="admissionNo" class="font-semibold">—</h2>
-      </div>
-      <div>
-      <p class="text-sm text-gray-600">Name</p>
-      <h2 id="studentName" class="font-semibold">—</h2>
-      </div>
-      <div>
-      <p class="text-sm text-gray-600">Father's Name</p>
-      <h2 id="fatherName" class="font-semibold">—</h2>
-      </div>
-      <div>
-      <p class="text-sm text-gray-600">Class/Section</p>
-      <h2 id="classSection" class="font-semibold">—</h2>
-      </div>
-      </div>
-      
-      <div class="mb-4 screen-only">
-      <label class="text-sm text-gray-600 font-semibold">Attendance</label>
-      <div class="flex gap-2 items-center">
-      <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-      <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
-      </div>
-      </div>
-      
-      <div class="overflow-x-auto">
-      <table id="marksTable" class="w-full border-collapse table-auto text-sm">
-      <thead id="marksTableHead"></thead>
-      <tbody id="marksTableBody"></tbody>
-      <tfoot id="marksTableFoot"></tfoot>
-      </table>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mt-6"> 
-      <div class="col-span-1">
-      <div class="border p-4">
-      <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
-      <table class="w-full text-sm" id="coscholasticTable">
-      <tbody id="coscholasticBody">
-      <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
-      <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
-      </tbody>
-      </table>
-      </div>
-      <div class="border p-4 mt-4">
-      <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
-      <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
-      </div>
-      
-      <div class="border p-4 mt-4 print-only">
-          <h3 class="font-semibold mb-2">Attendance</h3>
-          <div class="flex gap-2 items-center">
-              <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
-              <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
-          </div>
-      </div>
-      
-      </div>
-      <div class="col-span-2">
-      <div class="border p-4">
-      <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
-      <canvas id="marksChart" height="180"></canvas>
-      </div>
-      </div>
-      </div>
-    </div>
-    <div class="page-footer-area">
-      <div id="finalFooter" style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div class="col left" style="text-align:left;">
-      <div class="signature-space"></div>
-      <div class="signature-label">Class Teacher</div>
-      </div>
-      <div class="col" style="text-align:center;">
-      <div class="signature-space"></div>
-      <div class="signature-label">School Seal</div>
-      </div>
-      <div class="col right" style="text-align:right;">
-      <img src="principal.png" alt="Principal" class="principal-img" />
-      <div class="signature-label">Principal</div>
-      </div>
-      </div>
-      <div id="disclaimer" class="muted text-center">
-      *This digitally generated report card is a bonafide record of student's academic performance.
-      </div>
-      <div id="printDate" class="text-center muted">Date: —</div>
-    </div>
-    </div>
-  <div class="no-print text-center mt-6">
-  <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
-  </div>
+<div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
+<h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
+<label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
+<select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
+<option value="">-- Select Class --</option>
+<option value="Nursery">Nursery</option>
+<option value="LKG">LKG</option>
+<option value="UKG">UKG</option>
+<option value="1">I</option>
+<option value="2">II</option>
+<option value="3">III</option>
+<option value="4">IV</option>
+<option value="5">V</option>
+<option value="6">VI</option>
+<option value="7">VII</option>
+<option value="8">VIII</option>
+<option value="9">IX</option>
+</select>
+<p id="classTopperDashboard" class="font-semibold mt-1">Class Topper: —</p>
+<p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
+<div class="mt-3 flex gap-2">
+<button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
+<button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download Classwise Marks (Excel)</button>
+<button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
 </div>
-<div id="login-form-wrapper" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50" style="display:none;">
-    <div class="bg-white p-8 rounded shadow-lg w-80">
-        <h2 class="text-xl font-bold mb-4 text-center">NANDI GURUKUL Login</h2>
-        <input type="password" id="loginPasswordInput" class="border px-3 py-2 rounded w-full mb-3" placeholder="Enter Login Password" required />
-        <div class="flex items-center justify-between mb-4">
-            <label for="showPassword" class="text-sm text-gray-600 flex items-center">
-                <input type="checkbox" id="showPassword" class="mr-2" />
-                Show Password
-            </label>
-            <button id="loginSubmitBtn" class="px-4 py-1 bg-indigo-600 text-white rounded text-sm">Login</button>
+</div>
+<div class="page">
+  <div class="page-content-wrapper">
+    <div class="pb-6 border-b mb-6 relative">
+        <img src="logo.png" class="w-24 h-24 rounded-md absolute top-0 left-3" alt="School Logo" />
+
+        <div class="text-center ml-[112px] mr-[112px]"> 
+            <h1 class="text-2xl font-extrabold school-name school-name-color">NANDI GURUKUL VIDYA MANDIR</h1>
+            <p class="text-sm">Academic Session: <strong>2025-26</strong></p>
+            <p class="text-sm mt-1 text-gray-700 font-semibold">REPORT CARD - HALF YEARLY EXAMINATION</p>
         </div>
-        <p id="loginError" class="text-red-600 text-center text-sm hidden">Incorrect Password.</p>
+
+        <div class="text-right no-print absolute top-0 right-0">
+            <label class="block text-xs text-gray-600">Select Class</label>
+            <select id="classSelect" class="border rounded px-2 py-1 bg-white">
+            <option value="">-- Select Class --</option>
+            <option value="Nursery">Nursery</option>
+            <option value="LKG">LKG</option>
+            <option value="UKG">UKG</option>
+            <option value="1">I</option>
+            <option value="2">II</option>
+            <option value="3">III</option>
+            <option value="4">IV</option>
+            <option value="5">V</option>
+            <option value="6">VI</option>
+            <option value="7">VII</option>
+            <option value="8">VIII</option>
+            <option value="9">IX</option>
+            </select>
+        </div>
     </div>
+    <div class="no-print mb-4">
+    <div class="grid grid-cols-5 gap-4 items-end">
+    <div>
+    <label class="text-sm text-gray-600">Admission Number</label>
+    <input id="admissionInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="e.g. 138/Z18" />
+    </div>
+    <div>
+    <label class="text-sm text-gray-600">Student Name</label>
+    <input id="studentNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Student full name" />
+    </div>
+    <div>
+    <label class="text-sm text-gray-600">Father's Name</label>
+    <input id="fatherNameInput" type="text" class="border px-2 py-1 rounded w-full" placeholder="Father's full name" />
+    </div>
+    <div class="col-span-2 flex gap-2 justify-end">
+    <button id="loadBtn" class="px-3 py-1 border rounded">Load</button>
+    <button id="saveBtn" class="px-3 py-1 bg-green-600 text-white rounded">Save</button>
+    <button id="addStudentBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Add / Update</button>
+    <button id="printBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Print</button>
+    </div>
+    </div>
+    <div class="mt-4 flex gap-4 items-center">
+        <div>
+            <label class="text-sm text-gray-600">Report Print Date (Optional)</label>
+            <input id="reportPrintDateInput" type="date" class="border px-2 py-1 rounded" />
+        </div>
+        <button id="setPrintDateBtn" class="px-3 py-1 border rounded self-end">Set Date</button>
+    </div>
+    </div>
+    <div class="grid grid-cols-4 gap-4 mb-4 mt-4">
+    <div>
+    <p class="text-sm text-gray-600">Admission No.</p>
+    <h2 id="admissionNo" class="font-semibold">—</h2>
+    </div>
+    <div>
+    <p class="text-sm text-gray-600">Name</p>
+    <h2 id="studentName" class="font-semibold">—</h2>
+    </div>
+    <div>
+    <p class="text-sm text-gray-600">Father's Name</p>
+    <h2 id="fatherName" class="font-semibold">—</h2>
+    </div>
+    <div>
+    <p class="text-sm text-gray-600">Class/Section</p>
+    <h2 id="classSection" class="font-semibold">—</h2>
+    </div>
+    </div>
+    
+    <div class="mb-4 screen-only">
+    <label class="text-sm text-gray-600 font-semibold">Attendance</label>
+    <div class="flex gap-2 items-center">
+    <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+    <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+    </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+    <table id="marksTable" class="w-full border-collapse table-auto text-sm">
+    <thead id="marksTableHead"></thead>
+    <tbody id="marksTableBody"></tbody>
+    <tfoot id="marksTableFoot"></tfoot>
+    </table>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mt-6"> 
+    <div class="col-span-1">
+    <div class="border p-4">
+    <h3 class="font-semibold mb-2">Co-Scholastic Grades </h3>
+    <table class="w-full text-sm" id="coscholasticTable">
+    <tbody id="coscholasticBody">
+    <tr><td>Work Habits</td><td><input type="text" id="workHabitsInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full" /></td></tr>
+    <tr><td>Behavior</td><td><input type="text" id="behaviorInput" placeholder="e.g. A, B, C" class="border px-1 py-0.5 rounded w-full"/></td></tr>
+    </tbody>
+    </table>
+    </div>
+    <div class="border p-4 mt-4">
+    <h3 class="font-semibold mb-2">Class Teacher's Remark</h3>
+    <div id="teachersRemark" class="w-full p-2 text-sm border rounded bg-gray-50">Good effort. Keep improving.</div>
+    </div>
+    
+    <div class="border p-4 mt-4 print-only">
+        <h3 class="font-semibold mb-2">Attendance</h3>
+        <div class="flex gap-2 items-center">
+            <input type="number" id="attendancePresent" min="0" max="130" placeholder="Days Present" class="border px-2 py-1 rounded w-32" />
+            <input type="number" id="attendanceTotal" readonly value="130" class="border px-2 py-1 rounded w-40 bg-gray-200 text-center" title="Total working days" />
+        </div>
+    </div>
+    
+    </div>
+    <div class="col-span-2">
+    <div class="border p-4">
+    <h3 class="font-semibold mb-2">Graphical Analysis (Half Yearly)</h3>
+    <canvas id="marksChart" height="180"></canvas>
+    </div>
+    </div>
+    </div>
+  </div>
+  <div class="page-footer-area">
+    <div id="finalFooter" style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div class="col left" style="text-align:left;">
+    <div class="signature-space"></div>
+    <div class="signature-label">Class Teacher</div>
+    </div>
+    <div class="col" style="text-align:center;">
+    <div class="signature-space"></div>
+    <div class="signature-label">School Seal</div>
+    </div>
+    <div class="col right" style="text-align:right;">
+    <img src="principal.png" alt="Principal" class="principal-img" />
+    <div class="signature-label">Principal</div>
+    </div>
+    </div>
+    <div id="disclaimer" class="muted text-center">
+    *This digitally generated report card is a bonafide record of student's academic performance.
+    </div>
+    <div id="printDate" class="text-center muted">Date: —</div>
+  </div>
+  </div>
+<div class="no-print text-center mt-6">
+<button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
@@ -385,62 +368,17 @@ selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: null, 
-loginPassword: DEFAULT_LOGIN_PASSWORD 
+reportPrintDate: null, // Added for MODIFICATION 2
+loginPassword: DEFAULT_LOGIN_PASSWORD // ADDED: Current login password
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 
 /* ---------------- INIT ---------------- */
 function init() {
-    // 1. Initial State: Show login form, hide main content
-    qs('main-content').style.display = 'none';
-    qs('login-form-wrapper').style.display = 'flex';
-    
-    // 2. Attach Login Event Listeners
-    attachLoginEventListeners();
-}
+    // 1. Password Check (MUST BE FIRST)
+    if (!checkLogin()) return; // Stop initialization if login fails
 
-function attachLoginEventListeners() {
-    const passwordInput = qs('loginPasswordInput');
-    const showCheckbox = qs('showPassword');
-    const submitBtn = qs('loginSubmitBtn');
-    const errorMsg = qs('loginError');
-    
-    // Toggle password visibility (SHOW/HIDE)
-    showCheckbox.addEventListener('change', () => {
-        passwordInput.type = showCheckbox.checked ? 'text' : 'password';
-    });
-    
-    const handleLogin = () => {
-        const password = passwordInput.value;
-        const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
-        state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
-
-        if (password === state.loginPassword) {
-            // Success
-            qs('login-form-wrapper').style.display = 'none';
-            qs('main-content').style.display = 'block';
-            continueInitialization();
-        } else {
-            // Failure
-            errorMsg.textContent = 'Incorrect Password.';
-            errorMsg.style.display = 'block';
-            passwordInput.value = ''; // Clear input
-            passwordInput.focus();
-        }
-    };
-
-    submitBtn.addEventListener('click', handleLogin);
-    passwordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleLogin();
-        }
-    });
-}
-
-// Function to run after successful login
-function continueInitialization() {
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
     
@@ -460,11 +398,33 @@ function continueInitialization() {
     renderMarksTableForClass(''); // initial empty
 }
 
+/* ---------------- LOGIN FUNCTIONS ---------------- */
 
-/* ---------------- LOGIN FUNCTIONS (MODIFIED) ---------------- */
-// Removed the old checkLogin function as it's replaced by the new HTML form logic.
+function checkLogin() {
+    // Load the most current password from local storage or use the default
+    const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
+    state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
+
+    // Temporarily hide content until login is successful
+    document.body.style.display = 'none'; 
+    
+    // MODIFIED: Removed the default password hint from the prompt
+    let password = prompt('Enter Login Password:'); 
+
+    if (password === state.loginPassword) {
+        // Successful login
+        document.body.style.display = 'block'; // Show content
+        return true;
+    } else {
+        document.body.style.display = 'block'; 
+        alert('Incorrect Password! Access Denied.');
+        document.body.innerHTML = '<div style="margin: 50px; text-align: center;"><h1 style="color: red;">ACCESS DENIED. Incorrect Password.</h1></div>';
+        return false;
+    }
+}
 
 function changeLoginPassword() {
+    // MODIFIED: Removed the default password hint from the prompt
     const adminPass = prompt('Enter Admin Password to change Login Password:'); 
     
     if (adminPass !== ADMIN_PASSWORD) {
@@ -1239,84 +1199,6 @@ function downloadMarksExcel() {
     a.click();
     URL.revokeObjectURL(url);
 }
-    
-    // Core headers required by the user
-    const coreHeader = "Admission No.,Student Name,Father Name,Class";
-    const overallHeader = "Overall Total Marks,Overall Percentage";
-    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
-
-    let csvContent = header;
-
-    students.forEach(s => {
-        // Calculate overall totals and percentage for the overall columns
-        const studentNumericMarks = s.marks.filter(m => !m.isGrade);
-        const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
-        let maxPossible = 0;
-        
-        if (isNurUkg) {
-             s.marks.forEach(m => {
-                // Safely calculate max possible even if 'm' is corrupted
-                const maxConfig = m.max || (typeof m.name === 'object' && m.name !== null ? m.name : {}); 
-                maxPossible += (maxConfig.ut || 0) + (maxConfig.utOral || 0) + (maxConfig.hy || 0) + (maxConfig.hyOral || 0);
-            });
-        } else {
-            maxPossible = studentNumericMarks.length * 100;
-        }
-
-        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
-
-        // Base student info, only for the first line of the student
-        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
-
-        s.marks.forEach((m, index) => {
-            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
-            
-            // --- FIX APPLIED HERE: Handle the "object" issue defensively ---
-            let subjectName = m.name;
-            // If m.name is an object (corrupted state), try to extract the name string from it.
-            if (typeof subjectName === 'object' && subjectName !== null && typeof subjectName.name === 'string') {
-                subjectName = subjectName.name; 
-            }
-            row += `,"${subjectName}",`;
-            // --- END FIX ---
-            
-            let marksData;
-            if (m.isGrade) {
-                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
-                if (isNurUkg) {
-                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
-                } else {
-                    marksData = `—,—,Grade ${m.grade || '—'}`;
-                }
-            } else if (isNurUkg) {
-                // Nur-UKG numerical: UT W/O, HY W/O
-                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
-            } else {
-                // 1-9 numerical: UT, HY
-                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
-            }
-
-            row += marksData;
-
-            // Append overall total and percentage only to the first subject row
-            if (index === 0) {
-                row += `,${overallTotal},"${percentage}"`;
-            } else {
-                // Leave the overall columns empty for subsequent rows
-                row += `,,`; 
-            }
-            csvContent += row + "\n";
-        });
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
 
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
@@ -1387,6 +1269,7 @@ function setReportPrintDate() {
 
 
 /* ----------------- INIT CALL ----------------- */
+// The original init() call has been moved to the end to ensure all functions are defined first.
 init(); 
 
 /* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
