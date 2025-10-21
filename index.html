@@ -377,8 +377,9 @@ const qs = id => document.getElementById(id);
 /* ---------------- INIT ---------------- */
 function init() {
     // 1. Password Check (MUST BE FIRST)
-    if (!checkLogin()) return; // Stop initialization if login fails
-
+    // The original checkLogin now shows the password input form if needed.
+    // We update init to not run the login check directly, but rather run it 
+    // to potentially *show* the login prompt element.
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
     
@@ -392,6 +393,14 @@ function init() {
         state.reportPrintDate = storedDate;
         qs('reportPrintDateInput').value = storedDate; // Update the input field
     }
+    
+    // Check login and handle success/failure
+    if (!checkLogin()) {
+        // If checkLogin returns false, it means the login was handled and denied
+        // or the initial prompt was created.
+        return; 
+    }
+
     attachEventListeners();
     initChart();
     updatePrintDate();
@@ -399,6 +408,7 @@ function init() {
 }
 
 /* ---------------- LOGIN FUNCTIONS ---------------- */
+// MODIFICATION 1: Password Show/Hide Toggle Implementation
 
 function checkLogin() {
     // Load the most current password from local storage or use the default
@@ -408,39 +418,131 @@ function checkLogin() {
     // Temporarily hide content until login is successful
     document.body.style.display = 'none'; 
     
-    // MODIFIED: Removed the default password hint from the prompt
-    let password = prompt('Enter Login Password:'); 
+    // Create the custom login prompt/modal with the show/hide feature
+    const loginContainer = document.createElement('div');
+    loginContainer.id = 'login-modal';
+    loginContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
+    loginContainer.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 300px;">
+            <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 15px;">Enter Login Password</h2>
+            <div style="display: flex; align-items: center; position: relative; margin-bottom: 15px;">
+                <input id="loginPasswordInput" type="password" placeholder="Password" style="border: 1px solid #ccc; padding: 8px; border-radius: 4px; width: 100%; font-size: 1rem;">
+                <button id="togglePasswordVisibility" style="position: absolute; right: 8px; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #4f46e5;">Show</button>
+            </div>
+            <button id="submitLogin" style="background: #4f46e5; color: white; padding: 10px; border-radius: 4px; width: 100%; cursor: pointer;">Login</button>
+        </div>
+    `;
+    
+    document.body.appendChild(loginContainer);
+    
+    const passwordInput = qs('loginPasswordInput');
+    const toggleButton = qs('togglePasswordVisibility');
+    const submitButton = qs('submitLogin');
+    
+    // Attach event listener for show/hide toggle
+    toggleButton.addEventListener('click', () => {
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.textContent = 'Hide';
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.textContent = 'Show';
+        }
+    });
 
-    if (password === state.loginPassword) {
-        // Successful login
-        document.body.style.display = 'block'; // Show content
-        return true;
-    } else {
-        document.body.style.display = 'block'; 
-        alert('Incorrect Password! Access Denied.');
-        document.body.innerHTML = '<div style="margin: 50px; text-align: center;"><h1 style="color: red;">ACCESS DENIED. Incorrect Password.</h1></div>';
-        return false;
-    }
+    // Handle login attempt
+    const attemptLogin = () => {
+        const password = passwordInput.value;
+        if (password === state.loginPassword) {
+            // Successful login
+            loginContainer.remove(); // Remove the modal
+            document.body.style.display = 'block'; // Show content
+            attachEventListeners(); // Re-attach listeners once the DOM is ready
+            initChart();
+            updatePrintDate();
+            renderMarksTableForClass('');
+            return true;
+        } else {
+            alert('Incorrect Password! Access Denied.');
+            passwordInput.value = ''; // Clear password field
+            passwordInput.focus();
+            return false;
+        }
+    };
+    
+    submitButton.addEventListener('click', attemptLogin);
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            attemptLogin();
+        }
+    });
+    
+    // If the modal is still on screen, the login hasn't succeeded yet.
+    // The rest of init will run only after a successful login (within attemptLogin).
+    return false;
 }
 
 function changeLoginPassword() {
-    // MODIFIED: Removed the default password hint from the prompt
+    // MODIFIED: Use a custom prompt/modal for better UI consistency
     const adminPass = prompt('Enter Admin Password to change Login Password:'); 
     
     if (adminPass !== ADMIN_PASSWORD) {
         return alert('Incorrect Admin Password! Cannot change login password.');
     }
     
-    const newPass = prompt('Enter New Login Password:');
+    // MODIFIED: Use a custom prompt/modal with show/hide for new password
+    const newPassModal = document.createElement('div');
+    newPassModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1001; display: flex; justify-content: center; align-items: center;';
+    newPassModal.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 300px;">
+            <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 15px;">Set New Login Password</h2>
+            <div style="display: flex; align-items: center; position: relative; margin-bottom: 15px;">
+                <input id="newLoginPasswordInput" type="password" placeholder="New Password" style="border: 1px solid #ccc; padding: 8px; border-radius: 4px; width: 100%; font-size: 1rem;">
+                <button id="toggleNewPasswordVisibility" style="position: absolute; right: 8px; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #4f46e5;">Show</button>
+            </div>
+            <button id="submitNewPassword" style="background: #4f46e5; color: white; padding: 10px; border-radius: 4px; width: 100%; cursor: pointer;">Set Password</button>
+        </div>
+    `;
     
-    if (!newPass || newPass.trim() === '') {
-        return alert('New password cannot be empty.');
-    }
+    document.body.appendChild(newPassModal);
     
-    state.loginPassword = newPass;
-    localStorage.setItem(LOGIN_PASSWORD_KEY, newPass);
-    alert(`Login Password successfully updated to: ${newPass}. Please remember it for the next login.`);
+    const newPasswordInput = qs('newLoginPasswordInput');
+    const toggleNewButton = qs('toggleNewPasswordVisibility');
+    const submitNewButton = qs('submitNewPassword');
+    
+    // Attach event listener for show/hide toggle
+    toggleNewButton.addEventListener('click', () => {
+        if (newPasswordInput.type === 'password') {
+            newPasswordInput.type = 'text';
+            toggleNewButton.textContent = 'Hide';
+        } else {
+            newPasswordInput.type = 'password';
+            toggleNewButton.textContent = 'Show';
+        }
+    });
+
+    const setNewPassword = () => {
+        const newPass = newPasswordInput.value.trim();
+        newPassModal.remove();
+
+        if (!newPass) {
+            return alert('New password cannot be empty.');
+        }
+        
+        state.loginPassword = newPass;
+        localStorage.setItem(LOGIN_PASSWORD_KEY, newPass);
+        alert(`Login Password successfully updated to: ${newPass}. Please remember it for the next login.`);
+    };
+
+    submitNewButton.addEventListener('click', setNewPassword);
+    newPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            setNewPassword();
+        }
+    });
 }
+
+
 /* ---------------- MAP & HELPERS ---------------- */
 function interpretClassValue(val) {
 if (!val) return '';
@@ -1088,7 +1190,7 @@ a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
 a.click();
 URL.revokeObjectURL(url);
 }
-// MODIFICATION 1: Function to download marks as Excel (CSV)
+// MODIFICATION 2: Function to download marks as Excel (CSV) with separated subject marks
 function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for Excel download.');
@@ -1097,85 +1199,118 @@ function downloadMarksExcel() {
     const students = Object.values(state.studentsByClass[cls]);
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
-
-    let header;
-    let subjectHeader;
-
-    if (isNurUkg) {
-        // Headers for Nursery/LKG/UKG
-        subjectHeader = "Subject,UT Written Marks,UT Oral Marks,HY Written Marks,HY Oral Marks,Total Subject Marks";
-    } else {
-        // Headers for Classes 1-9
-        subjectHeader = "Subject,UT Marks,HY Marks,Total Subject Marks";
-    }
     
-    // Core headers required by the user
-    const coreHeader = "Admission No.,Student Name,Father Name,Class";
-    const overallHeader = "Overall Total Marks,Overall Percentage";
-    header = `${coreHeader},${subjectHeader},${overallHeader}\n`;
+    // --- 1. Determine Dynamic Subject Headers ---
+    let subjectHeaders = [];
+    const subjects = subjectsForClass(cls);
+    
+    subjects.forEach(subjectName => {
+        if (isNurUkg) {
+            // Check if it's the Drawing subject with special maxes (no oral)
+            const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === subjectName);
+            const hasOral = subjConfig && (subjConfig.utOralMax > 0 || subjConfig.hyOralMax > 0);
 
+            subjectHeaders.push(`${subjectName} - UT Written`);
+            if (hasOral) subjectHeaders.push(`${subjectName} - UT Oral`);
+            subjectHeaders.push(`${subjectName} - HY Written`);
+            if (hasOral) subjectHeaders.push(`${subjectName} - HY Oral`);
+        } else if (subjectName === 'G.K.') {
+            // For Classes 1-9, G.K. is a grade
+            subjectHeaders.push(`${subjectName} - Grade`);
+        } else {
+            // For Classes 1-9, all other subjects are UT/HY
+            subjectHeaders.push(`${subjectName} - UT Marks`);
+            subjectHeaders.push(`${subjectName} - HY Marks`);
+        }
+        subjectHeaders.push(`${subjectName} - Overall Total`);
+    });
+
+    // --- 2. Construct Header Row ---
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Grand Total,Overall Percentage,Class Teacher's Remark,Work Habits Grade,Behavior Grade";
+    
+    let header = `${coreHeader},${subjectHeaders.join(',')},${overallHeader}\n`;
     let csvContent = header;
 
+    // --- 3. Populate Data Rows ---
     students.forEach(s => {
-        // Calculate overall totals and percentage for the overall columns
+        let rowData = [
+            `"${s.admission}"`,
+            `"${s.name}"`,
+            `"${s.fatherName}"`,
+            `"${classLabel}"`
+        ];
+
+        // --- Subject Marks Data ---
+        s.marks.forEach(m => {
+            if (m.isGrade) {
+                // G.K. Grade for Classes 1-9
+                rowData.push(`"${m.grade || '—'}"`);
+            } else if (isNurUkg) {
+                // Nur-UKG Numerical Subjects
+                const subjConfig = SUBJECTS_NUR_TO_UKG.find(conf => conf.name === m.name);
+                const hasOral = subjConfig && (subjConfig.utOralMax > 0 || subjConfig.hyOralMax > 0);
+
+                rowData.push(m.ut || 0);
+                if (hasOral) rowData.push(m.utOral || 0);
+                rowData.push(m.hy || 0);
+                if (hasOral) rowData.push(m.hyOral || 0);
+            } else {
+                // 1-9 Numerical Subjects
+                rowData.push(m.ut || 0);
+                rowData.push(m.hy || 0);
+            }
+            
+            // Push Subject Overall Total (for all subjects except G.K.)
+            if (!m.isGrade) {
+                rowData.push(m.total || 0);
+            } else {
+                 // For G.K. (grade), the "Overall Total" column is technically just the grade again, or a dash
+                 rowData.push(`—`);
+            }
+        });
+
+        // --- Overall and Co-Scholastic Data ---
+        
+        // Re-calculate overall totals and percentage for accuracy
         const studentNumericMarks = s.marks.filter(m => !m.isGrade);
         const overallTotal = studentNumericMarks.reduce((a, b) => a + (b.total || 0), 0);
         let maxPossible = 0;
         
         if (isNurUkg) {
              s.marks.forEach(m => {
-                maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
+                // Only count max for numeric subjects in total
+                if(!m.isGrade) {
+                     maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
+                }
             });
         } else {
             maxPossible = studentNumericMarks.length * 100;
         }
 
         const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
-
-        // Base student info, only for the first line of the student
-        const baseInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
-
-        s.marks.forEach((m, index) => {
-            let row = index === 0 ? baseInfo : `,,,`; // Keep only one row with student info
-            row += `,"${m.name}",`;
-            
-            let marksData;
-            if (m.isGrade) {
-                // For G.K. or other graded subjects: Marks columns are dashes/empty, final total column gets the grade
-                if (isNurUkg) {
-                    marksData = `—,—,—,—,Grade ${m.grade || '—'}`;
-                } else {
-                    marksData = `—,—,Grade ${m.grade || '—'}`;
-                }
-            } else if (isNurUkg) {
-                // Nur-UKG numerical: UT W/O, HY W/O
-                marksData = `${m.ut || 0},${m.utOral || 0},${m.hy || 0},${m.hyOral || 0},${m.total || 0}`;
-            } else {
-                // 1-9 numerical: UT, HY
-                marksData = `${m.ut || 0},${m.hy || 0},${m.total || 0}`;
-            }
-
-            row += marksData;
-
-            // Append overall total and percentage only to the first subject row
-            if (index === 0) {
-                row += `,${overallTotal},"${percentage}"`;
-            } else {
-                // Leave the overall columns empty for subsequent rows
-                row += `,,`; 
-            }
-            csvContent += row + "\n";
-        });
+        
+        rowData.push(
+            overallTotal,
+            `"${percentage}"`,
+            `"${s.teachersRemark || '—'}"`,
+            `"${s.coscholastic.workHabits || '—'}"`,
+            `"${s.coscholastic.behavior || '—'}"`
+        );
+        
+        csvContent += rowData.join(',') + "\n";
     });
 
+    // --- 4. Trigger Download ---
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `Marks_Detailed_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 }
+
 
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
