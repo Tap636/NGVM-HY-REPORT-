@@ -163,9 +163,14 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .signature-sign { font-weight:600; text-align:center; margin-top:8px; }
 table input[type="number"] { text-align:center; }
 select.grade-select { padding:4px; border-radius:4px; }
+/* New class to hide main content until login */
+.hidden-until-login { display: none; }
 </style>
 </head>
 <body class="bg-gray-100 p-6">
+
+<div id="main-app-content" class="hidden-until-login">
+
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
 <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
 <label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
@@ -342,6 +347,8 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="no-print text-center mt-6">
 <button id="clearDataBtn" class="px-3 py-1 bg-red-600 text-white rounded">Clear All Data (Requires Password)</button>
 </div>
+
+</div>
 <script>
 /* ---------------- CONFIG & SUBJECTS ---------------- */
 const SUBJECTS_NUR_TO_UKG = [
@@ -368,18 +375,15 @@ selectedClass: '',
 selectedStudentKey: '',
 studentsByClass: {},
 chart: null,
-reportPrintDate: null, // Added for MODIFICATION 2
-loginPassword: DEFAULT_LOGIN_PASSWORD // ADDED: Current login password
+reportPrintDate: null, 
+loginPassword: DEFAULT_LOGIN_PASSWORD 
 };
 /* ---------------- UTIL ---------------- */
 const qs = id => document.getElementById(id);
 
 /* ---------------- INIT ---------------- */
 function init() {
-    // 1. Password Check (MUST BE FIRST)
-    // The original checkLogin now shows the password input form if needed.
-    // We update init to not run the login check directly, but rather run it 
-    // to potentially *show* the login prompt element.
+    // This function now only handles post-login setup
     const stored = localStorage.getItem('ng_students');
     state.studentsByClass = stored ? JSON.parse(stored) : {};
     
@@ -394,29 +398,19 @@ function init() {
         qs('reportPrintDateInput').value = storedDate; // Update the input field
     }
     
-    // Check login and handle success/failure
-    if (!checkLogin()) {
-        // If checkLogin returns false, it means the login was handled and denied
-        // or the initial prompt was created.
-        return; 
-    }
-
+    // Setup the main content
     attachEventListeners();
     initChart();
     updatePrintDate();
     renderMarksTableForClass(''); // initial empty
+    showDashboardTopper(); // initial topper check
 }
 
 /* ---------------- LOGIN FUNCTIONS ---------------- */
-// MODIFICATION 1: Password Show/Hide Toggle Implementation
-
-function checkLogin() {
+function createLoginModal() {
     // Load the most current password from local storage or use the default
     const storedPass = localStorage.getItem(LOGIN_PASSWORD_KEY);
     state.loginPassword = storedPass || DEFAULT_LOGIN_PASSWORD;
-
-    // Temporarily hide content until login is successful
-    document.body.style.display = 'none'; 
     
     // Create the custom login prompt/modal with the show/hide feature
     const loginContainer = document.createElement('div');
@@ -438,6 +432,7 @@ function checkLogin() {
     const passwordInput = qs('loginPasswordInput');
     const toggleButton = qs('togglePasswordVisibility');
     const submitButton = qs('submitLogin');
+    const mainContent = qs('main-app-content');
     
     // Attach event listener for show/hide toggle
     toggleButton.addEventListener('click', () => {
@@ -456,11 +451,8 @@ function checkLogin() {
         if (password === state.loginPassword) {
             // Successful login
             loginContainer.remove(); // Remove the modal
-            document.body.style.display = 'block'; // Show content
-            attachEventListeners(); // Re-attach listeners once the DOM is ready
-            initChart();
-            updatePrintDate();
-            renderMarksTableForClass('');
+            mainContent.classList.remove('hidden-until-login'); // Show content
+            init(); // Run post-login setup
             return true;
         } else {
             alert('Incorrect Password! Access Denied.');
@@ -476,11 +468,8 @@ function checkLogin() {
             attemptLogin();
         }
     });
-    
-    // If the modal is still on screen, the login hasn't succeeded yet.
-    // The rest of init will run only after a successful login (within attemptLogin).
-    return false;
 }
+
 
 function changeLoginPassword() {
     // MODIFIED: Use a custom prompt/modal for better UI consistency
@@ -1204,7 +1193,10 @@ function downloadMarksExcel() {
     let subjectHeaders = [];
     const subjects = subjectsForClass(cls);
     
-    subjects.forEach(subjectName => {
+    // Use the actual subject list for the class to get the column structure
+    const subjectList = isNurUkg ? SUBJECTS_NUR_TO_UKG : students[0]?.marks.map(m => m.name) || subjects;
+
+    subjectList.forEach(subjectName => {
         if (isNurUkg) {
             // Check if it's the Drawing subject with special maxes (no oral)
             const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === subjectName);
@@ -1223,6 +1215,32 @@ function downloadMarksExcel() {
             subjectHeaders.push(`${subjectName} - HY Marks`);
         }
         subjectHeaders.push(`${subjectName} - Overall Total`);
+    });
+
+    // Remove the trailing 'Overall Total' for G.K. since it's redundant with the Grade column, 
+    // unless you want a dash in that column. Let's keep it clean and remove the column for G.K.
+    // We need a better way to filter this in the loop above or handle it in the row generation.
+    
+    // A better approach is to only push the overall total if it's NOT a grade-based subject.
+    subjectHeaders = []; // Reset and rebuild carefully
+    
+    subjectList.forEach(subjectName => {
+        if (isNurUkg) {
+            const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === subjectName);
+            const hasOral = subjConfig && (subjConfig.utOralMax > 0 || subjConfig.hyOralMax > 0);
+
+            subjectHeaders.push(`${subjectName} - UT Written`);
+            if (hasOral) subjectHeaders.push(`${subjectName} - UT Oral`);
+            subjectHeaders.push(`${subjectName} - HY Written`);
+            if (hasOral) subjectHeaders.push(`${subjectName} - HY Oral`);
+            subjectHeaders.push(`${subjectName} - Overall Total`); // Nur-UKG has overall total
+        } else if (subjectName === 'G.K.') {
+            subjectHeaders.push(`${subjectName} - Grade`); // Only the grade
+        } else {
+            subjectHeaders.push(`${subjectName} - UT Marks`);
+            subjectHeaders.push(`${subjectName} - HY Marks`);
+            subjectHeaders.push(`${subjectName} - Overall Total`); // 1-9 subjects have overall total
+        }
     });
 
     // --- 2. Construct Header Row ---
@@ -1255,18 +1273,14 @@ function downloadMarksExcel() {
                 if (hasOral) rowData.push(m.utOral || 0);
                 rowData.push(m.hy || 0);
                 if (hasOral) rowData.push(m.hyOral || 0);
+                // Push Subject Overall Total for Nur-UKG
+                rowData.push(m.total || 0);
             } else {
                 // 1-9 Numerical Subjects
                 rowData.push(m.ut || 0);
                 rowData.push(m.hy || 0);
-            }
-            
-            // Push Subject Overall Total (for all subjects except G.K.)
-            if (!m.isGrade) {
+                // Push Subject Overall Total for 1-9
                 rowData.push(m.total || 0);
-            } else {
-                 // For G.K. (grade), the "Overall Total" column is technically just the grade again, or a dash
-                 rowData.push(`—`);
             }
         });
 
@@ -1325,6 +1339,8 @@ qs('reportPrintDateInput').value = '';
 clearStudentView();
 updatePrintDate();
 alert('All data cleared successfully.');
+// Re-load to show the login screen again after clearing data
+window.location.reload(); 
 }
 /* ----------------- HELPERS: LOAD / CLEAR VIEW ----------------- */
 function clearStudentView() {
@@ -1380,14 +1396,11 @@ function setReportPrintDate() {
 }
 
 
-/* ----------------- INIT CALL ----------------- */
-// The original init() call has been moved to the end to ensure all functions are defined first.
-init(); 
+/* ----------------- INITIALIZATION CALLS ----------------- */
+// FIX: Run createLoginModal immediately to ensure the password prompt appears.
+// Wait for the DOM to be fully loaded before trying to create the modal.
+document.addEventListener('DOMContentLoaded', createLoginModal);
 
-/* ----------------- Extra: loadStudent helper when existing saved student selected via add/load ---------------- */
-(function wireLoadFromSaved() {
-// When page loads, nothing auto-loads. Users use Load/Add buttons.
-})();
 </script>
 </body>
 </html>
