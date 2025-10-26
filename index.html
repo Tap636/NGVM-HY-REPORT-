@@ -191,15 +191,15 @@ select.grade-select { padding:4px; border-radius:4px; }
         <h2 class="text-xl font-bold mb-4 text-indigo-600">Secure Login Required</h2>
         <div class="mb-4">
             <label for="loginPasswordInput" class="block text-sm font-medium text-gray-700">Enter Password</label>
-            <input type="password" id="loginPasswordInput" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="Password" onkeydown="if(event.key==='Enter') handleLoginAttempt()">
+            <input type="password" id="loginPasswordInput" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="Password">
         </div>
         <div class="mb-6 flex items-center">
-            <input type="checkbox" id="showPasswordCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" onclick="togglePasswordVisibility()">
+            <input type="checkbox" id="showPasswordCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
             <label for="showPasswordCheckbox" class="ml-2 block text-sm text-gray-900">
                 Show Password
             </label>
         </div>
-        <button id="loginBtn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="handleLoginAttempt()">
+        <button id="loginBtn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Login
         </button>
     </div>
@@ -516,6 +516,14 @@ return map[Number(cls)] || cls;
 }
 /* ---------------- EVENT LISTENERS ---------------- */
 function attachEventListeners() {
+// --- FIX: LOGIN LISTENERS (Moved from HTML attributes) ---
+qs('loginBtn').addEventListener('click', handleLoginAttempt);
+qs('loginPasswordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLoginAttempt();
+});
+qs('showPasswordCheckbox').addEventListener('click', togglePasswordVisibility);
+// -------------------------------------------------------
+
 qs('classSelect').addEventListener('change', e => {
 const val = interpretClassValue(e.target.value);
 state.selectedClass = val;
