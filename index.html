@@ -186,7 +186,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 </head>
 <body class="bg-gray-100 p-6">
 
-<div id="loginModal" class="modal-overlay hidden">
+<div id="loginModal" class="modal-overlay"> 
     <div class="bg-white p-8 rounded-lg shadow-2xl w-96">
         <h2 class="text-xl font-bold mb-4 text-indigo-600">Secure Login Required</h2>
         <div class="mb-4">
@@ -426,7 +426,10 @@ function init() {
 /* ---------------- LOGIN FUNCTIONS (MODIFIED) ---------------- */
 
 function showLoginModal() {
-    qs('loginModal').classList.remove('hidden');
+    // The 'hidden' class was removed from the HTML for robustness, 
+    // but we keep this function to ensure focus is applied.
+    // qs('loginModal').classList.remove('hidden'); 
+    
     // Focus the password input when the modal opens
     setTimeout(() => qs('loginPasswordInput').focus(), 100); 
 }
