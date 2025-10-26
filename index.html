@@ -6,6 +6,8 @@
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
 @media print {
@@ -225,7 +227,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <p id="schoolTopperDashboard" class="font-semibold mt-1">School Topper: —</p>
 <div class="mt-3 flex gap-2">
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
-<button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download All Marks (CSV)</button>
+<button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download All Marks (EXCEL)</button>
 <label for="importCsvInput" class="px-3 py-1 bg-blue-600 text-white rounded cursor-pointer">Import Students (CSV)</label>
 <input type="file" id="importCsvInput" accept=".csv" class="hidden" onchange="importStudentsCSV(this.files[0])">
 <button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
@@ -536,7 +538,7 @@ const ex = state.studentsByClass[state.selectedClass][key];
 student.marks = ex.marks || student.marks;
 student.attendance = ex.attendance || ex.attendance;
 student.coscholastic = ex.coscholastic || student.coscholastic;
-student.teachersRemark = ex.teachersRemark || student.teachersRemark;
+student.teachersRemark = ex.teachersRemark || ex.teachersRemark;
 // Ensure fatherName is preserved/updated
 student.fatherName = fatherName || ex.fatherName || student.fatherName;
 }
@@ -569,8 +571,8 @@ window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
-// MODIFICATION 1: Attach Download Excel event listener
-qs('downloadExcelBtn').addEventListener('click', exportDataToCSVWorkbook);
+// MODIFICATION 2: Update event handler to call new XLSX export function
+qs('downloadExcelBtn').addEventListener('click', exportDataToXLSX);
 // MODIFICATION 2: Attach Set Print Date event listener
 qs('setPrintDateBtn').addEventListener('click', setReportPrintDate);
 
@@ -1145,196 +1147,153 @@ URL.revokeObjectURL(url);
 }
 
 
-/* ---------------- NEW EXPORT LOGIC: Simulates Multi-Sheet Excel Structure in CSV ---------------- */
+/* ---------------- NEW EXPORT LOGIC: Multi-Sheet XLSX ---------------- */
 
 /**
- * Helper to get all unique classes from the data.
+ * Gets all students sorted by their class value (Nursery, LKG, UKG, 1, 2, ... 9).
  */
-function getAllClasses() {
-    return Object.keys(state.studentsByClass);
-}
-
-/**
- * Creates the header row based on the Excel screenshot format.
- */
-function generateExcelHeader(examName) {
-    const core = `"Admission No.","Student's Name","Class","Father's Name"`;
-    // Create the subject columns to span over all exams
-    const subjectColumns = SUBJECTS_NUR_TO_UKG.concat(SUBJECTS_1_TO_5, SUBJECTS_6_TO_8, SUBJECTS_9)
-        .map(s => s.name || s)
-        .filter((value, index, self) => self.indexOf(value) === index) // Unique subjects
-        .filter(s => s !== 'G.K.') // G.K. is a grade only, exclude from marks columns
-        .sort();
-
-    const subjectHeaders = subjectColumns.map(sub => {
-        // Base Unit Test-1 format
-        let ut1Cols = `"Eng-W","Eng-O","Hin-W","Hin-O","Math-W","Math-O","Drawing"`;
-        if (examName === 'Unit Test-1') {
-            if (isNurToUkg(state.selectedClass)) {
-                return ut1Cols; // Uses the hardcoded structure for simplicity and matching the image
-            } else {
-                 // For 1-9: Eng-W, Hin-W, Math-W, Comp-W, EVS-W, Drawing
-                 // Since we can't dynamically know the subject order, use the image's example
-                 return ut1Cols; // Keep the same columns but they are all 'W'
-            }
-        }
-        // Simplified headers for now, matching the screenshot's columns (Eng-W to Drawing)
-        return ut1Cols; 
-    }).join(',');
-
-
-    // Simplified header for all classes to match the image column layout
-    const simplifiedSubjectHeaders = SUBJECTS_NUR_TO_UKG.map(s => {
-        if (s.name === 'Drawing' || s.utOralMax === 0) {
-            return `"${s.name}"`;
-        } else {
-            return `"${s.name}-W","${s.name}-O"`;
-        }
-    }).flat().join(',');
-    
-    // We must ensure the header is consistent for every row
-    const staticHeader = `"Admission No.","Student's Name","Class","Father's Name","Eng-W","Eng-O","Hin-W","Hin-O","Math-W","Math-O","Drawing","Total","Percentage Attendance"`;
-    return staticHeader;
-}
-
-/**
- * Generates the data row for a student for a specific exam context.
- * NOTE: This is a placeholder as the state only stores UT (Unit Test) and HY (Half Yearly) marks.
- * It uses UT marks for Unit Test-1, HY marks for Half Yearly, and 0 for others.
- */
-function generateStudentRowData(student, examName) {
-    const isNurUkg = isNurToUkg(student.cls);
-    const marksData = [];
-    let totalMarks = 0;
-    let totalMax = 0;
-
-    const subjects = isNurUkg ? SUBJECTS_NUR_TO_UKG : student.marks.filter(m => !m.isGrade).map(m => m.name);
-    
-    // Use the subjects array to populate the marks columns in order
-    // Ensure the column order matches the header: Eng-W, Eng-O, Hin-W, Hin-O, Math-W, Math-O, Drawing
-    const targetSubjects = ["English", "Hindi", "Maths", "Drawing"]; // Simplified list for output format
-
-    targetSubjects.forEach(subjectName => {
-        const mark = student.marks.find(m => m.name === subjectName);
-        if (!mark || mark.isGrade) {
-            // Fill with empty or zero if subject is not found or is G.K. (grade-based)
-            if (subjectName === "Drawing" && !isNurUkg) { 
-                // Class 1-9 drawing is just a score
-                if (examName === 'Unit Test-1') marksData.push(mark ? mark.ut : 0);
-                else if (examName === 'Half Yearly') marksData.push(mark ? mark.hy : 0);
-                else marksData.push(0);
-                return;
-            } else if (subjectName === "Drawing" && isNurUkg) {
-                 // Nur-UKG drawing is only written
-                const utMax = 20, hyMax = 80;
-                let val = 0;
-                if (examName === 'Unit Test-1') {
-                    val = mark ? mark.ut : 0;
-                    totalMarks += val;
-                    totalMax += utMax;
-                } else if (examName === 'Half Yearly') {
-                    val = mark ? mark.hy : 0;
-                    totalMarks += val;
-                    totalMax += hyMax;
-                }
-                marksData.push(val);
-                return;
-            } else if (!isNurUkg) {
-                 // For 1-9, all are 'W' and 'O' is 0
-                 // This is the core logic for the columns shown in the image
-                 const utMax = 20, hyMax = 80;
-                 let wVal = 0;
-                 if (examName === 'Unit Test-1') {
-                     wVal = mark ? mark.ut : 0;
-                     totalMarks += wVal;
-                     totalMax += utMax;
-                 } else if (examName === 'Half Yearly') {
-                     wVal = mark ? mark.hy : 0;
-                     totalMarks += wVal;
-                     totalMax += hyMax;
-                 }
-                 
-                 // Push Written and 0 for Oral
-                 marksData.push(wVal);
-                 marksData.push(0); // Oral is 0 for 1-9
-                 return;
-            }
-        }
-        
-        const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === subjectName);
-        const utOralMax = subjConfig ? (subjConfig.utOralMax || 0) : 0;
-        const hyOralMax = subjConfig ? (subjConfig.hyOralMax || 0) : 0;
-        
-        let writtenMark = 0, oralMark = 0;
-        let writtenMax = 0, oralMax = 0;
-
-        if (examName === 'Unit Test-1') {
-            writtenMark = mark ? mark.ut : 0;
-            oralMark = mark ? mark.utOral : 0;
-            writtenMax = subjConfig ? subjConfig.utMax : 0;
-            oralMax = utOralMax;
-        } else if (examName === 'Half Yearly') {
-            writtenMark = mark ? mark.hy : 0;
-            oralMark = mark ? mark.hyOral : 0;
-            writtenMax = subjConfig ? subjConfig.hyMax : 0;
-            oralMax = hyOralMax;
-        } else {
-            // Unit Test-2 or Annual - assume 0 for now
-            writtenMax = subjConfig ? subjConfig.hyMax : 0; // Use HY Max as a placeholder max
-            oralMax = hyOralMax;
-        }
-        
-        // Push Written and Oral marks
-        marksData.push(writtenMark);
-        if (oralMax > 0 && subjectName !== 'Drawing') { 
-            marksData.push(oralMark);
-            totalMarks += oralMark;
-            totalMax += oralMax;
-        }
-        totalMarks += writtenMark;
-        totalMax += writtenMax;
-
-    });
-    
-    // Calculate Total and Percentage
-    const totalRow = totalMarks;
-    const percentage = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(2) : '0.00';
-    const attendance = `${student.attendance.present || 0}/${student.attendance.total || DEFAULT_ATT_TOTAL}`;
-
-    const coreInfo = `"${student.admission}","${student.name}","${displayClassLabel(student.cls)}","${student.fatherName}"`;
-    return `${coreInfo},${marksData.join(',')},${totalRow},"${percentage}% ${attendance}"`;
-}
-
-
-function exportDataToCSVWorkbook() {
-    const allClasses = getAllClasses();
-    if (allClasses.length === 0) return alert('No student data available to download.');
-
-    // Exam names as requested
-    const EXAMS = ['Unit Test-1', 'Half Yearly', 'Unit Test-2', 'Annual'];
-    let csvContent = "";
-
-    // Iterate through all exams and all classes to build the CSV structure
-    EXAMS.forEach(exam => {
-        csvContent += `\n\nSheet: ${exam}\n`;
-        csvContent += generateExcelHeader(exam) + '\n';
-        
-        allClasses.forEach(cls => {
-            const students = Object.values(state.studentsByClass[cls] || {});
-            students.forEach(student => {
-                csvContent += generateStudentRowData(student, exam) + '\n';
-            });
+function getAllStudentsSorted() {
+    const classOrder = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let allStudents = [];
+    Object.keys(state.studentsByClass).forEach(cls => {
+        Object.values(state.studentsByClass[cls] || {}).forEach(student => {
+            allStudents.push(student);
         });
     });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `School_Marks_Workbook_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    alert('Download initiated. Note: This file is a CSV structured to resemble a multi-sheet Excel, as pure client-side multi-sheet Excel (.xlsx) creation is not supported by the current setup.');
+    // Sort by class according to the predefined order
+    return allStudents.sort((a, b) => {
+        return classOrder.indexOf(a.cls) - classOrder.indexOf(b.cls);
+    });
+}
+
+/**
+ * Generates the data object for a student for a specific exam context.
+ * This structure is consistent for all classes/exams to match the required XLSX column format.
+ */
+function generateStudentDataRow(student, examName) {
+    const isNurUkg = isNurToUkg(student.cls);
+    
+    // The core subject columns we need to output
+    const subjectColumns = ["English", "Hindi", "Maths", "Drawing"];
+
+    // Base row structure
+    const row = {
+        'Admission No.': student.admission,
+        "Student's Name": student.name,
+        'Class': displayClassLabel(student.cls),
+        "Father's Name": student.fatherName || 'N/A',
+    };
+
+    let totalMarks = 0;
+    let totalMax = 0;
+
+    subjectColumns.forEach(subjectName => {
+        const mark = student.marks.find(m => m.name === subjectName);
+        const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === subjectName);
+
+        let writtenMark = 0, oralMark = 0;
+        let writtenMax = 0, oralMax = 0;
+        
+        // Determine the marks to use based on the requested exam sheet
+        // NOTE: Our state only stores UT (for Unit Test-1) and HY (for Half Yearly).
+        // UT-2 and Annual will show 0 marks for now.
+        if (mark) {
+            if (examName === 'Unit Test-1' || examName === 'Unit Test-2') {
+                writtenMark = mark.ut || 0;
+                oralMark = isNurUkg ? (mark.utOral || 0) : 0;
+                writtenMax = isNurUkg ? (subjConfig ? subjConfig.utMax : 20) : 20;
+                oralMax = isNurUkg ? (subjConfig ? subjConfig.utOralMax : 0) : 0;
+            } else if (examName === 'Half Yearly' || examName === 'Annual') {
+                writtenMark = mark.hy || 0;
+                oralMark = isNurUkg ? (mark.hyOral || 0) : 0;
+                writtenMax = isNurUkg ? (subjConfig ? subjConfig.hyMax : 80) : 80;
+                oralMax = isNurUkg ? (subjConfig ? subjConfig.hyOralMax : 0) : 0;
+            }
+        }
+        
+        // --- Populate the Row Columns ---
+        if (subjectName === "Drawing") {
+            // Drawing only has one column (Written)
+            row[subjectName] = writtenMark;
+            totalMarks += writtenMark;
+            totalMax += writtenMax;
+        } else {
+            // English, Hindi, Maths have Written and Oral columns
+            row[`${subjectName}-W`] = writtenMark;
+            row[`${subjectName}-O`] = oralMark; // For Class 1-9 this will be 0
+            totalMarks += writtenMark + oralMark;
+            totalMax += writtenMax + oralMax;
+        }
+    });
+
+    // Final total and percentage
+    const percentage = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(2) + '%' : '0.00%';
+    const attendance = `${student.attendance.present || 0}/${student.attendance.total || DEFAULT_ATT_TOTAL}`;
+
+    row['Total'] = totalMarks;
+    row['Percentage Attendance'] = `${percentage} ${attendance}`;
+
+    return row;
+}
+
+
+function exportDataToXLSX() {
+    if (typeof XLSX === 'undefined') {
+        return alert('Excel library (SheetJS) is not loaded. Please check your internet connection and try again.');
+    }
+    const allStudents = getAllStudentsSorted();
+    if (allStudents.length === 0) return alert('No student data available to download.');
+
+    // 1. Create a new workbook
+    const workbook = XLSX.utils.book_new();
+
+    // 2. Define the four required sheets
+    const EXAMS = ['Unit test-1', 'Half Yearly', 'Unit Test-2', 'Annual'];
+    
+    // Define a consistent header order for all sheets
+    const headerOrder = [
+        'Admission No.', 
+        "Student's Name", 
+        'Class', 
+        "Father's Name", 
+        'English-W', 'English-O', 
+        'Hindi-W', 'Hindi-O', 
+        'Maths-W', 'Maths-O', 
+        'Drawing', 
+        'Total', 
+        'Percentage Attendance'
+    ];
+
+    EXAMS.forEach(examName => {
+        // 3. Generate data for the current sheet
+        const sheetData = allStudents.map(s => generateStudentDataRow(s, examName));
+
+        // 4. Convert JSON data to a worksheet
+        const worksheet = XLSX.utils.json_to_sheet(sheetData, { header: headerOrder });
+        
+        // Optional: Set column widths for better display
+        const wscols = [
+            {wch: 15}, // A: Admission No.
+            {wch: 25}, // B: Student's Name
+            {wch: 10}, // C: Class
+            {wch: 25}, // D: Father's Name
+            {wch: 10}, {wch: 10}, // E, F: English W/O
+            {wch: 10}, {wch: 10}, // G, H: Hindi W/O
+            {wch: 10}, {wch: 10}, // I, J: Maths W/O
+            {wch: 10}, // K: Drawing
+            {wch: 10}, // L: Total
+            {wch: 20}  // M: Percentage Attendance
+        ];
+        worksheet['!cols'] = wscols;
+
+        // 5. Add the worksheet to the workbook with the sheet name
+        XLSX.utils.book_append_sheet(workbook, worksheet, examName);
+    });
+
+    // 6. Write the workbook and trigger download
+    XLSX.writeFile(workbook, `School_Marks_Workbook_${new Date().toISOString().split('T')[0]}.xlsx`);
+    alert('Multi-sheet Excel workbook download initiated successfully!');
 }
 
 /* ---------------- NEW IMPORT LOGIC ---------------- */
@@ -1355,25 +1314,26 @@ function importStudentsCSV(file) {
 
         // Simple CSV parser: split by comma, trim, handle quotes (basic)
         const headerLine = lines[0].replace(/"/g, '').split(',').map(h => h.trim());
-        const dataLines = lines.slice(1);
-
-        const COL_MAP = {
-            'Admission No.': -1,
-            'Student Name': -1,
-            'Class': -1,
-            'Father Name': -1
+        // Find the index of the relevant columns, prioritizing exact match, then substring match
+        const findColIndex = (target) => {
+            const exactIndex = headerLine.findIndex(h => h === target);
+            if (exactIndex !== -1) return exactIndex;
+            return headerLine.findIndex(h => h.includes(target));
         };
-
-        // Find column indices
-        Object.keys(COL_MAP).forEach(key => {
-            COL_MAP[key] = headerLine.findIndex(h => h.startsWith(key));
-        });
-
+        
+        const COL_MAP = {
+            'Admission No.': findColIndex('Admission No.'),
+            "Student's Name": findColIndex('Student'),
+            'Class': findColIndex('Class'),
+            "Father's Name": findColIndex('Father')
+        };
+        
         // Basic validation for required columns
-        if (Object.values(COL_MAP).some(index => index === -1)) {
-            return alert(`CSV Header Error: Missing one or more required columns: ${Object.keys(COL_MAP).join(', ')}. Please use the exact downloaded structure.`);
+        if (COL_MAP['Admission No.'] === -1 || COL_MAP["Student's Name"] === -1 || COL_MAP['Class'] === -1) {
+            return alert(`CSV Header Error: Missing one or more required columns (Admission No., Student's Name, Class). Please ensure the file structure matches the downloaded Excel.`);
         }
-
+        
+        const dataLines = lines.slice(1);
         let importedCount = 0;
 
         dataLines.forEach(line => {
@@ -1381,9 +1341,9 @@ function importStudentsCSV(file) {
             const cols = line.replace(/"/g, '').split(',').map(c => c.trim());
             
             const admission = cols[COL_MAP['Admission No.']];
-            const name = cols[COL_MAP['Student Name']];
+            const name = cols[COL_MAP["Student's Name"]];
             const classNameLabel = cols[COL_MAP['Class']];
-            const fatherName = cols[COL_MAP['Father Name']];
+            const fatherName = COL_MAP["Father's Name"] !== -1 ? cols[COL_MAP["Father's Name"]] : '';
             
             // Check for minimum data integrity
             if (!admission || !name || !classNameLabel) return;
@@ -1394,7 +1354,7 @@ function importStudentsCSV(file) {
             const key = `${cls}|${admission}`;
             
             if (state.studentsByClass[cls] && state.studentsByClass[cls][key]) {
-                // Student already exists, skip or add update logic here if needed
+                // Student already exists, skip
                 return;
             }
 
