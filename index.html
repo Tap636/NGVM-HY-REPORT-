@@ -6,7 +6,6 @@
 <title>NANDI GURUKUL VIDYA MANDIR - Report Card</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* -------- PRINT STYLES - A4, watermark, footer positions, etc. -------- */
 @media print {
@@ -228,15 +227,6 @@ select.grade-select { padding:4px; border-radius:4px; }
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
 <button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download Classwise Marks (Excel)</button>
 <button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
-</div>
-
-<div class="mt-3 pt-3 border-t">
-    <label class="block text-sm text-gray-600 mb-1">Import Student Profiles (from .xlsx)</label>
-    <div class="flex gap-2">
-        <input type="file" id="importStudentFile" class="hidden" accept=".xlsx, .xls">
-        <button id="importStudentBtn" class="px-3 py-1 bg-teal-600 text-white rounded">Choose File & Import</button>
-    </div>
-    <p id="importStatus" class="text-xs text-gray-500 mt-1"></p>
 </div>
 </div>
 <div class="page">
@@ -507,10 +497,9 @@ function changeLoginPassword() {
 /* ---------------- MAP & HELPERS ---------------- */
 function interpretClassValue(val) {
 if (!val) return '';
-// Handle Roman numerals AND text
 const romanMap = { "I":"1","II":"2","III":"3","IV":"4","V":"5","VI":"6","VII":"7","VIII":"8","IX":"9" };
-if (romanMap[val.toUpperCase()]) return romanMap[val.toUpperCase()];
-return val; // Assumes 'Nursery', 'LKG', 'UKG' or already '1', '2' etc.
+if (romanMap[val]) return romanMap[val];
+return val;
 }
 function displayClassLabel(cls) {
 if (!cls) return '—';
@@ -578,21 +567,15 @@ window.print();
 });
 qs('dashboardClassSelect').addEventListener('change', showDashboardTopper);
 qs('bulkDownloadBtn').addEventListener('click', bulkDownloadReports);
-
-// MODIFICATION: Replaced downloadMarksExcel (CSV) with downloadMarksXLSX (Excel Workbook)
-qs('downloadExcelBtn').addEventListener('click', downloadMarksXLSX);
-
+// MODIFICATION 1: Attach Download Excel event listener
+qs('downloadExcelBtn').addEventListener('click', downloadMarksExcel);
+// MODIFICATION 2: Attach Set Print Date event listener
 qs('setPrintDateBtn').addEventListener('click', setReportPrintDate);
+
+// ADDED: Attach Set New Login Password event listener
 qs('setNewLoginPassBtn').addEventListener('click', changeLoginPassword);
+
 qs('clearDataBtn').addEventListener('click', clearAllData);
-
-// MODIFICATION: Add event listeners for new Import buttons
-qs('importStudentBtn').addEventListener('click', () => {
-    // Trigger the hidden file input
-    qs('importStudentFile').click();
-});
-qs('importStudentFile').addEventListener('change', handleStudentImport);
-
 }
 /* ---------------- PERSISTENCE ---------------- */
 function persistStudents() {
@@ -607,9 +590,9 @@ SUBJECTS_NUR_TO_UKG.forEach(s => {
 marks.push({
 name: s.name,
 ut: 0,
-utOral: 0, // Default to 0, not max
+utOral: s.utOralMax || 0,
 hy: 0,
-hyOral: 0, // Default to 0, not max
+hyOral: s.hyOralMax || 0,
 total: 0,
 max: { ut: s.utMax, utOral: s.utOralMax, hy: s.hyMax, hyOral: s.hyOralMax }
 });
@@ -665,10 +648,9 @@ thead.innerHTML = `
 </tr>
 `;
 const student = getCurrentStudent();
-const rows = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name, max: s }));
+const rows = student ? student.marks : SUBJECTS_NUR_TO_UKG.map(s => ({ name: s.name }));
 rows.forEach((m, idx) => {
-// Use the 'max' property from the mark object, or fallback to config
-const max = (m.max || SUBJECTS_NUR_TO_UKG.find(s => s.name === m.name) || SUBJECTS_NUR_TO_UKG[idx]);
+const max = (m.max || SUBJECTS_NUR_TO_UKG[idx]);
 // For drawing: utOral/hyOral disabled
 const utMax = max.ut;
 const utOralMax = max.utOral;
@@ -900,12 +882,7 @@ qs('marksTableBody').querySelectorAll('input, select').forEach(el => {
 const idx = Number(el.getAttribute('data-idx'));
 const field = el.getAttribute('data-field');
 if (!Number.isFinite(idx)) return;
-if (!student.marks[idx]) {
-    // This can happen if subjects were changed after student was created
-    // We'll skip this to avoid errors, but data might be misaligned
-    console.warn(`Mismatch in student marks structure for ${student.name}, subject index ${idx}`);
-    return;
-}
+student.marks[idx] = student.marks[idx] || {};
 if (el.tagName.toLowerCase() === 'select') {
 student.marks[idx].grade = el.value;
 student.marks[idx].isGrade = true;
@@ -927,9 +904,9 @@ const hyOral = Number(m.hyOral) || 0;
 const subjTotal = ut + utOral + hy + hyOral;
 m.total = subjTotal;
 totals.ut += ut; totals.utOral += utOral; totals.hy += hy; totals.hyOral += hyOral; totals.overall += subjTotal;
-// Calculate max overall
-const max = m.max || SUBJECTS_NUR_TO_UKG.find(s => s.name === m.name);
-if(max) maxOverall += (max.ut || 0) + (max.utOral || 0) + (max.hy || 0) + (max.hyOral || 0);
+// Calculate max overall for Nur/LKG/UKG based on SUBJECTS_NUR_TO_UKG
+const subjConfig = SUBJECTS_NUR_TO_UKG.find(s => s.name === m.name);
+if(subjConfig) maxOverall += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
 });
 qs('totalUT').textContent = totals.ut;
 qs('totalUTOral').textContent = totals.utOral;
@@ -987,8 +964,7 @@ overallCell.textContent = m.isGrade ? (m.grade || '—') : (m.total || 0);
 }
 // update chart
 if (student) updateChart(student);
-// Do not persist here, causes lag. Persist on Save button.
-// persistStudents();
+persistStudents();
 }
 /* compute totals when no student loaded (from visible inputs) */
 function computeTotalsFromInputs() {
@@ -1055,7 +1031,6 @@ options: {
 });
 }
 function updateChart(student) {
-if (!student || !student.marks) return;
 const labels = student.marks.filter(m => !m.isGrade).map(m => m.name);
 const obtained = student.marks.filter(m => !m.isGrade).map(m => m.total || 0);
 const classAvg = labels.map(l => getClassAverage(student.cls, l));
@@ -1146,8 +1121,7 @@ const numericCount = numericMarks.length;
 let maxPossible = 0;
 if (isNurToUkg(s.cls)) {
     s.marks.forEach(m => {
-        const max = m.max || SUBJECTS_NUR_TO_UKG.find(sub => sub.name === m.name);
-        if(max) maxPossible += (max.ut || 0) + (max.utOral || 0) + (max.hy || 0) + (max.hyOral || 0);
+        maxPossible += (m.max.ut || 0) + (m.max.utOral || 0) + (m.max.hy || 0) + (m.max.hyOral || 0);
     });
 } else {
     maxPossible = numericCount * 100; // 20 (UT) + 80 (HY) = 100
@@ -1167,316 +1141,116 @@ a.download = `ReportCards_${cls}_${new Date().toISOString().split('T')[0]}.txt`;
 a.click();
 URL.revokeObjectURL(url);
 }
-
-// ========================================================================
-// MODIFICATION: Replaced CSV export with new XLSX (Workbook) export
-// ========================================================================
-function downloadMarksXLSX() {
-    // 1. Check for SheetJS
-    if (typeof XLSX === 'undefined') {
-        return alert('Excel library (SheetJS) not loaded. Please check your internet connection and try again.');
-    }
-
-    // 2. Get class and students
+// MODIFICATION 1: Function to download marks as Excel (CSV)
+function downloadMarksExcel() {
     const cls = qs('dashboardClassSelect').value || state.selectedClass;
     if (!cls) return alert('Select a class for Excel download.');
-    const students = Object.values(state.studentsByClass[cls] || {});
-    if (students.length === 0) return alert('No students found in this class.');
-
+    if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).length) return alert('No students found in this class.');
+    
+    const students = Object.values(state.studentsByClass[cls]);
     const isNurUkg = isNurToUkg(cls);
     const classLabel = displayClassLabel(cls);
 
-    // 3. Build Dynamic Header Columns (Row 2)
-    const headerRow2 = ["Admission No.", "Student's Name", "Class", "Father's N."];
-    
-    // Get subject configuration
-    const subjectConfigs = isNurUkg ? 
-        SUBJECTS_NUR_TO_UKG : 
-        subjectsForClass(cls).map(name => ({ 
-            name, 
-            isGrade: (name === 'G.K.'),
-            // Provide default max for 1-9
-            utMax: 20, hyMax: 80, utOralMax: 0, hyOralMax: 0 
-        }));
+    // Ensure we have an example student to build the subject header structure
+    const studentExample = students[0];
+    if (!studentExample) return alert('No student data available to determine subject structure.');
 
-    // This map will hold the column key for data mapping
-    // e.g., { name: "English", keys: ["English-W", "English-O"], type: 'oral' }
-    const subjectKeyMap = []; 
+    // 1. Build Dynamic Header (One column for each mark field)
+    let subjectColumns = [];
+    const maxMarksMap = {}; // Helper to determine max for header label
 
-    subjectConfigs.forEach(config => {
-        const name = config.name;
+    studentExample.marks.forEach(m => {
+        const name = m.name;
+        
+        // Populate maxMarksMap for correct max values in header
         if (isNurUkg) {
-            if (config.utOralMax > 0) {
-                headerRow2.push(`${name}-W`, `${name}-O`);
-                subjectKeyMap.push({ name: name, keys: [`${name}-W`, `${name}-O`], type: 'oral', max: config });
-            } else {
-                headerRow2.push(name); // e.g., Drawing
-                subjectKeyMap.push({ name: name, keys: [name], type: 'written_only', max: config });
-            }
+            const subjConfig = SUBJECTS_NUR_TO_UKG.find(sc => sc.name === name);
+            if (subjConfig) maxMarksMap[name] = subjConfig;
         } else {
-            // Classes 1-9
-            if (name === 'G.K.') {
-                headerRow2.push("G.K. Grade");
-                subjectKeyMap.push({ name: name, keys: ["G.K. Grade"], type: 'grade', max: config });
-            } else {
-                // Per user request, "exactly same format" (W/O split)
-                headerRow2.push(`${name}-W`, `${name}-O`);
-                // "no oral" handled by populating -O with blank
-                subjectKeyMap.push({ name: name, keys: [`${name}-W`, `${name}-O`], type: 'oral_blank', max: config }); 
-            }
+            maxMarksMap[name] = { utMax: 20, hyMax: 80 };
+        }
+        
+        const max = maxMarksMap[name];
+
+        if (m.isGrade) {
+            subjectColumns.push(`"${name} Grade"`);
+        } else if (isNurUkg) {
+            subjectColumns.push(`"${name} UT Written (Max: ${max.utMax})"`);
+            if ((max.utOralMax || 0) > 0) subjectColumns.push(`"${name} UT Oral (Max: ${max.utOralMax})"`);
+            subjectColumns.push(`"${name} HY Written (Max: ${max.hyMax})"`);
+            if ((max.hyOralMax || 0) > 0) subjectColumns.push(`"${name} HY Oral (Max: ${max.hyOralMax})"`);
+            subjectColumns.push(`"${name} Total"`); 
+        } else { // Classes 1-9
+            subjectColumns.push(`"${name} UT Marks (Max: 20)"`);
+            subjectColumns.push(`"${name} HY Marks (Max: 80)"`);
+            subjectColumns.push(`"${name} Total"`); 
         }
     });
 
-    headerRow2.push("Total", "Percentage", "Attendance");
+    const coreHeader = "Admission No.,Student Name,Father Name,Class";
+    const overallHeader = "Overall Total Marks,Overall Percentage";
+    const header = `${coreHeader},${subjectColumns.join(',')},${overallHeader}\n`;
+    let csvContent = header;
 
-    // 4. Build Header Row 1 (for Merges)
-    // ["Student Profile", "", "", "", "Unit Test-1" (merged), ..., "Total", "Percentage", "Attendance"]
-    const headerRow1 = ["Student Profile", "", "", ""]; // Spans 4 columns
-    const numSubjectCols = headerRow2.length - 4 - 3; // Total - Profile(4) - Tail(3)
-    
-    // Add "Unit Test-1" label and blanks for merging
-    headerRow1.push("Unit Test-1"); 
-    for (let i = 1; i < numSubjectCols; i++) {
-        headerRow1.push(""); 
-    }
-    
-    headerRow1.push("Total", "Percentage", "Attendance");
+    // 2. Iterate and Build Single Row Data for each student
+    students.forEach(s => {
+        // Recalculate Totals and Percentage
+        let overallTotal = 0;
+        let maxPossible = 0;
+        let numericCount = 0;
 
-    // 5. Define Merges
-    const merges = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // Student Profile
-        { s: { r: 0, c: 4 }, e: { r: 0, c: 4 + numSubjectCols - 1 } } // "Unit Test-1"
-    ];
-
-    // 6. Helper to create data array for a sheet
-    // examType: 'ut' or 'hy'
-    const createSheetData = (examType) => {
-        const data = [];
-        students.forEach(s => {
-            const row = {};
-            row["Admission No."] = s.admission;
-            row["Student's Name"] = s.name;
-            row["Class"] = classLabel;
-            row["Father's N."] = s.fatherName || '';
-            row["Attendance"] = `${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}`;
-
-            let examTotal = 0;
-            let maxExamTotal = 0;
-
-            subjectKeyMap.forEach(map => {
-                const mark = s.marks.find(m => m.name === map.name);
-                if (!mark) return;
-
-                // Use max from student mark data if available, fallback to map
-                const max = mark.max || map.max; 
-
-                if (map.type === 'grade') {
-                    row[map.keys[0]] = mark.grade || '—';
-                } 
-                else if (map.type === 'written_only') {
-                    // e.g., Nur-UKG Drawing
-                    const val = (examType === 'ut') ? (mark.ut || 0) : (mark.hy || 0);
-                    row[map.keys[0]] = val;
-                    examTotal += val;
-                    const maxVal = (examType === 'ut') ? (max.ut || 0) : (max.hy || 0);
-                    maxExamTotal += maxVal;
-                } 
-                else if (map.type === 'oral') {
-                    // Nur-UKG with oral
-                    const valW = (examType === 'ut') ? (mark.ut || 0) : (mark.hy || 0);
-                    const valO = (examType === 'ut') ? (mark.utOral || 0) : (mark.hyOral || 0);
-                    row[map.keys[0]] = valW; // -W
-                    row[map.keys[1]] = valO; // -O
-                    examTotal += (valW + valO);
-                    const maxW = (examType === 'ut') ? (max.ut || 0) : (max.hy || 0);
-                    const maxO = (examType === 'ut') ? (max.utOral || 0) : (max.hyOral || 0);
-                    maxExamTotal += (maxW + maxO);
-                }
-                else if (map.type === 'oral_blank') {
-                    // Class 1-9
-                    const valW = (examType === 'ut') ? (mark.ut || 0) : (mark.hy || 0);
-                    row[map.keys[0]] = valW; // -W
-                    row[map.keys[1]] = '';   // -O (blank)
-                    examTotal += valW;
-                    const maxW = (examType === 'ut') ? (max.ut || 20) : (max.hy || 80);
-                    maxExamTotal += maxW;
-                }
-            });
-
-            row["Total"] = examTotal;
-            row["Percentage"] = maxExamTotal > 0 ? ((examTotal / maxExamTotal) * 100).toFixed(2) + '%' : '0.00%';
-            
-            data.push(row);
-        });
-        return data;
-    };
-
-    // 7. Helper to create a worksheet
-    const createWorksheet = (data, sheetName) => {
-        // Create data array (for aoa)
-        const aoa = [
-            headerRow1.map(h => h === "Unit Test-1" ? sheetName : h), // Set dynamic sheet name
-            headerRow2
-        ];
-        
-        // Convert JSON data to AOA, skipping header
-        // We must map the data object back to an array in the correct column order
-        const dataBody = data.map(row => headerRow2.map(key => row[key]));
-        const finalAoa = aoa.concat(dataBody);
-
-        const ws = XLSX.utils.aoa_to_sheet(finalAoa);
-        ws['!merges'] = merges;
-        return ws;
-    };
-
-    // 8. Create data for each sheet
-    const ut1Data = createSheetData('ut');
-    const hyData = createSheetData('hy');
-
-    // 9. Create worksheets
-    const ws_ut1 = createWorksheet(ut1Data, "Unit Test-1");
-    const ws_hy = createWorksheet(hyData, "Half Yearly");
-    
-    // Create empty sheets for UT-2 and Annual (just headers)
-    const aoa_empty_ut2 = [
-        headerRow1.map(h => h === "Unit Test-1" ? "Unit Test-2" : h),
-        headerRow2
-    ];
-    const ws_ut2 = XLSX.utils.aoa_to_sheet(aoa_empty_ut2);
-    ws_ut2['!merges'] = merges;
-
-    const aoa_empty_annual = [
-        headerRow1.map(h => h === "Unit Test-1" ? "Annual" : h),
-        headerRow2
-    ];
-    const ws_annual = XLSX.utils.aoa_to_sheet(aoa_empty_annual);
-    ws_annual['!merges'] = merges;
-
-    // 10. Create Workbook and Download
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws_ut1, "Unit Test-1");
-    XLSX.utils.book_append_sheet(wb, ws_hy, "Half Yearly");
-    XLSX.utils.book_append_sheet(wb, ws_ut2, "Unit Test-2");
-    XLSX.utils.book_append_sheet(wb, ws_annual, "Annual");
-
-    XLSX.writeFile(wb, `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-// ========================================================================
-// MODIFICATION: Added new function to handle student import from XLSX
-// ========================================================================
-function handleStudentImport(e) {
-    // 1. Check for SheetJS
-    if (typeof XLSX === 'undefined') {
-        return alert('Excel library (SheetJS) not loaded. Please check your internet connection and try again.');
-    }
-
-    const file = e.target.files[0];
-    if (!file) return;
-
-    qs('importStatus').textContent = `Importing ${file.name}...`;
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-        try {
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            // 2. Assume data is in the first sheet, or "Unit Test-1"
-            const sheetName = workbook.SheetNames.includes("Unit Test-1") ? "Unit Test-1" : workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            if (!worksheet) {
-                throw new Error('No valid sheet found in the workbook.');
-            }
-
-            // 3. Convert to JSON (array of arrays)
-            // { header: 1 } gives array of arrays
-            // { range: 1 } skips the first merged row (Row 1) and reads from Row 2
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 1 }); 
-            
-            // jsonData[0] should now be the header row (Row 2 from file)
-            const headerRow = jsonData[0]; 
-            if (!headerRow || !Array.isArray(headerRow)) {
-                 throw new Error('Could not read header row (Row 2).');
-            }
-
-            // 4. Find column indices
-            const findCol = (name) => headerRow.findIndex(h => h && h.toString().trim().toLowerCase() === name.toLowerCase());
-            const colMap = {
-                admission: findCol("Admission No."),
-                name: findCol("Student's Name"),
-                cls: findCol("Class"),
-                father: findCol("Father's N.")
-            };
-
-            if (colMap.admission === -1 || colMap.name === -1 || colMap.cls === -1) {
-                throw new Error("Required columns ('Admission No.', 'Student's Name', 'Class') not found in row 2.");
-            }
-            
-            // 5. Loop through data rows (starting from index 1, which is Row 3 from file)
-            let importedCount = 0;
-            let updatedCount = 0;
-            
-            for (let i = 1; i < jsonData.length; i++) {
-                const row = jsonData[i];
-                if (!row || row.length === 0) continue; // Skip empty rows
-
-                const admission = row[colMap.admission] ? row[colMap.admission].toString().trim() : '';
-                const name = row[colMap.name] ? row[colMap.name].toString().trim() : '';
-                const clsLabel = row[colMap.cls] ? row[colMap.cls].toString().trim() : '';
-                const fatherName = colMap.father !== -1 ? (row[colMap.father] || '').toString().trim() : '';
-                
-                // 6. Use app's internal class value ('1' not 'I')
-                const cls = interpretClassValue(clsLabel);
-
-                if (!admission || !name || !cls) {
-                    console.warn('Skipping row:', row, 'Missing required data or invalid class.');
-                    continue; 
-                }
-
-                // 7. Add/Update student (logic from addStudentBtn listener)
-                const key = `${cls}|${admission}`;
-                state.studentsByClass[cls] = state.studentsByClass[cls] || {};
-                const student = makeEmptyStudent(name, admission, cls, fatherName);
-                
-                if (state.studentsByClass[cls][key]) {
-                    // Student exists - preserve marks/etc., update profile
-                    const ex = state.studentsByClass[cls][key];
-                    student.marks = ex.marks || student.marks;
-                    student.attendance = ex.attendance || ex.attendance;
-                    student.coscholastic = ex.coscholastic || ex.coscholastic;
-                    student.teachersRemark = ex.teachersRemark || ex.teachersRemark;
-                    student.remark = ex.remark || ex.remark;
-                    updatedCount++;
+        s.marks.forEach(m => {
+            if (!m.isGrade) {
+                // m.total is calculated in saveCurrentStudent or calculateTotalsAndUpdate
+                overallTotal += m.total || 0; 
+                if (isNurUkg) {
+                    const subjConfig = SUBJECTS_NUR_TO_UKG.find(sc => sc.name === m.name);
+                    if (subjConfig) maxPossible += (subjConfig.utMax || 0) + (subjConfig.utOralMax || 0) + (subjConfig.hyMax || 0) + (subjConfig.hyOralMax || 0);
                 } else {
-                    importedCount++;
+                    numericCount++;
                 }
-                
-                state.studentsByClass[cls][key] = student;
             }
-
-            persistStudents();
-            const msg = `Import successful: ${importedCount} new students added, ${updatedCount} students updated.`;
-            qs('importStatus').textContent = msg;
-            alert(msg);
-
-        } catch (error) {
-            console.error('Import failed:', error);
-            qs('importStatus').textContent = `Import failed: ${error.message}`;
-            alert(`Import failed: ${error.message}`);
-        } finally {
-            // Clear the file input so 'change' fires again
-            e.target.value = null; 
+        });
+        
+        if (!isNurUkg) {
+            maxPossible = numericCount * 100;
         }
-    };
 
-    reader.onerror = () => {
-        qs('importStatus').textContent = 'Failed to read file.';
-        alert('Failed to read file.');
-        e.target.value = null;
-    };
+        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
 
-    reader.readAsArrayBuffer(file);
+        // Base student info
+        const coreInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
+
+        let marksData = [];
+        s.marks.forEach(m => {
+            const max = maxMarksMap[m.name];
+            if (m.isGrade) {
+                marksData.push(`"Grade ${m.grade || '—'}"`);
+            } else if (isNurUkg) {
+                marksData.push(m.ut || 0); // UT Written
+                if ((max.utOralMax || 0) > 0) marksData.push(m.utOral || 0); // UT Oral (if applicable)
+                marksData.push(m.hy || 0); // HY Written
+                if ((max.hyOralMax || 0) > 0) marksData.push(m.hyOral || 0); // HY Oral (if applicable)
+                marksData.push(m.total || 0); // Subject total
+            } else {
+                // 1-9 numerical
+                marksData.push(m.ut || 0, m.hy || 0, m.total || 0); // UT, HY, Subject total
+            }
+        });
+
+        // Combine all data for a single row
+        const row = `${coreInfo},${marksData.join(',')},${overallTotal},"${percentage}"\n`;
+        csvContent += row;
+    });
+
+    // 3. Output CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Marks_Class_${cls}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 /* ---------------- CLEAR DATA ---------------- */
@@ -1522,8 +1296,7 @@ function updatePrintDate() {
     let dateToDisplay;
     if (state.reportPrintDate) {
         // Format the stored date (YYYY-MM-DD) to a locale string (DD/MM/YYYY)
-        // Add time to avoid timezone issues with pure YYYY-MM-DD
-        dateToDisplay = new Date(state.reportPrintDate + 'T00:00:00').toLocaleDateString('en-IN');
+        dateToDisplay = new Date(state.reportPrintDate).toLocaleDateString('en-IN');
     } else {
         // Use the current date as a fallback if nothing is stored/set
         dateToDisplay = new Date().toLocaleDateString('en-IN');
