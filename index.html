@@ -207,7 +207,7 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="main-content">
 <div class="no-print mb-4 p-4 bg-yellow-100 border rounded">
 <h2 class="font-bold mb-2">School Dashboard (Topper Analysis)</h2>
-<label class="block text-sm text-gray-600 mb-1">Select Class to See Topper:</label>
+<label class="block text-sm text-gray-600 mb-1">Select Class to See Topper/Download Data:</label>
 <select id="dashboardClassSelect" class="border rounded px-2 py-1 mb-2">
 <option value="">-- Select Class --</option>
 <option value="Nursery">Nursery</option>
@@ -228,8 +228,8 @@ select.grade-select { padding:4px; border-radius:4px; }
 <div class="mt-3 flex gap-2">
 <button id="bulkDownloadBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Download Classwise Report Cards</button>
 <button id="downloadExcelBtn" class="px-3 py-1 bg-green-700 text-white rounded">Download All Marks (EXCEL)</button>
-<label for="importCsvInput" class="px-3 py-1 bg-blue-600 text-white rounded cursor-pointer">Import Students (CSV)</label>
-<input type="file" id="importCsvInput" accept=".csv" class="hidden" onchange="importStudentsCSV(this.files[0])">
+<label for="importCsvInput" class="px-3 py-1 bg-blue-600 text-white rounded cursor-pointer">Import Students (XLSX/CSV)</label>
+<input type="file" id="importCsvInput" accept=".xlsx,.csv" class="hidden" onchange="importStudents(this.files[0])">
 <button id="setNewLoginPassBtn" class="px-3 py-1 bg-yellow-600 text-white rounded">Set New Login Password</button>
 </div>
 </div>
@@ -1095,6 +1095,7 @@ const s = state.studentsByClass[cls][k];
 const tot = s.marks.filter(m => !m.isGrade).reduce((a,b)=>a+(b.total||0),0);
 if (tot > classTopper.total) classTopper={name:s.name,total:tot};
 });
+// School topper checks all classes
 Object.values(state.studentsByClass).forEach(clsObj => {
 Object.values(clsObj).forEach(s => {
 const tot = s.marks.filter(m => !m.isGrade).reduce((a,b)=>a+(b.total||0),0);
@@ -1147,37 +1148,31 @@ URL.revokeObjectURL(url);
 }
 
 
-/* ---------------- NEW EXPORT LOGIC: Multi-Sheet XLSX ---------------- */
+/* ---------------- NEW EXPORT LOGIC: Class-wise Multi-Sheet XLSX ---------------- */
 
 /**
- * Gets all students sorted by their class value (Nursery, LKG, UKG, 1, 2, ... 9).
+ * Gets students for the selected class, sorted by admission number.
  */
-function getAllStudentsSorted() {
-    const classOrder = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    let allStudents = [];
-    Object.keys(state.studentsByClass).forEach(cls => {
-        Object.values(state.studentsByClass[cls] || {}).forEach(student => {
-            allStudents.push(student);
-        });
-    });
+function getStudentsForSelectedClass() {
+    const cls = qs('dashboardClassSelect').value;
+    if (!cls || !state.studentsByClass[cls]) return [];
 
-    // Sort by class according to the predefined order
-    return allStudents.sort((a, b) => {
-        return classOrder.indexOf(a.cls) - classOrder.indexOf(b.cls);
-    });
+    const classStudents = Object.values(state.studentsByClass[cls]);
+
+    // Sort by admission number (simple string sort)
+    return classStudents.sort((a, b) => a.admission.localeCompare(b.admission));
 }
 
 /**
  * Generates the data object for a student for a specific exam context.
- * This structure is consistent for all classes/exams to match the required XLSX column format.
+ * NOTE: The structure ensures UT-2 and Annual fields are 0.
  */
 function generateStudentDataRow(student, examName) {
     const isNurUkg = isNurToUkg(student.cls);
     
-    // The core subject columns we need to output
+    // Core subjects for Nursery-UKG that have the split columns
     const subjectColumns = ["English", "Hindi", "Maths", "Drawing"];
 
-    // Base row structure
     const row = {
         'Admission No.': student.admission,
         "Student's Name": student.name,
@@ -1187,6 +1182,24 @@ function generateStudentDataRow(student, examName) {
 
     let totalMarks = 0;
     let totalMax = 0;
+    
+    // Determine which marks/maxima to use
+    let markField, oralMarkField, isMaxUT;
+    if (examName === 'Unit test-1') {
+        markField = 'ut';
+        oralMarkField = 'utOral';
+        isMaxUT = true;
+    } else if (examName === 'Half Yearly') {
+        markField = 'hy';
+        oralMarkField = 'hyOral';
+        isMaxUT = false;
+    } else {
+        // Unit Test-2 and Annual: All marks are 0, max possible is still based on UT/HY structure
+        markField = null;
+        oralMarkField = null;
+        // Assume UT-2 uses UT maxima, Annual uses HY maxima
+        isMaxUT = examName.includes('Unit Test'); 
+    }
 
     subjectColumns.forEach(subjectName => {
         const mark = student.marks.find(m => m.name === subjectName);
@@ -1195,21 +1208,19 @@ function generateStudentDataRow(student, examName) {
         let writtenMark = 0, oralMark = 0;
         let writtenMax = 0, oralMax = 0;
         
-        // Determine the marks to use based on the requested exam sheet
-        // NOTE: Our state only stores UT (for Unit Test-1) and HY (for Half Yearly).
-        // UT-2 and Annual will show 0 marks for now.
-        if (mark) {
-            if (examName === 'Unit Test-1' || examName === 'Unit Test-2') {
-                writtenMark = mark.ut || 0;
-                oralMark = isNurUkg ? (mark.utOral || 0) : 0;
-                writtenMax = isNurUkg ? (subjConfig ? subjConfig.utMax : 20) : 20;
-                oralMax = isNurUkg ? (subjConfig ? subjConfig.utOralMax : 0) : 0;
-            } else if (examName === 'Half Yearly' || examName === 'Annual') {
-                writtenMark = mark.hy || 0;
-                oralMark = isNurUkg ? (mark.hyOral || 0) : 0;
-                writtenMax = isNurUkg ? (subjConfig ? subjConfig.hyMax : 80) : 80;
-                oralMax = isNurUkg ? (subjConfig ? subjConfig.hyOralMax : 0) : 0;
-            }
+        // --- Calculate Marks (0 for UT-2, Annual) ---
+        if (markField && mark) {
+            writtenMark = mark[markField] || 0;
+            oralMark = isNurUkg ? (mark[oralMarkField] || 0) : 0;
+        }
+
+        // --- Calculate Maxima (Non-zero for all sheets) ---
+        if (isMaxUT) {
+            writtenMax = isNurUkg ? (subjConfig ? subjConfig.utMax : 20) : 20;
+            oralMax = isNurUkg ? (subjConfig ? subjConfig.utOralMax : 0) : 0;
+        } else {
+            writtenMax = isNurUkg ? (subjConfig ? subjConfig.hyMax : 80) : 80;
+            oralMax = isNurUkg ? (subjConfig ? subjConfig.hyOralMax : 0) : 0;
         }
         
         // --- Populate the Row Columns ---
@@ -1221,7 +1232,7 @@ function generateStudentDataRow(student, examName) {
         } else {
             // English, Hindi, Maths have Written and Oral columns
             row[`${subjectName}-W`] = writtenMark;
-            row[`${subjectName}-O`] = oralMark; // For Class 1-9 this will be 0
+            row[`${subjectName}-O`] = oralMark; 
             totalMarks += writtenMark + oralMark;
             totalMax += writtenMax + oralMax;
         }
@@ -1239,11 +1250,15 @@ function generateStudentDataRow(student, examName) {
 
 
 function exportDataToXLSX() {
+    const cls = qs('dashboardClassSelect').value;
+    if (!cls) return alert('Please select a class from the "Select Class to See Topper/Download Data" dropdown before attempting to download the Excel file.');
+    
     if (typeof XLSX === 'undefined') {
         return alert('Excel library (SheetJS) is not loaded. Please check your internet connection and try again.');
     }
-    const allStudents = getAllStudentsSorted();
-    if (allStudents.length === 0) return alert('No student data available to download.');
+    
+    const students = getStudentsForSelectedClass();
+    if (students.length === 0) return alert(`No student data found for class ${displayClassLabel(cls)}.`);
 
     // 1. Create a new workbook
     const workbook = XLSX.utils.book_new();
@@ -1266,8 +1281,8 @@ function exportDataToXLSX() {
     ];
 
     EXAMS.forEach(examName => {
-        // 3. Generate data for the current sheet
-        const sheetData = allStudents.map(s => generateStudentDataRow(s, examName));
+        // 3. Generate data for the current sheet using the students of the selected class
+        const sheetData = students.map(s => generateStudentDataRow(s, examName));
 
         // 4. Convert JSON data to a worksheet
         const worksheet = XLSX.utils.json_to_sheet(sheetData, { header: headerOrder });
@@ -1292,33 +1307,52 @@ function exportDataToXLSX() {
     });
 
     // 6. Write the workbook and trigger download
-    XLSX.writeFile(workbook, `School_Marks_Workbook_${new Date().toISOString().split('T')[0]}.xlsx`);
-    alert('Multi-sheet Excel workbook download initiated successfully!');
+    const classLabel = displayClassLabel(cls).replace('/', '_');
+    XLSX.writeFile(workbook, `School_Marks_${classLabel}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    alert(`Multi-sheet Excel workbook for Class ${displayClassLabel(cls)} download initiated successfully!`);
 }
 
-/* ---------------- NEW IMPORT LOGIC ---------------- */
+/* ---------------- NEW IMPORT LOGIC: XLSX/CSV ---------------- */
 
 /**
- * Parses a single CSV file and imports new students.
- * It assumes a simple format: Admission No.,Student Name,Class,Father Name
+ * Reads and imports student data from an uploaded XLSX or CSV file.
  */
-function importStudentsCSV(file) {
+function importStudents(file) {
     if (!file) return;
+    if (typeof XLSX === 'undefined') {
+        return alert('Excel library (SheetJS) is not loaded. Please check your internet connection and try again.');
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split('\n').filter(line => line.trim() !== '');
+        let data;
+        let workbook;
+        try {
+            data = e.target.result;
+            // Attempt to read the file as a binary stream (required for XLSX)
+            workbook = XLSX.read(data, {type: file.name.endsWith('.xlsx') ? 'binary' : 'string', FS: ','});
+        } catch (error) {
+            return alert('Error reading file. Ensure it is a valid XLSX or CSV format.');
+        }
 
-        if (lines.length < 2) return alert('CSV is empty or missing data rows.');
+        // Get the first sheet's data (assuming list of students is in Sheet1)
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert sheet data to JSON array of objects
+        const jsonStudents = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonStudents.length < 2) return alert('File is empty or missing data rows.');
 
-        // Simple CSV parser: split by comma, trim, handle quotes (basic)
-        const headerLine = lines[0].replace(/"/g, '').split(',').map(h => h.trim());
-        // Find the index of the relevant columns, prioritizing exact match, then substring match
+        // The first row is the header
+        const headerLine = jsonStudents[0].map(h => String(h).trim());
+        
+        // Find the index of the relevant columns, prioritizing exact match
         const findColIndex = (target) => {
             const exactIndex = headerLine.findIndex(h => h === target);
             if (exactIndex !== -1) return exactIndex;
-            return headerLine.findIndex(h => h.includes(target));
+            // Fallback for case/spacing variations
+            return headerLine.findIndex(h => h.toLowerCase().includes(target.toLowerCase().replace(/[^a-z]/g, '')));
         };
         
         const COL_MAP = {
@@ -1330,20 +1364,18 @@ function importStudentsCSV(file) {
         
         // Basic validation for required columns
         if (COL_MAP['Admission No.'] === -1 || COL_MAP["Student's Name"] === -1 || COL_MAP['Class'] === -1) {
-            return alert(`CSV Header Error: Missing one or more required columns (Admission No., Student's Name, Class). Please ensure the file structure matches the downloaded Excel.`);
+            return alert(`File Header Error: Missing one or more required columns (Admission No., Student's Name, Class). Found: ${headerLine.join(', ')}`);
         }
         
-        const dataLines = lines.slice(1);
+        const dataRows = jsonStudents.slice(1);
         let importedCount = 0;
 
-        dataLines.forEach(line => {
-            // Crude split by comma - may fail on complex CSV but works for simple case
-            const cols = line.replace(/"/g, '').split(',').map(c => c.trim());
-            
-            const admission = cols[COL_MAP['Admission No.']];
-            const name = cols[COL_MAP["Student's Name"]];
-            const classNameLabel = cols[COL_MAP['Class']];
-            const fatherName = COL_MAP["Father's Name"] !== -1 ? cols[COL_MAP["Father's Name"]] : '';
+        dataRows.forEach(cols => {
+            // Ensure column data is available before accessing index
+            const admission = cols[COL_MAP['Admission No.']] ? String(cols[COL_MAP['Admission No.']]).trim() : '';
+            const name = cols[COL_MAP["Student's Name"]] ? String(cols[COL_MAP["Student's Name']]).trim() : '';
+            const classNameLabel = cols[COL_MAP['Class']] ? String(cols[COL_MAP['Class']]).trim() : '';
+            const fatherName = COL_MAP["Father's Name"] !== -1 && cols[COL_MAP["Father's Name"]] ? String(cols[COL_MAP["Father's Name']]).trim() : '';
             
             // Check for minimum data integrity
             if (!admission || !name || !classNameLabel) return;
@@ -1351,6 +1383,9 @@ function importStudentsCSV(file) {
             // Convert class label (I, II, Nursery) to internal value (1, 2, Nursery)
             const cls = interpretClassValue(classNameLabel);
             
+            // Skip if class is not a known value
+            if (!cls || cls.toLowerCase().includes('undefined')) return;
+
             const key = `${cls}|${admission}`;
             
             if (state.studentsByClass[cls] && state.studentsByClass[cls][key]) {
@@ -1374,9 +1409,15 @@ function importStudentsCSV(file) {
         // Clear file input value to allow re-importing the same file
         qs('importCsvInput').value = ''; 
     };
-
-    reader.readAsText(file);
+    
+    // Read the file based on type
+    if (file.name.endsWith('.xlsx')) {
+        reader.readAsBinaryString(file);
+    } else {
+        reader.readAsText(file);
+    }
 }
+
 
 /* ---------------- CLEAR DATA ---------------- */
 function clearAllData() {
