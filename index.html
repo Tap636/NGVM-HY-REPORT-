@@ -87,6 +87,11 @@ z-index: 0;
     color: black !important; 
 }
 
+/* MODIFICATION 1: PRINT STYLES - Set the marks table header background color for print */
+.marks-header-bg {
+    background-color: #f08421 !important;
+    color: black !important; /* Ensure text is readable */
+}
 
 /* Footer (single horizontal line) - ALIGNMENT FIXES */
 #finalFooter {
@@ -154,6 +159,11 @@ body { background: #ffffff; }
   flex-grow: 1;
 }
 
+/* MODIFICATION 2: SCREEN STYLES - Set the marks table header background color for screen */
+.marks-header-bg {
+    background-color: #f08421;
+    color: black; /* Ensure text is readable */
+}
 /* Screen style for school name */
 .school-name-color { color: #4f46e5; } 
 .school-name { letter-spacing: 1px; }
@@ -393,6 +403,7 @@ const SUBJECTS_1_TO_5 = ["Hindi", "English", "Mathematics", "Computer", "E.V.S."
 const SUBJECTS_6_TO_8 = ["Hindi", "English", "Mathematics", "Computer", "Drawing", "G.K.", "Science", "S.S.T."];
 const SUBJECTS_9 = ["Hindi", "English", "Mathematics", "Science", "S.S.T.", "Drawing"];
 const DEFAULT_ATT_TOTAL = 130;
+const PASS_PERCENTAGE = 33.00; // New constant for pass/fail logic
 
 // --- MODIFICATIONS FOR PASSWORD LOGIN AND MANAGEMENT ---
 const LOGIN_PASSWORD_KEY = 'ng_loginPassword';
@@ -612,7 +623,11 @@ name, admission, cls, fatherName, marks, // Added fatherName
 coscholastic: {},
 attendance: { present: 0, total: DEFAULT_ATT_TOTAL },
 teachersRemark: 'Good effort. Keep improving.',
-remark: ''
+remark: '',
+// New fields for result
+grandTotal: 0,
+percentage: 0,
+result: 'PASS' // Default to pass
 };
 }
 function isNurToUkg(cls) {
@@ -633,12 +648,12 @@ const tfoot = qs('marksTableFoot');
 tbody.innerHTML = '';
 tfoot.innerHTML = '';
 if (!cls) {
-thead.innerHTML = `<tr class="bg-green-100"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center">Overall Performance</th></tr>`;
+thead.innerHTML = `<tr class="marks-header-bg"><th class="border px-3 py-2 text-left">Subject</th><th class="border px-3 py-2 text-center">Unit Test</th><th class="border px-3 py-2 text-center">Half Yearly</th><th class="border px-3 py-2 text-center">Overall Performance</th></tr>`;
 return;
 }
 if (isNurToUkg(cls)) {
 thead.innerHTML = `
-<tr class="bg-green-100">
+<tr class="marks-header-bg">
 <th class="border px-3 py-2 text-left">Subject</th>
 <th class="border px-3 py-2 text-center">Unit Test Written</th>
 <th class="border px-3 py-2 text-center">Unit Test Oral</th>
@@ -679,6 +694,7 @@ tbody.insertAdjacentHTML('beforeend', `
 </tr>
 `);
 });
+// MODIFICATION 3: Nur-UKG Footer structure updated for Grand Total and Result
 tfoot.innerHTML = `
 <tr class="bg-gray-50">
 <td class="border px-3 py-2 font-semibold text-right">Total</td>
@@ -689,14 +705,19 @@ tfoot.innerHTML = `
 <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
 </tr>
 <tr class="bg-gray-50">
-<td colspan="5" class="border px-3 py-2 font-semibold text-right">Percentage</td>
+<td colspan="4" class="border px-3 py-2 font-semibold text-right">Grand Total & Percentage</td>
+<td id="grandTotal" class="border px-3 py-2 font-semibold text-center" colspan="1">0</td>
 <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
+</tr>
+<tr class="bg-gray-50">
+<td colspan="5" class="border px-3 py-2 font-semibold text-right">Final Result</td>
+<td id="finalResult" class="border px-3 py-2 font-semibold text-center">PASS</td>
 </tr>
 `;
 } else {
 // Classes 1-9: no oral columns, UT=20 HY=80; G.K. grade
 thead.innerHTML = `
-<tr class="bg-green-100">
+<tr class="marks-header-bg">
 <th class="border px-3 py-2 text-left">Subject</th>
 <th class="border px-3 py-2 text-center">Unit Test - 20</th>
 <th class="border px-3 py-2 text-center">Half Yearly - 80</th>
@@ -738,6 +759,7 @@ tbody.insertAdjacentHTML('beforeend', `
 `);
 }
 });
+// MODIFICATION 4: 1-9 Footer structure updated for Grand Total and Result
 tfoot.innerHTML = `
 <tr class="bg-gray-50">
 <td class="border px-3 py-2 font-semibold text-right">Total</td>
@@ -746,8 +768,13 @@ tfoot.innerHTML = `
 <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
 </tr>
 <tr class="bg-gray-50">
-<td colspan="3" class="border px-3 py-2 font-semibold text-right">Percentage</td>
+<td colspan="2" class="border px-3 py-2 font-semibold text-right">Grand Total & Percentage</td>
+<td id="grandTotal" class="border px-3 py-2 font-semibold text-center">0</td>
 <td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
+</tr>
+<tr class="bg-gray-50">
+<td colspan="3" class="border px-3 py-2 font-semibold text-right">Final Result</td>
+<td id="finalResult" class="border px-3 py-2 font-semibold text-center">PASS</td>
 </tr>
 `;
 }
@@ -893,9 +920,12 @@ student.marks[idx][field] = Number(el.value) || 0;
 }
 // perform totals depending on class
 let percentage = 0;
+let grandTotal = 0;
+let maxOverall = 0;
+let result = 'PASS';
+
 if (student && isNurToUkg(student.cls)) {
 let totals = { ut:0, utOral:0, hy:0, hyOral:0, overall:0 };
-let maxOverall = 0; // Correctly calculate max overall
 student.marks.forEach(m => {
 const ut = Number(m.ut) || 0;
 const utOral = Number(m.utOral) || 0;
@@ -913,9 +943,14 @@ qs('totalUTOral').textContent = totals.utOral;
 qs('totalHY').textContent = totals.hy;
 qs('totalHYOral').textContent = totals.hyOral;
 qs('totalOverall').textContent = totals.overall;
+grandTotal = totals.overall;
 const denom = maxOverall || 1;
-percentage = denom > 0 ? ((totals.overall / denom) * 100).toFixed(2) : '0.00';
+percentage = denom > 0 ? ((grandTotal / denom) * 100).toFixed(2) : '0.00';
+
+// Display Grand Total & Percentage
+if (qs('grandTotal')) qs('grandTotal').textContent = grandTotal;
 qs('percentage').textContent = percentage + '%';
+
 } else if (student) {
 // classes 1-9
 let totals = { ut:0, hy:0, overall:0, numericCount:0 };
@@ -933,26 +968,51 @@ totals.ut += ut; totals.hy += hy; totals.overall += t; totals.numericCount++;
 qs('totalUT').textContent = totals.ut;
 qs('totalHY').textContent = totals.hy;
 qs('totalOverall').textContent = totals.overall;
-const denom = (totals.numericCount || 1) * 100;
-percentage = denom>0?((totals.overall/denom)*100).toFixed(2):'0.00';
+grandTotal = totals.overall;
+const numericCount = totals.numericCount || 1;
+maxOverall = numericCount * 100;
+percentage = maxOverall>0?((grandTotal/maxOverall)*100).toFixed(2):'0.00';
+
+// Display Grand Total & Percentage
+if (qs('grandTotal')) qs('grandTotal').textContent = grandTotal;
 qs('percentage').textContent = percentage + '%';
+
 } else {
 // no student: compute totals from visible inputs
 computeTotalsFromInputs();
 }
-// Remark
+
+// Result and Remark Logic
 if (student) {
-let remarkText = 'Needs Improvement';
-const p = Number(percentage);
-if (p >= 90) remarkText = 'Outstanding';
-else if (p >= 80) remarkText = 'Excellent';
-else if (p >= 70) remarkText = 'Very Good';
-else if (p >= 60) remarkText = 'Good';
-else if (p >= 50) remarkText = 'Average';
-student.remark = remarkText;
-student.teachersRemark = remarkText;
-qs('teachersRemark').textContent = remarkText;
+    const p = Number(percentage);
+    student.percentage = p;
+    student.grandTotal = grandTotal;
+
+    if (p < PASS_PERCENTAGE) {
+        result = 'FAIL';
+        student.remark = 'Poor Performance (Failed)';
+        student.teachersRemark = 'Failed'; // Specific request: teachers remark will be 'Failed'
+    } else {
+        result = 'PASS';
+        let remarkText = 'Needs Improvement';
+        if (p >= 90) remarkText = 'Outstanding';
+        else if (p >= 80) remarkText = 'Excellent';
+        else if (p >= 70) remarkText = 'Very Good';
+        else if (p >= 60) remarkText = 'Good';
+        else if (p >= 50) remarkText = 'Average';
+        // Specific request: 33% = poor performance
+        else if (p >= PASS_PERCENTAGE) remarkText = 'Poor Performance'; 
+        
+        student.remark = remarkText;
+        student.teachersRemark = remarkText;
+    }
+    
+    // Update HTML elements
+    if (qs('finalResult')) qs('finalResult').textContent = result;
+    qs('teachersRemark').textContent = student.teachersRemark;
 }
+
+
 // reflect row overall values
 if (student) {
 qs('marksTableBody').querySelectorAll('tr').forEach((tr, idx) => {
@@ -1001,6 +1061,8 @@ if (isNurUkg) {
 if (qs('totalUT')) qs('totalUT').textContent = totalUT;
 if (qs('totalHY')) qs('totalHY').textContent = totalHY;
 if (qs('totalOverall')) qs('totalOverall').textContent = totalOverall;
+if (qs('grandTotal')) qs('grandTotal').textContent = totalOverall; // Update Grand Total on inputs
+
 }
 /* ----------------- CHART ----------------- */
 // MODIFICATION 3: Define chart colors
@@ -1108,12 +1170,6 @@ if (!state.studentsByClass[cls] || !Object.keys(state.studentsByClass[cls]).leng
 const arr = [];
 Object.keys(state.studentsByClass[cls]).forEach(key => {
 const s = state.studentsByClass[cls][key];
-// Added Father Name to the report
-let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
-s.marks.forEach(m => {
-if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
-else report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
-});
 // Re-calculate totals and percentage correctly to ensure data accuracy for download
 const numericMarks = s.marks.filter(m=>!m.isGrade);
 const totalOverall = numericMarks.reduce((a,b)=>a+(b.total||0),0);
@@ -1129,8 +1185,28 @@ if (isNurToUkg(s.cls)) {
 
 const percentage = maxPossible > 0 ? ((totalOverall/maxPossible)*100).toFixed(2) : '0.00';
 
-report += `\nTotals: Overall ${totalOverall}\n`;
-report += `Percentage: ${percentage}%\nRemark: ${s.remark || '—'}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher:\nPrincipal:\n\n--------------------------------------------------\n\n`;
+// Determine remark based on calculated percentage
+let remarkForDownload = 'Needs Improvement';
+if (Number(percentage) < PASS_PERCENTAGE) {
+    remarkForDownload = 'Poor Performance (Failed)';
+} else if (Number(percentage) >= 90) remarkForDownload = 'Outstanding';
+else if (Number(percentage) >= 80) remarkForDownload = 'Excellent';
+else if (Number(percentage) >= 70) remarkForDownload = 'Very Good';
+else if (Number(percentage) >= 60) remarkForDownload = 'Good';
+else if (Number(percentage) >= 50) remarkForDownload = 'Average';
+else if (Number(percentage) >= PASS_PERCENTAGE) remarkForDownload = 'Poor Performance';
+
+// Added Father Name and Result to the report
+let report = `Report Card - ${displayClassLabel(s.cls)} - ${s.name}\nAdmission No: ${s.admission}\nFather's Name: ${s.fatherName || '—'}\n\nSubjects:\n`;
+s.marks.forEach(m => {
+if (m.isGrade) report += `${m.name}: Grade ${m.grade || '—'}\n`;
+else report += `${m.name}: Unit Test ${m.ut || 0}, Half Yearly ${m.hy || 0}, Overall: ${m.total || 0}\n`;
+});
+
+report += `\nGrand Total: ${totalOverall}\n`;
+report += `Percentage: ${percentage}%\n`;
+report += `Final Result: ${Number(percentage) < PASS_PERCENTAGE ? 'FAIL' : 'PASS'}\n`; // Include Final Result
+report += `Remark: ${remarkForDownload}\n\nAttendance: ${s.attendance.present || 0} / ${s.attendance.total || DEFAULT_ATT_TOTAL}\nRemark by Teacher: ${s.teachersRemark || '—'}\n\nClass Teacher:\nPrincipal:\n\n--------------------------------------------------\n\n`;
 arr.push(report);
 });
 const blob = new Blob(arr, { type: 'text/plain' });
@@ -1188,7 +1264,8 @@ function downloadMarksExcel() {
     });
 
     const coreHeader = "Admission No.,Student Name,Father Name,Class";
-    const overallHeader = "Overall Total Marks,Overall Percentage";
+    // MODIFICATION: Changed Overall Total Marks to Grand Total
+    const overallHeader = "Grand Total Marks,Overall Percentage,Final Result";
     const header = `${coreHeader},${subjectColumns.join(',')},${overallHeader}\n`;
     let csvContent = header;
 
@@ -1216,7 +1293,8 @@ function downloadMarksExcel() {
             maxPossible = numericCount * 100;
         }
 
-        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) + '%' : '0.00%';
+        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2);
+        const result = Number(percentage) < PASS_PERCENTAGE ? 'FAIL' : 'PASS';
 
         // Base student info
         const coreInfo = `"${s.admission}","${s.name}","${s.fatherName}","${classLabel}"`;
@@ -1239,7 +1317,7 @@ function downloadMarksExcel() {
         });
 
         // Combine all data for a single row
-        const row = `${coreInfo},${marksData.join(',')},${overallTotal},"${percentage}"\n`;
+        const row = `${coreInfo},${marksData.join(',')},${overallTotal},"${percentage}%","${result}"\n`;
         csvContent += row;
     });
 
