@@ -644,7 +644,7 @@ thead.innerHTML = `
 <th class="border px-3 py-2 text-center">Unit Test Oral</th>
 <th class="border px-3 py-2 text-center">Half Yearly Written</th>
 <th class="border px-3 py-2 text-center">Half Yearly Oral</th>
-<th class="border px-3 py-2 text-center font-semibold">Overall Performance</th>
+<th class="border px-3 py-2 text-center font bold">Overall Performance</th>
 </tr>
 `;
 const student = getCurrentStudent();
@@ -684,7 +684,7 @@ tbody.insertAdjacentHTML('beforeend', `
 const maxOverallConfigNurUkg = SUBJECTS_NUR_TO_UKG.reduce((acc, s) => acc + (s.utMax || 0) + (s.utOralMax || 0) + (s.hyMax || 0) + (s.hyOralMax || 0), 0);
 tfoot.innerHTML = `
     <tr class="bg-gray-50 font-semibold">
-        <td class="border px-3 py-2 text-right" colspan="5">Total (Marks Obtained)</td>
+        <td class="border px-3 py-2 text-right" colspan="5">Total Marks Obtained</td>
         <td id="totalOverall" class="border px-3 py-2 text-center">0</td>
     </tr>
     <tr class="bg-gray-50 font-bold">
@@ -748,7 +748,7 @@ tbody.insertAdjacentHTML('beforeend', `
 // MODIFIED TFOOTER (Classes 1 to 9) - Now using a 2, 1, 1 column span split for better balance in 4 columns
 tfoot.innerHTML = `
     <tr class="bg-gray-50 font-semibold">
-        <td class="border px-3 py-2 text-right" colspan="3">Total (Marks Obtained)</td>
+        <td class="border px-3 py-2 text-right" colspan="3">Total Marks Obtained</td>
         <td id="totalOverall" class="border px-3 py-2 text-center">0</td>
     </tr>
     <tr class="bg-gray-50 font-bold">
