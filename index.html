@@ -19,15 +19,23 @@ body { -webkit-print-color-adjust: exact; }
   width: 210mm;
   min-height: 297mm; 
   margin: 0 auto;
+  /* Reduced vertical padding to prevent blank page */
   padding: 5mm 12.7mm; 
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   background: white;
   position: relative;
-  page-break-inside: avoid; 
+  /* Added page-break-after: always for individual page breaks in bulk print */
+  page-break-after: always;
+  /* Removed page-break-inside: avoid; to allow content to break if necessary */
   -webkit-print-color-adjust: exact;
   display: flex; 
   flex-direction: column;
 }
+/* Ensure the last page does not force an extra blank page */
+.page:last-of-type {
+    page-break-after: auto;
+}
+
 
 /* Watermark centered: Opacity reduced for typical watermark effect */
 .page::before{
@@ -91,6 +99,21 @@ z-index: 0;
 .marks-header-bg {
     background-color: #f08421 !important;
     color: black !important; /* Ensure text is readable */
+}
+/* New style to align Grand Total, Percentage, and Result in one row for print */
+.result-row-cell-nur-ukg {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 0.75rem; /* px-3 */
+    padding-right: 0.75rem; /* px-3 */
+    align-items: center;
+}
+.result-row-cell-1-9 {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 0.75rem; /* px-3 */
+    padding-right: 0.75rem; /* px-3 */
+    align-items: center;
 }
 
 /* Footer (single horizontal line) - ALIGNMENT FIXES */
@@ -164,6 +187,22 @@ body { background: #ffffff; }
     background-color: #f08421;
     color: black; /* Ensure text is readable */
 }
+/* New style to align Grand Total, Percentage, and Result in one row for screen */
+.result-row-cell-nur-ukg {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 0.75rem; /* px-3 */
+    padding-right: 0.75rem; /* px-3 */
+    align-items: center;
+}
+.result-row-cell-1-9 {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 0.75rem; /* px-3 */
+    padding-right: 0.75rem; /* px-3 */
+    align-items: center;
+}
+
 /* Screen style for school name */
 .school-name-color { color: #4f46e5; } 
 .school-name { letter-spacing: 1px; }
@@ -694,7 +733,7 @@ tbody.insertAdjacentHTML('beforeend', `
 </tr>
 `);
 });
-// MODIFICATION 3: Nur-UKG Footer structure updated for Grand Total and Result
+// MODIFICATION 1: Nur-UKG Footer structure updated for Grand Total, Percentage, and Result in ONE ROW
 tfoot.innerHTML = `
 <tr class="bg-gray-50">
 <td class="border px-3 py-2 font-semibold text-right">Total</td>
@@ -705,13 +744,14 @@ tfoot.innerHTML = `
 <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
 </tr>
 <tr class="bg-gray-50">
-<td colspan="4" class="border px-3 py-2 font-semibold text-right">Grand Total & Percentage</td>
-<td id="grandTotal" class="border px-3 py-2 font-semibold text-center" colspan="1">0</td>
-<td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
-</tr>
-<tr class="bg-gray-50">
-<td colspan="5" class="border px-3 py-2 font-semibold text-right">Final Result</td>
-<td id="finalResult" class="border px-3 py-2 font-semibold text-center">PASS</td>
+<td colspan="5" class="border px-3 py-2 font-semibold text-right"></td>
+<td class="border px-3 py-2 font-semibold result-row-cell-nur-ukg">
+    <span>Grand Total: <span id="grandTotal">0</span></span>
+    <span>|</span>
+    <span>Percentage: <span id="percentage">0%</span></span>
+    <span>|</span>
+    <span>Result: <span id="finalResult">PASS</span></span>
+</td>
 </tr>
 `;
 } else {
@@ -759,7 +799,7 @@ tbody.insertAdjacentHTML('beforeend', `
 `);
 }
 });
-// MODIFICATION 4: 1-9 Footer structure updated for Grand Total and Result
+// MODIFICATION 2: 1-9 Footer structure updated for Grand Total, Percentage, and Result in ONE ROW
 tfoot.innerHTML = `
 <tr class="bg-gray-50">
 <td class="border px-3 py-2 font-semibold text-right">Total</td>
@@ -768,13 +808,14 @@ tfoot.innerHTML = `
 <td id="totalOverall" class="border px-3 py-2 font-semibold text-center">0</td>
 </tr>
 <tr class="bg-gray-50">
-<td colspan="2" class="border px-3 py-2 font-semibold text-right">Grand Total & Percentage</td>
-<td id="grandTotal" class="border px-3 py-2 font-semibold text-center">0</td>
-<td id="percentage" class="border px-3 py-2 font-semibold text-center">0%</td>
-</tr>
-<tr class="bg-gray-50">
-<td colspan="3" class="border px-3 py-2 font-semibold text-right">Final Result</td>
-<td id="finalResult" class="border px-3 py-2 font-semibold text-center">PASS</td>
+<td colspan="3" class="border px-3 py-2 font-semibold text-right"></td>
+<td class="border px-3 py-2 font-semibold result-row-cell-1-9">
+    <span>Grand Total: <span id="grandTotal">0</span></span>
+    <span>|</span>
+    <span>Percentage: <span id="percentage">0%</span></span>
+    <span>|</span>
+    <span>Result: <span id="finalResult">PASS</span></span>
+</td>
 </tr>
 `;
 }
@@ -947,9 +988,10 @@ grandTotal = totals.overall;
 const denom = maxOverall || 1;
 percentage = denom > 0 ? ((grandTotal / denom) * 100).toFixed(2) : '0.00';
 
-// Display Grand Total & Percentage
+// Display Grand Total & Percentage in the combined cell
 if (qs('grandTotal')) qs('grandTotal').textContent = grandTotal;
-qs('percentage').textContent = percentage + '%';
+if (qs('percentage')) qs('percentage').textContent = percentage + '%';
+
 
 } else if (student) {
 // classes 1-9
@@ -973,9 +1015,9 @@ const numericCount = totals.numericCount || 1;
 maxOverall = numericCount * 100;
 percentage = maxOverall>0?((grandTotal/maxOverall)*100).toFixed(2):'0.00';
 
-// Display Grand Total & Percentage
+// Display Grand Total & Percentage in the combined cell
 if (qs('grandTotal')) qs('grandTotal').textContent = grandTotal;
-qs('percentage').textContent = percentage + '%';
+if (qs('percentage')) qs('percentage').textContent = percentage + '%';
 
 } else {
 // no student: compute totals from visible inputs
@@ -1293,7 +1335,7 @@ function downloadMarksExcel() {
             maxPossible = numericCount * 100;
         }
 
-        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2);
+        const percentage = maxPossible > 0 ? ((overallTotal / maxPossible) * 100).toFixed(2) : '0.00';
         const result = Number(percentage) < PASS_PERCENTAGE ? 'FAIL' : 'PASS';
 
         // Base student info
