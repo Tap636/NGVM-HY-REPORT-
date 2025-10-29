@@ -714,7 +714,7 @@ const student = getCurrentStudent();
 subs.forEach((s, idx) => {
 const mark = student ? student.marks[idx] : null;
 if (s === 'G.K.') {
-const grade = mark ? (mark.grade || 'A') : 'A';
+const grade = mark ? (mark.grade || 'A') : 'A', 'B', 'C', 'D';
 tbody.insertAdjacentHTML('beforeend', `
 <tr>
 <td class="border px-3 py-2">${s}</td>
